@@ -1,0 +1,45 @@
+spring:
+  main:
+    allow-circular-references: true
+  data:
+    mongodb:
+      uri: mongodb+srv://nthai2001cr:H1q54razaxG0HE1T@cluster0.41zzcbg.mongodb.net/spring-boot-mongodb?retryWrites=true&w=majority
+      auto-index-creation: true
+jwt:
+  settings:
+    accessTokenExpiryTime: 300
+    refreshTokenExpiryTime: 600
+    tokenSigningKeyString: "vietcaikeyquanquegichodu256bitsbaygioroidmvietnhieuvanchuadulasao"
+    tokenIssuer: "localhost"
+logging:
+  level:
+    org:
+      springframework:
+        security: "TRACE"
+server:
+  port: 5000
+security:
+  oauth2:
+    googleClientId: "66028302633-0eoupfkn27i2sm67jl3fucsg799ni25d.apps.googleusercontent.com"
+    googleClientSecret: "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"
+  passwordPolicy:
+    isWhitespacesAllowed: false
+    repeatedPasswordAllowed: false
+    minimumLength: 6
+    minimumLowerCharacters: 0
+    minimumUpperCharacters: 1
+    minimumSpecialCharacters: 0
+    passwordReuseFrequencyDays: 0
+  maxFailedLoginAttempts: 3
+  failedLoginLockExpirationMillis: 5000 # 5 seconds
+  activationTokenExpirationMillis: 300000 # 5 minutes
+  passwordResetTokenExpirationMillis: 300000 # 5 minutes
+  failedLoginIntervalMillis: 10000 # 10 seconds
+mailing:
+  host: "smtp.gmail.com"
+  port: 587
+  username: "mochacr0@gmail.com"
+  password: "nhxyxrnqckoijmcs"
+  timeout: 10000
+
+
