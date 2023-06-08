@@ -25,8 +25,7 @@ import org.springframework.http.MediaType;
 import java.util.Collections;
 import java.util.List;
 
-import static com.example.springbootmongodb.controller.ControllerConstants.AUTH_LOGIN_ENDPOINT;
-import static com.example.springbootmongodb.controller.ControllerConstants.AUTH_REFRESH_TOKEN_ROUTE;
+import static com.example.springbootmongodb.controller.ControllerConstants.*;
 
 @Slf4j
 @Configuration
@@ -79,7 +78,7 @@ public class SwaggerConfiguration {
             pathItem.readOperations().forEach(operation -> {
                 ApiResponses responses = operation.getResponses();
                 responses.put("400", getApiErrorResponse(HttpStatus.BAD_REQUEST, "Unauthorized"));
-                responses.put("401", getApiErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid UUID string"));
+                responses.put("401", getApiErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid ID string"));
                 responses.put("403", getApiErrorResponse(HttpStatus.FORBIDDEN, "You don't have permission to perform this action"));
                 responses.put("404", getApiErrorResponse(HttpStatus.NOT_FOUND, "Requested item wasn't found"));
                 responses.put("500", getApiErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error"));
@@ -166,7 +165,7 @@ public class SwaggerConfiguration {
 
     private void customizeBearerAuthSecurityScheme(OpenAPI openApi) {
         SecurityScheme bearerAuth = new SecurityScheme();
-        bearerAuth.setName("Bearer Auth");
+        bearerAuth.setName(SWAGGER_SECURITY_SCHEME_BEARER_AUTH);
         bearerAuth.setType(SecurityScheme.Type.HTTP);
         bearerAuth.setScheme("bearer");
         bearerAuth.setBearerFormat("JWT");
