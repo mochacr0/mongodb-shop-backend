@@ -1,8 +1,6 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.*;
-import com.example.springbootmongodb.exception.InvalidDataException;
-import com.example.springbootmongodb.service.UserAddressService;
 import com.example.springbootmongodb.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,13 +9,9 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.UUID;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 

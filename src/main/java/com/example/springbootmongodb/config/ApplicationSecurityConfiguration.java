@@ -76,7 +76,6 @@ public class ApplicationSecurityConfiguration {
     private AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
 
     private static final List<String> NON_TOKEN_BASED_AUTH_ENTRY_ENDPOINTS = new ArrayList<>(Arrays.asList(
-            //official
             AUTH_LOGIN_ENDPOINT,
             AUTH_ACTIVATE_EMAIL_ROUTE,
             AUTH_RESEND_ACTIVATION_TOKEN_ROUTE,
@@ -84,9 +83,9 @@ public class ApplicationSecurityConfiguration {
             AUTH_REQUEST_PASSWORD_RESET_EMAIL_ROUTE,
             AUTH_RESET_PASSWORD_ROUTE,
             AUTH_REFRESH_TOKEN_ROUTE,
-            //test
-            USERS_UPDATE_USER_ROUTE,
-//            AUTH_CHANGE_PASSWORD_ROUTE,
+            USERS_REGISTER_USER_ROUTE,
+            USERS_ACTIVATE_USER_CREDENTIALS_ROUTE,
+//            USERS_DELETE_USER_BY_ID_ROUTE,
             "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"));
 
     @Bean

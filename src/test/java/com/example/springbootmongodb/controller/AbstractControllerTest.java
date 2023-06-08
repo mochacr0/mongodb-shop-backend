@@ -2,12 +2,16 @@ package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.RegisterUserRequest;
 import com.example.springbootmongodb.common.data.User;
+import com.example.springbootmongodb.config.SecuritySettingsConfiguration;
+import com.example.springbootmongodb.config.UserPasswordPolicy;
 import com.example.springbootmongodb.security.JwtTokenPair;
 import com.example.springbootmongodb.security.LoginRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.passay.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,8 +25,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 
-import static com.example.springbootmongodb.controller.ControllerConstants.USERS_DELETE_USER_BY_ID_ROUTE;
-import static com.example.springbootmongodb.controller.ControllerConstants.USERS_REGISTER_USER_ROUTE;
+import static com.example.springbootmongodb.controller.ControllerConstants.*;
 import static com.example.springbootmongodb.controller.ControllerTestConstants.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -36,14 +39,18 @@ public abstract class AbstractControllerTest {
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper objectMapper;
-    @Value("${security.maxFailedLoginAttempts}")
-    protected int maxFailedLoginAttempts;
-    @Value("${security.failedLoginLockExpirationMillis}")
-    protected long failedLoginLockExpirationMillis;
-    @Value("${security.failedLoginIntervalMillis}")
-    protected long failedLoginIntervalMillis;
+    @Autowired
+    protected SecuritySettingsConfiguration securitySettings;
     private String accessToken;
     private String refreshToken;
+    private PasswordGenerator passwordGenerator;
+    protected String DEFAULT_PASSWORD;
+
+    @PostConstruct
+    private void setUp() {
+        passwordGenerator = new PasswordGenerator();
+        DEFAULT_PASSWORD = generatePassword();
+    }
 
 //    @SuppressWarnings("rawtypes")
 //    private HttpMessageConverter mappingJackson2HttpMessageConverter;
@@ -166,19 +173,28 @@ public abstract class AbstractControllerTest {
         return performPost(USERS_REGISTER_USER_ROUTE, User.class, request);
     }
 
+    protected void activateUser(String userId) throws Exception {
+        performPostWithEmptyBody(USERS_ACTIVATE_USER_CREDENTIALS_ROUTE, userId);
+    }
+
     protected void deleteUser(String userId) throws Exception {
         performDelete(USERS_DELETE_USER_BY_ID_ROUTE, userId.toString()).andExpect(status().isOk());
     }
 
-    public String getRandomUsername() {
+    public String generateUsername() {
         return "user" + RandomStringUtils.randomAlphanumeric(5);
     }
 
-    public String getRandomEmail() {
+    public String generateEmail() {
         return "user" + RandomStringUtils.randomAlphanumeric(5) + "@gmail.com";
     }
 
-    public String getRandomString() {
+    public String generateRandomString() {
         return RandomStringUtils.randomAlphanumeric(10);
+    }
+
+    public String generatePassword() {
+        UserPasswordPolicy passwordPolicy = securitySettings.getPasswordPolicy();
+        return passwordGenerator.generatePassword(passwordPolicy.getMinimumLength(), passwordPolicy.getPasswordCharacterRules());
     }
 }

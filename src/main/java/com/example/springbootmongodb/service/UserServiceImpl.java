@@ -61,11 +61,6 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
         return this.userRepository;
     }
 
-//    @Override
-//    public Class<UserEntity> getEntityClass() {
-//        return UserEntity.class;
-//    }
-
     @Override
     public User save(User user) {
         log.info("Performing UserService save");

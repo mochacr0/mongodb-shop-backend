@@ -8,7 +8,6 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.AUTH_ROUTE;
-import static com.example.springbootmongodb.controller.ControllerConstants.USERS_GET_USER_BY_ID_ROUTE;
 import static com.example.springbootmongodb.controller.ControllerTestConstants.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,8 +32,9 @@ public class AuthControllerTest extends AbstractControllerTest {
 
         @BeforeEach
         void setUp() throws Exception {
-            user = createUser(getRandomUsername(), getRandomEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
-            performPostWithEmptyBody(USERS_GET_USER_BY_ID_ROUTE + "/activate", user.getId().toString());
+            user = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
+            activateUser(user.getId());
+            login(user.getName(), DEFAULT_PASSWORD);
         }
 
         @AfterEach
@@ -64,7 +64,7 @@ public class AuthControllerTest extends AbstractControllerTest {
         @Test
         void testLoginWithFailedLoginLock() throws Exception {
             //failed maximum times, should return bad credentials
-            for (int i = 0; i < maxFailedLoginAttempts; i++) {
+            for (int i = 0; i < securitySettings.getMaxFailedLoginAttempts(); i++) {
                 performLogin(user.getName(), INVALID_PASSWORD)
                         .andExpect(status().isUnauthorized())
                         .andExpect(jsonPath("$.message", Matchers.is(BAD_CREDENTIALS_EXCEPTION_MESSAGE)));
@@ -74,7 +74,7 @@ public class AuthControllerTest extends AbstractControllerTest {
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.message", Matchers.is(LOCKED_EXCEPTION_MESSAGE)));
             //Wait until the expiration time has passed
-            Thread.sleep(failedLoginLockExpirationMillis);
+            Thread.sleep(securitySettings.getFailedLoginLockExpirationMillis());
             //Now login should return ok
             performLogin(user.getName(), DEFAULT_PASSWORD).andExpect(status().isOk());
         }
@@ -87,9 +87,9 @@ public class AuthControllerTest extends AbstractControllerTest {
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.message", Matchers.is(BAD_CREDENTIALS_EXCEPTION_MESSAGE)));
             //Wait until the interval time has passed
-            Thread.sleep(failedLoginIntervalMillis);
+            Thread.sleep(securitySettings.getFailedLoginIntervalMillis());
             //then try to fail maximum times, should return bad credentials
-            for (int i = 0; i < maxFailedLoginAttempts; i++) {
+            for (int i = 0; i < securitySettings.getMaxFailedLoginAttempts(); i++) {
                 performLogin(user.getName(), INVALID_PASSWORD)
                         .andExpect(status().isUnauthorized())
                         .andExpect(jsonPath("$.message", Matchers.is(BAD_CREDENTIALS_EXCEPTION_MESSAGE)));
@@ -110,8 +110,8 @@ public class AuthControllerTest extends AbstractControllerTest {
 
         @BeforeEach
         void setUp() throws Exception {
-            user = createUser(getRandomUsername(), getRandomEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
-            performPostWithEmptyBody(USERS_GET_USER_BY_ID_ROUTE + "/activate", user.getId().toString());
+            user = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
+            activateUser(user.getId());
             login(user.getName(),DEFAULT_PASSWORD);
             changePasswordRequest = new ChangePasswordRequest();
             changePasswordRequest.setCurrentPassword(DEFAULT_PASSWORD);
