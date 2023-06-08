@@ -27,43 +27,50 @@ public class AuthController {
     @Autowired
     private SecuritySettingsConfiguration securitySettings;
 
-    @Operation(tags = {"Auth"}, summary = "Activate user")
+    @Operation(summary = "Activate a user account using the activation token retrieved from the email")
     @PostMapping(value = AUTH_ACTIVATE_EMAIL_ROUTE)
     void activateEmail(
-            @Parameter(description = "Activation token retrieved from email")
+            @Parameter(description = "Activate user using activation token retrieved from email")
             @RequestParam String activationToken) {
         authService.activateEmail(activationToken);
     }
 
-    @Operation(tags = {"Auth"}, summary = "Resend activation token")
+    @Operation(summary = "Resend the activation token to the user's email address")
     @PostMapping(value = AUTH_RESEND_ACTIVATION_TOKEN_ROUTE)
-    void resendActivationToken(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
+    void resendActivationToken(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
+                                                                                     description = "Object containing the email")
                                @RequestBody ResendActivationEmailRequest resendRequest, HttpServletRequest request) {
         authService.resendActivationTokenByEmail(resendRequest.getEmail(), request);
     }
 
-    @Operation(tags = {"Auth"}, summary = "Get user password policy")
+    @Operation(summary = "Retrieve the password policy for users")
     @GetMapping(value = AUTH_GET_USER_PASSWORD_POLICY_ROUTE)
     UserPasswordPolicy getUserPasswordPolicy() {
         return securitySettings.getPasswordPolicy();
     }
 
-    @Operation(tags = {"Auth"}, summary = "Request change password token")
+    @Operation(summary = "Change user's password")
     @PostMapping(value = AUTH_CHANGE_PASSWORD_ROUTE)
-    JwtToken changePassword(@RequestBody ChangePasswordRequest request) {
+    JwtToken changePassword(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
+                                                                                  description = "Object containing the change password request details")
+            @RequestBody ChangePasswordRequest request) {
         return authService.changePassword(request);
     }
 
-    @Operation(tags = {"Auth"}, summary = "Request password reset token")
+    @Operation(summary = "Request a password reset token to be sent to the user's email address")
     @PostMapping(value = AUTH_REQUEST_PASSWORD_RESET_EMAIL_ROUTE)
-    void requestPasswordResetEmail (@RequestBody PasswordResetEmailRequest passwordResetEmailRequest,
+    void requestPasswordResetEmail (@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
+                                                                                          description = "Object containing the email")
+                                    @RequestBody PasswordResetEmailRequest passwordResetEmailRequest,
                                     HttpServletRequest request) {
         authService.requestPasswordResetEmail(passwordResetEmailRequest.getEmail(), request);
     }
 
-    @Operation(tags = {"Auth"}, summary = "Reset password by password reset token")
+    @Operation(summary = "Reset user's password using the password reset token")
     @PostMapping(value = AUTH_RESET_PASSWORD_ROUTE)
-    void resetPassword (@RequestBody PasswordResetRequest passwordResetRequest) {
+    void resetPassword (@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
+                                                                              description = "Object containing the password reset request details")
+            @RequestBody PasswordResetRequest passwordResetRequest) {
         authService.resetPassword(passwordResetRequest);
     }
 }

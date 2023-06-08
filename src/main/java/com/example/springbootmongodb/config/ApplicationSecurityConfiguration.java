@@ -78,9 +78,10 @@ public class ApplicationSecurityConfiguration {
     private static final List<String> NON_TOKEN_BASED_AUTH_ENTRY_ENDPOINTS = new ArrayList<>(Arrays.asList(
             //official
             AUTH_LOGIN_ENDPOINT,
-            AUTH_REQUEST_PASSWORD_RESET_EMAIL_ROUTE,
             AUTH_ACTIVATE_EMAIL_ROUTE,
             AUTH_RESEND_ACTIVATION_TOKEN_ROUTE,
+            AUTH_GET_USER_PASSWORD_POLICY_ROUTE,
+            AUTH_REQUEST_PASSWORD_RESET_EMAIL_ROUTE,
             AUTH_RESET_PASSWORD_ROUTE,
             AUTH_REFRESH_TOKEN_ROUTE,
             //test

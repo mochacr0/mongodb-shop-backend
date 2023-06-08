@@ -45,6 +45,8 @@ public class ControllerConstants {
 
     public static final String USERS_GET_USERS_ROUTE = USERS_ROUTE;
     public static final String USERS_BY_USER_ID_ROUTE = USERS_ROUTE + "/{userId}";
+
+    public static final String USERS_GET_CURRENT_USER_ROUTE = USERS_ROUTE + "/current";
     public static final String USERS_GET_USER_BY_ID_ROUTE = USERS_BY_USER_ID_ROUTE;
     public static final String USERS_DELETE_USER_BY_ID_ROUTE = USERS_BY_USER_ID_ROUTE;
     public static final String USERS_ACTIVATE_USER_CREDENTIALS_ROUTE = USERS_BY_USER_ID_ROUTE + "/activate";
@@ -55,5 +57,7 @@ public class ControllerConstants {
     public static final String USERS_GET_ADDRESS_BY_ID_ROUTE = USERS_ADDRESSES_ROUTE + "/{addressId}";
     public static final String USERS_DELETE_ADDRESSES_ROUTE = USERS_GET_ADDRESS_BY_ID_ROUTE;
 
+    //Swagger security schemes
+    public static final String SWAGGER_SECURITY_SCHEME_BEARER_AUTH = "Bearer Auth";
 
 }
