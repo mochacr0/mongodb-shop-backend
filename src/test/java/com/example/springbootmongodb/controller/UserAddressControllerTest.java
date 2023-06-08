@@ -4,9 +4,6 @@ import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.UserAddress;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
-import org.springframework.util.Assert;
-
-import static com.example.springbootmongodb.controller.ControllerTestConstants.DEFAULT_PASSWORD;
 
 @Slf4j
 class UserAddressControllerTest extends AbstractControllerTest {
@@ -15,10 +12,11 @@ class UserAddressControllerTest extends AbstractControllerTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class CreateUserAddressMethodTest {
         private User user;
-
         @BeforeEach
         void setUp() throws Exception {
-            user = createUser(getRandomUsername(), getRandomEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
+            user = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
+            activateUser(user.getId());
+            login(user.getName(), DEFAULT_PASSWORD);
         }
 
         @AfterEach
@@ -30,12 +28,12 @@ class UserAddressControllerTest extends AbstractControllerTest {
         @Test
         void testCreateAddressWithValidBody() throws Exception {
             UserAddress userAddress = new UserAddress();
-            userAddress.setName(getRandomUsername());
-            userAddress.setPhoneNumber(getRandomString());
-            userAddress.setProvince(getRandomString());
-            userAddress.setDistrict(getRandomString());
-            userAddress.setWard(getRandomString());
-            userAddress.setStreetAddress(getRandomString());
+            userAddress.setName(generateUsername());
+            userAddress.setPhoneNumber(generateRandomString());
+            userAddress.setProvince(generateRandomString());
+            userAddress.setDistrict(generateRandomString());
+            userAddress.setWard(generateRandomString());
+            userAddress.setStreetAddress(generateRandomString());
             UserAddress createdUserAddress = performPost("/users/addresses/create", UserAddress.class, userAddress);
             Assertions.assertNotNull(createdUserAddress);
             Assertions.assertEquals(user.getId(), createdUserAddress.getUserId());

@@ -13,7 +13,7 @@ public class ControllerTestConstants {
     //User controller test constants
     protected static String DEFAULT_USER_EMAIL = "defaultuser@gmail.com";
     protected static String DEFAULT_USER_NAME = "defaultuser";
-    protected static final String DEFAULT_PASSWORD = "Defaultpassword";
+//    protected static final String DEFAULT_PASSWORD = "Defaultpassword";
 
     //Auth controller test constants
 }

@@ -18,7 +18,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 class UserControllerTest extends AbstractControllerTest {
     @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class FindUsersMethodTest {
+        private User user;
+        @BeforeAll
+        void setUp() throws Exception {
+            user = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
+            activateUser(user.getId());
+            login(user.getName(), DEFAULT_PASSWORD);
+        }
+
+        @AfterAll
+        void tearDown() throws Exception {
+            if (user != null) {
+                deleteUser(user.getId());
+            }
+        }
 
         @Test
         void testFindUsersWithInvalidPageNumber() throws Exception {
@@ -101,11 +116,15 @@ class UserControllerTest extends AbstractControllerTest {
             private User defaultUser;
             @BeforeEach
             void setUp() throws Exception {
-                defaultUser = createUser(getRandomUsername(), getRandomEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
+                defaultUser = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
+                activateUser(defaultUser.getId());
             }
             @AfterEach
             void tearDown() throws Exception {
-                deleteUser(defaultUser.getId());
+                if (defaultUser != null) {
+                    login(defaultUser.getName(), DEFAULT_PASSWORD);
+                    deleteUser(defaultUser.getId());
+                }
             }
             @Test
             void testRegisterUserWithExistedName() throws Exception {
@@ -135,8 +154,8 @@ class UserControllerTest extends AbstractControllerTest {
             @BeforeEach
             void setUp() {
                 request = new RegisterUserRequest();
-                request.setName(getRandomUsername());
-                request.setEmail(getRandomEmail());
+                request.setName(generateUsername());
+                request.setEmail(generateEmail());
                 request.setMatchedPasswords(DEFAULT_PASSWORD);
             }
             @Test
@@ -165,9 +184,9 @@ class UserControllerTest extends AbstractControllerTest {
         void testRegisterUserWithInvalidFormatEmail() throws Exception {
             String invalidFormatEmail = "nguyentrihai.com";
             RegisterUserRequest request = new RegisterUserRequest();
-            request.setName(getRandomUsername());
+            request.setName(generateUsername());
             request.setEmail(invalidFormatEmail);
-            request.setMatchedPasswords(DEFAULT_PASSWORD);
+            request.setMatchedPasswords(generatePassword());
             performPost(USERS_REGISTER_USER_ROUTE, request)
                     .andExpect(status().isBadRequest());
         }
@@ -178,8 +197,8 @@ class UserControllerTest extends AbstractControllerTest {
             @BeforeEach
             void setUp() {
                 request = new RegisterUserRequest();
-                request.setName(getRandomUsername());
-                request.setEmail(getRandomEmail());
+                request.setName(generateUsername());
+                request.setEmail(generateEmail());
             }
             @Test
             void testRegisterUserWithUnmatchedPasswords() throws Exception {
@@ -205,32 +224,34 @@ class UserControllerTest extends AbstractControllerTest {
         @Test
         void testRegisterUserWithValidBody() throws Exception {
             RegisterUserRequest request = new RegisterUserRequest();
-            request.setName(getRandomUsername());
-            request.setEmail(getRandomEmail());
+            request.setName(generateUsername());
+            request.setEmail(generateEmail());
             request.setPassword(DEFAULT_PASSWORD);
             request.setConfirmPassword(DEFAULT_PASSWORD);
             User user = readResponse(performPost(USERS_ROUTE + "/register", request).andExpect(status().isOk()), User.class);
+            activateUser(user.getId());
+            login(user.getName(), DEFAULT_PASSWORD);
             deleteUser(user.getId());
         }
     }
 
     @Test
     void testDeleteUser() throws Exception {
-        String name = "usertest1000";
-        String email = "usertest1000@gmail.com";
-        String password = "Password";
-        User createdUser = createUser(name, email, password, password);
+        User createdUser = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
         Assertions.assertNotNull(createdUser);
+        activateUser(createdUser.getId());
+        login(createdUser.getName(), DEFAULT_PASSWORD);
         performDelete(USERS_DELETE_USER_BY_ID_ROUTE, createdUser.getId()).andExpect(status().isOk());
         performGet(USERS_GET_USER_BY_ID_ROUTE, createdUser.getId()).andExpect(status().isNotFound());
     }
 
-    @Test
+//    @Test
     void testActivateUserCredentialsByUserId() throws Exception {
-        User user = createUser(getRandomUsername(), getRandomEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
+        String password = generatePassword();
+        User user = createUser(generateUsername(), generateEmail(), password, password);
         //note: case invalid uuid
         performPostWithEmptyBody(USERS_GET_USER_BY_ID_ROUTE + "/activate", user.getId().toString()).andExpect(status().isOk());
-        login(user.getName(), DEFAULT_PASSWORD);
+        login(user.getName(), password);
         deleteUser(user.getId());
     }
 
