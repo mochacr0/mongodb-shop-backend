@@ -6,7 +6,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 

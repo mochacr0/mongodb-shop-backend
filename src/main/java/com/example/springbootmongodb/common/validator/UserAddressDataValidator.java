@@ -17,9 +17,9 @@ public class UserAddressDataValidator extends DataValidator<UserAddress>{
     private UserAddressRepository userAddressRepository;
     @Override
     protected void validateOnCreateImpl(UserAddress data) {
-        long totalAddresses = userAddressRepository.count();
-        if (totalAddresses > 5) {
-            throw new InvalidDataException("Only 5 addresses are allowed in total.");
+        long totalAddresses = userAddressRepository.countByUserId(data.getUserId());
+        if (totalAddresses >= 5) {
+            throw new InvalidDataException("Only 5 addresses are allowed per user.");
         }
     }
 

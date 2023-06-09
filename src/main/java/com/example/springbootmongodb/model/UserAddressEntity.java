@@ -5,8 +5,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+@Document(value = "userAddresses")
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -24,19 +26,19 @@ public class UserAddressEntity extends AbstractEntity<UserAddress> {
         StringBuilder builder = new StringBuilder();
         builder.append("UserAddressEntity [id=");
         builder.append(this.getId());
-        builder.append(", userId");
+        builder.append(", userId=");
         builder.append(this.getUserId());
-        builder.append(", name");
+        builder.append(", name=");
         builder.append(this.getName());
-        builder.append(", phoneNumber");
+        builder.append(", phoneNumber=");
         builder.append(this.getPhoneNumber());
-        builder.append(", province");
+        builder.append(", province=");
         builder.append(this.getProvince());
-        builder.append(", district");
+        builder.append(", district=");
         builder.append(this.getDistrict());
-        builder.append(", ward");
+        builder.append(", ward=");
         builder.append(this.getWard());
-        builder.append(", streetAddress");
+        builder.append(", streetAddress=");
         builder.append(this.getStreetAddress());
         return builder.toString();
     }

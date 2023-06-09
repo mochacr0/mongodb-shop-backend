@@ -49,7 +49,7 @@ public class UserAddressController {
     @Operation(summary = "Update an existing user address by its ID")
     @PutMapping(value = USERS_UPDATE_ADDRESSES_ROUTE)
     UserAddress updateAddress(@Parameter(description = "ID of the address to update")
-                              @PathVariable(name = "userAddressId") String addressId,
+                              @PathVariable(name = "addressId") String addressId,
                               @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
                                                                                     description = "UserAddress object containing the updated address details.")
                               @RequestBody UserAddress userAddress) {
@@ -57,7 +57,7 @@ public class UserAddressController {
     }
 
     @Operation(summary = "Delete an existing user address by its ID")
-    @DeleteMapping(value = USERS_DELETE_ADDRESSES_ROUTE)
+    @DeleteMapping(value = USERS_DELETE_ADDRESS_BY_ID_ROUTE)
     void deleteAddressById(@Parameter(description = "ID of the address to delete")
                            @PathVariable(name = "addressId") String addressId) {
         userAddressService.deleteById(addressId);

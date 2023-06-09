@@ -22,9 +22,9 @@ public class UserCredentialsServiceImpl implements UserCredentialsService {
     UserService userService;
     @Autowired
     SecuritySettingsConfiguration securitySettings;
-    private final String USERNAME_PASSWORD_INCORRECT_MESSAGE = "Authentication failed: The username or password you entered is incorrect. Please try again";
-    private final String ACCOUNT_LOCKED_MESSAGE = "Authentication failed: Username was locked due to security policy";
-    private final String UNVERIFIED_ACCOUNT_MESSAGE = "Authentication failed: Email address has not yet been verified";
+    public static final String USERNAME_PASSWORD_INCORRECT_MESSAGE = "Authentication failed: The username or password you entered is incorrect. Please try again";
+    public static final String ACCOUNT_LOCKED_MESSAGE = "Authentication failed: Username was locked due to security policy";
+    public static final String UNVERIFIED_ACCOUNT_MESSAGE = "Authentication failed: Email address has not yet been verified";
 
     @Override
     public void validatePassword(User user, String password, String clientIpAddress) {
