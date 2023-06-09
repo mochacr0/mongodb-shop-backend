@@ -8,13 +8,12 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.AUTH_ROUTE;
-import static com.example.springbootmongodb.controller.ControllerTestConstants.*;
+import static com.example.springbootmongodb.service.UserCredentialsServiceImpl.ACCOUNT_LOCKED_MESSAGE;
+import static com.example.springbootmongodb.service.UserCredentialsServiceImpl.USERNAME_PASSWORD_INCORRECT_MESSAGE;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class AuthControllerTest extends AbstractControllerTest {
-    private final String BAD_CREDENTIALS_EXCEPTION_MESSAGE = "Authentication failed: The username or password you entered is incorrect. Please try again";
-    private final String LOCKED_EXCEPTION_MESSAGE = "Authentication failed: Username was locked due to security policy";
     @Autowired
     private UserService userService;
 
@@ -67,12 +66,12 @@ public class AuthControllerTest extends AbstractControllerTest {
             for (int i = 0; i < securitySettings.getMaxFailedLoginAttempts(); i++) {
                 performLogin(user.getName(), INVALID_PASSWORD)
                         .andExpect(status().isUnauthorized())
-                        .andExpect(jsonPath("$.message", Matchers.is(BAD_CREDENTIALS_EXCEPTION_MESSAGE)));
+                        .andExpect(jsonPath("$.message", Matchers.is(USERNAME_PASSWORD_INCORRECT_MESSAGE)));
             }
             //exceeded maximum allowed attempts, should return locked
             performLogin(user.getName(), INVALID_PASSWORD)
                     .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.message", Matchers.is(LOCKED_EXCEPTION_MESSAGE)));
+                    .andExpect(jsonPath("$.message", Matchers.is(ACCOUNT_LOCKED_MESSAGE)));
             //Wait until the expiration time has passed
             Thread.sleep(securitySettings.getFailedLoginLockExpirationMillis());
             //Now login should return ok
@@ -85,19 +84,19 @@ public class AuthControllerTest extends AbstractControllerTest {
             //first failed login
             performLogin(user.getName(), INVALID_PASSWORD)
                     .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.message", Matchers.is(BAD_CREDENTIALS_EXCEPTION_MESSAGE)));
+                    .andExpect(jsonPath("$.message", Matchers.is(USERNAME_PASSWORD_INCORRECT_MESSAGE)));
             //Wait until the interval time has passed
             Thread.sleep(securitySettings.getFailedLoginIntervalMillis());
             //then try to fail maximum times, should return bad credentials
             for (int i = 0; i < securitySettings.getMaxFailedLoginAttempts(); i++) {
                 performLogin(user.getName(), INVALID_PASSWORD)
                         .andExpect(status().isUnauthorized())
-                        .andExpect(jsonPath("$.message", Matchers.is(BAD_CREDENTIALS_EXCEPTION_MESSAGE)));
+                        .andExpect(jsonPath("$.message", Matchers.is(USERNAME_PASSWORD_INCORRECT_MESSAGE)));
             }
             //should return locked
             performLogin(user.getName(), INVALID_PASSWORD)
                     .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.message", Matchers.is(LOCKED_EXCEPTION_MESSAGE)));
+                    .andExpect(jsonPath("$.message", Matchers.is(ACCOUNT_LOCKED_MESSAGE)));
         }
     }
 

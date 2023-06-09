@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 @NoArgsConstructor
-public abstract class AbstractData {
+public abstract class AbstractData implements TimestampBased {
     protected String id;
     protected LocalDateTime createdAt;
     protected LocalDateTime updatedAt;

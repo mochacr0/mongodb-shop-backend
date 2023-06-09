@@ -5,6 +5,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 
-public interface UserAddressRepository extends MongoRepository<UserAddressEntity, String> {
+public interface UserAddressRepository extends MongoRepository<UserAddressEntity, String>, CustomUserAddressRepository {
     List<UserAddressEntity> findByUserId(String userId);
 }

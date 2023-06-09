@@ -11,4 +11,5 @@ public interface UserAddressService {
     List<UserAddress> findCurrentUserAddresses();
     void deleteById(String addressId);
     UserAddress findById(String addressId);
+    void deleteUserAddressesByUserId(String userId);
 }

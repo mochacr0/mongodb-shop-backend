@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.RegisterUserRequest;
+import com.example.springbootmongodb.common.data.TimestampBased;
 import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.config.SecuritySettingsConfiguration;
 import com.example.springbootmongodb.config.UserPasswordPolicy;
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
+import java.util.Comparator;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 import static com.example.springbootmongodb.controller.ControllerTestConstants.*;
@@ -115,11 +117,24 @@ public abstract class AbstractControllerTest {
         return mockMvc.perform(builder);
     }
 
-//    public ResultActions performPost(String urlTemplate, Object...urlVariables) throws Exception {
-//        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(urlTemplate, urlVariables);
-//        String contentJsonString;
-//        return mockMvc.perform(builder);
-//    }
+    public <T, V> T performPut(String urlTemplate, Class<T> responseClass, V content, Object... urlVariables) throws Exception {
+        return readResponse(performPut(urlTemplate, content, urlVariables), responseClass);
+    }
+
+    public <V> ResultActions performPut(String urlTemplate, V content, Object...urlVariables) throws Exception {
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(urlTemplate, urlVariables);
+        setJwtToken(builder);
+        String contentJsonString;
+        if (content != null) {
+            try {
+                contentJsonString = objectMapper.writeValueAsString(content);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            builder.content(contentJsonString).contentType(CONTENT_TYPE);
+        }
+        return mockMvc.perform(builder);
+    }
 
     public ResultActions performDelete(String urlTemplate, Object... urlVariables) throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(urlTemplate, urlVariables);
@@ -178,7 +193,7 @@ public abstract class AbstractControllerTest {
     }
 
     protected void deleteUser(String userId) throws Exception {
-        performDelete(USERS_DELETE_USER_BY_ID_ROUTE, userId.toString()).andExpect(status().isOk());
+        performDelete(USERS_DELETE_USER_BY_ID_ROUTE, userId).andExpect(status().isOk());
     }
 
     public String generateUsername() {
@@ -196,5 +211,12 @@ public abstract class AbstractControllerTest {
     public String generatePassword() {
         UserPasswordPolicy passwordPolicy = securitySettings.getPasswordPolicy();
         return passwordGenerator.generatePassword(passwordPolicy.getMinimumLength(), passwordPolicy.getPasswordCharacterRules());
+    }
+
+    public static class TimestampBasedComparator<T extends TimestampBased> implements Comparator<T> {
+        @Override
+        public int compare(T o1, T o2) {
+            return o1.getCreatedAt().compareTo(o2.getCreatedAt());
+        }
     }
 }

@@ -5,11 +5,11 @@ import com.example.springbootmongodb.common.data.UserAddress;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.common.validator.DataValidator;
-import com.example.springbootmongodb.common.validator.UserAddressDataValidator;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.example.springbootmongodb.repository.UserAddressRepository;
+import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -17,7 +17,6 @@ import org.springframework.security.authentication.AuthenticationServiceExceptio
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Security;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +29,9 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
     private UserService userService;
     @Autowired
     private DataValidator<UserAddress> userAddressDataValidator;
+
+    public static final String MISMATCHED_USER_IDS_MESSAGE = "User ID mismatched. You aren't authorized to perform this address!";
+    public static final String DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE = "This address's default label is unchangeable. Set another default address first";
 
     @Override
     public MongoRepository<UserAddressEntity, String> getRepository() {
@@ -47,8 +49,9 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
         log.info("Performing UserAddressService create");
         User existingUser = userService.findById(getCurrentUser().getId());
         userAddress.setUserId(existingUser.getId());
+        userAddressDataValidator.validateOnCreate(userAddress);
         UserAddress createdUserAddress = super.insert(userAddress);
-        if (createdUserAddress.isDefault()) {
+        if (userAddress.isDefault()) {
             existingUser.setDefaultAddressId(createdUserAddress.getId());
             userService.save(existingUser);
         }
@@ -62,14 +65,19 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
         User existingUser = userService.findById(getCurrentUser().getId());
         UserAddress existingAddress = this.findById(addressId);
         if (!existingUser.getId().equals(existingAddress.getUserId())) {
-            throw new AuthenticationServiceException("User ID mismatched. You aren't authorized to update this address!");
+            throw new InvalidDataException(MISMATCHED_USER_IDS_MESSAGE);
         }
         userAddress.setId(addressId);
         userAddress.setUserId(existingUser.getId());
         UserAddress savedUserAddress = super.save(userAddress);
-        if (savedUserAddress.isDefault()) {
+        if (userAddress.isDefault()) {
             existingUser.setDefaultAddressId(savedUserAddress.getId());
             userService.save(existingUser);
+        }
+        else {
+            if (StringUtils.isNotEmpty(existingUser.getDefaultAddressId()) && existingUser.getDefaultAddressId().equals(userAddress.getId())) {
+                throw new InvalidDataException(DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE);
+            }
         }
         return savedUserAddress;
     }
@@ -100,10 +108,10 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
         User existingUser = userService.findById(getCurrentUser().getId());
         UserAddress existingAddress = this.findById(addressId);
         if (!existingUser.getId().equals(existingAddress.getUserId())) {
-            throw new AuthenticationServiceException("User ID mismatched. You aren't authorized to delete this address!");
+            throw new InvalidDataException(MISMATCHED_USER_IDS_MESSAGE);
         }
-        if (existingUser.getDefaultAddressId().equals(existingAddress.getId())) {
-            throw new InvalidDataException("Cannot delete default address. Please change the default address and try again.");
+        if (existingAddress.getId().equals(existingUser.getDefaultAddressId())) {
+            throw new InvalidDataException(DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE);
         }
         userAddressRepository.deleteById(addressId);
     }
@@ -118,8 +126,15 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
         }
         UserAddressEntity addressEntity = addressEntityOptional.get();
         if (!securityUser.getId().equals(addressEntity.getUserId())) {
-            throw new AuthenticationServiceException("User ID mismatched. You aren't authorized to get this address!");
+            throw new InvalidDataException(MISMATCHED_USER_IDS_MESSAGE);
         }
         return DaoUtils.toData(addressEntity);
+    }
+
+    @Override
+    public void deleteUserAddressesByUserId(String userId) {
+        log.info("Performing UserAddressService deleteUserAddressesByUserId");
+        userService.findById(userId);
+        userAddressRepository.deleteUserAddressesByUserId(userId);
     }
 }

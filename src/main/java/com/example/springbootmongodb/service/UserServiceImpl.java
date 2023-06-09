@@ -14,6 +14,7 @@ import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserCredentials;
 import com.example.springbootmongodb.model.UserEntity;
+import com.example.springbootmongodb.repository.UserAddressRepository;
 import com.example.springbootmongodb.repository.UserRepository;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +36,8 @@ import java.util.Optional;
 public class UserServiceImpl extends DataBaseService<User, UserEntity> implements UserService {
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private UserAddressService userAddressService;
     @Autowired
     private CommonValidator commonValidator;
     @Autowired
@@ -138,8 +141,9 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
     @Transactional
     public void deleteById(String userId) {
         log.info("Performing UserService deleteById");
-        this.findById(userId);
-        this.userRepository.deleteById(userId);
+        findById(userId);
+        userAddressService.deleteUserAddressesByUserId(userId);
+        userRepository.deleteById(userId);
     }
 
     @Override
