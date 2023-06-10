@@ -25,17 +25,17 @@ public class ModelConstants {
     /**
      * User credentials constants.
      */
-    public static final String USER_CREDENTIALS_COLLECTION = "userCredentials";
-    public static final String USER_CREDENTIALS_ACTIVATION_TOKEN_FIELD = "activationToken";
-    public static final String USER_CREDENTIALS_PASSWORD_FIELD = "password";
-    public static final String USER_CREDENTIALS_PASSWORD_RESET_TOKEN_FIELD = "passwordResetToken";
-    public static final String USER_CREDENTIALS_PASSWORD_RESET_TOKEN_EXPIRATION_MILLIS_FIELD = "passwordResetTokenExpirationMillis";
-    public static final String USER_CREDENTIALS_FAILED_LOGIN_HISTORY_TOKEN_FIELD = "failedLoginHistory";
-    public static final String USER_CREDENTIALS_IS_VERIFIED_FIELD = "isVerified";
-    public static final String USER_CREDENTIALS_IS_ENABLED_FIELD = "isEnabled";
-    public static final String USER_CREDENTIALS_ACTIVATION_TOKEN_EXPIRATION_MILLIS_FIELD = "activationTokenExpirationMillis";
-    public static final String USER_CREDENTIALS_FAILED_LOGIN_LOCK_EXPIRATION_MILLIS_FIELD = "failedLoginLockExpirationMillis";
-    public static final String USER_CREDENTIALS_FAILED_LOGIN_COUNT_FIELD = "failedLoginCount";
-    public static final String USER_CREDENTIALS_FIRST_FAILED_LOGIN_ATTEMPT_MILLIS_FIELD = "firstFailedLoginAttemptMillis";
-    public static final String USER_CREDENTIALS_ADDITIONAL_INFO_FIELD = "additionalInfo";
+//    public static final String USER_CREDENTIALS_COLLECTION = "userCredentials";
+//    public static final String USER_CREDENTIALS_ACTIVATION_TOKEN_FIELD = "activationToken";
+//    public static final String USER_CREDENTIALS_PASSWORD_FIELD = "password";
+//    public static final String USER_CREDENTIALS_PASSWORD_RESET_TOKEN_FIELD = "passwordResetToken";
+//    public static final String USER_CREDENTIALS_PASSWORD_RESET_TOKEN_EXPIRATION_MILLIS_FIELD = "passwordResetTokenExpirationMillis";
+//    public static final String USER_CREDENTIALS_FAILED_LOGIN_HISTORY_TOKEN_FIELD = "failedLoginHistory";
+//    public static final String USER_CREDENTIALS_IS_VERIFIED_FIELD = "isVerified";
+//    public static final String USER_CREDENTIALS_IS_ENABLED_FIELD = "isEnabled";
+//    public static final String USER_CREDENTIALS_ACTIVATION_TOKEN_EXPIRATION_MILLIS_FIELD = "activationTokenExpirationMillis";
+//    public static final String USER_CREDENTIALS_FAILED_LOGIN_LOCK_EXPIRATION_MILLIS_FIELD = "failedLoginLockExpirationMillis";
+//    public static final String USER_CREDENTIALS_FAILED_LOGIN_COUNT_FIELD = "failedLoginCount";
+//    public static final String USER_CREDENTIALS_FIRST_FAILED_LOGIN_ATTEMPT_MILLIS_FIELD = "firstFailedLoginAttemptMillis";
+//    public static final String USER_CREDENTIALS_ADDITIONAL_INFO_FIELD = "additionalInfo";
 }

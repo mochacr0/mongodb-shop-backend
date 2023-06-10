@@ -84,8 +84,9 @@ public class ApplicationSecurityConfiguration {
             AUTH_RESET_PASSWORD_ROUTE,
             AUTH_REFRESH_TOKEN_ROUTE,
             USERS_REGISTER_USER_ROUTE,
-            USERS_ACTIVATE_USER_CREDENTIALS_ROUTE,
+            //TEST
 //            USERS_DELETE_USER_BY_ID_ROUTE,
+            USERS_ACTIVATE_USER_CREDENTIALS_ROUTE,
             "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"));
 
     @Bean
