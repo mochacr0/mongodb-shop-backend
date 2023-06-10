@@ -21,4 +21,5 @@ public interface UserService {
     User findByActivationToken(String activationToken);
     User findByPasswordResetToken(String passwordResetToken);
     User findCurrentUser();
+    User saveCurrentUser(User user);
 }

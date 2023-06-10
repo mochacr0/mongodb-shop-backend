@@ -68,8 +68,14 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
     public User save(User user) {
         log.info("Performing UserService save");
         userDataValidator.validateOnUpdate(user);
-        findById(user.getId());
         return super.save(user);
+    }
+
+    public User saveCurrentUser(User user) {
+        log.info("Performing UserService saveCurrentUser");
+        SecurityUser securityUser = getCurrentUser();
+        findById(securityUser.getId());
+        return save(user);
     }
 
     @Override

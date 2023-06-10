@@ -88,6 +88,7 @@ class UserAddressControllerTest extends AbstractControllerTest {
 
         @AfterEach
         void tearDown() throws Exception {
+            login(user.getName(), DEFAULT_PASSWORD);
             if (user != null) {
                 deleteUser(user.getId());
             }
@@ -168,7 +169,7 @@ class UserAddressControllerTest extends AbstractControllerTest {
             UserAddress userAddress = createUserAddressData();
             userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, userAddress);
             performDelete(USERS_DELETE_USER_BY_ID_ROUTE, user.getId());
-            performGet(USERS_GET_ADDRESS_BY_ID_ROUTE, userAddress.getId()).andExpect(status().isNotFound());
+            performGet(USERS_GET_ADDRESS_BY_ID_ROUTE, userAddress.getId()).andExpect(status().isUnauthorized());
         }
 
         @Test

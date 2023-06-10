@@ -40,8 +40,8 @@ public class ControllerConstants {
 
     //Users controller constants
     public static final String USERS_ROUTE = "/users";
-    public static final String USERS_REGISTER_USER_ROUTE = USERS_ROUTE + "/register";
-    public static final String USERS_UPDATE_USER_ROUTE = USERS_ROUTE + "/update";
+    public static final String USERS_REGISTER_USER_ROUTE = USERS_ROUTE;
+    public static final String USERS_UPDATE_USER_ROUTE = USERS_ROUTE;
 
     public static final String USERS_GET_USERS_ROUTE = USERS_ROUTE;
     public static final String USERS_BY_USER_ID_ROUTE = USERS_ROUTE + "/{userId}";

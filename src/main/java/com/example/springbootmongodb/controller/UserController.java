@@ -51,14 +51,13 @@ public class UserController {
         return userService.findCurrentUser();
     }
 
-    @Operation(summary = "Update user", description = "Update the User. " +
-            "Specify existing User Id to update user. " +
-            "Referencing non-existing User Id will cause 'Not Found' error.")
-    @PostMapping(value = USERS_UPDATE_USER_ROUTE)
+    @Operation(summary = "Update current user", description = "Update the Current User. " +
+            "Referencing non-existing User will cause 'Not Found' error.")
+    @PutMapping(value = USERS_UPDATE_USER_ROUTE)
     User saveUser(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
                                                                         description = "User payload to update")
                   @RequestBody User user) {
-        return userService.save(user);
+        return userService.saveCurrentUser(user);
     }
 
     @Operation(summary = "Register new user", description = "Register new user. " +

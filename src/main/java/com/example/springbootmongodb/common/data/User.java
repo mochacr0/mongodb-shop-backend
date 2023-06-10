@@ -14,7 +14,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static com.example.springbootmongodb.model.ModelConstants.EMAIL_FIELD;
 import static com.example.springbootmongodb.model.ModelConstants.NAME_FIELD;

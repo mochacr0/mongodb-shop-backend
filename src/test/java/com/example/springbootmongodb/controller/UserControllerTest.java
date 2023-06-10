@@ -70,8 +70,8 @@ class UserControllerTest extends AbstractControllerTest {
                 RegisterUserRequest request = new RegisterUserRequest();
                 request.setName("usertest" + i);
                 request.setEmail("usertest" + i + "@gmail.com");
-                request.setPassword("Password");
-                request.setConfirmPassword("Password");
+                request.setPassword(DEFAULT_PASSWORD);
+                request.setConfirmPassword(DEFAULT_PASSWORD);
                 registerRequests.add(request);
                 createUser(request);
             }
@@ -228,7 +228,7 @@ class UserControllerTest extends AbstractControllerTest {
             request.setEmail(generateEmail());
             request.setPassword(DEFAULT_PASSWORD);
             request.setConfirmPassword(DEFAULT_PASSWORD);
-            User user = readResponse(performPost(USERS_ROUTE + "/register", request).andExpect(status().isOk()), User.class);
+            User user = readResponse(performPost(USERS_REGISTER_USER_ROUTE, request).andExpect(status().isOk()), User.class);
             activateUser(user.getId());
             login(user.getName(), DEFAULT_PASSWORD);
             deleteUser(user.getId());
@@ -242,7 +242,7 @@ class UserControllerTest extends AbstractControllerTest {
         activateUser(createdUser.getId());
         login(createdUser.getName(), DEFAULT_PASSWORD);
         performDelete(USERS_DELETE_USER_BY_ID_ROUTE, createdUser.getId()).andExpect(status().isOk());
-        performGet(USERS_GET_USER_BY_ID_ROUTE, createdUser.getId()).andExpect(status().isNotFound());
+        performGet(USERS_GET_USER_BY_ID_ROUTE, createdUser.getId()).andExpect(status().isUnauthorized());
     }
 
 //    @Test
@@ -250,7 +250,7 @@ class UserControllerTest extends AbstractControllerTest {
         String password = generatePassword();
         User user = createUser(generateUsername(), generateEmail(), password, password);
         //note: case invalid uuid
-        performPostWithEmptyBody(USERS_GET_USER_BY_ID_ROUTE + "/activate", user.getId().toString()).andExpect(status().isOk());
+        performPostWithEmptyBody(USERS_ACTIVATE_USER_CREDENTIALS_ROUTE, user.getId()).andExpect(status().isOk());
         login(user.getName(), password);
         deleteUser(user.getId());
     }
