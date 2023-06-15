@@ -4,7 +4,7 @@ import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
@@ -12,11 +12,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAccessTokenAuthenticationProvider implements AuthenticationProvider {
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private JwtTokenFactory tokenFactory;
+    private final UserService userService;
+    private final JwtTokenFactory tokenFactory;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {

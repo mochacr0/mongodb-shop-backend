@@ -18,9 +18,11 @@ import com.example.springbootmongodb.repository.UserAddressRepository;
 import com.example.springbootmongodb.repository.UserRepository;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,25 +35,19 @@ import java.util.Optional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl extends DataBaseService<User, UserEntity> implements UserService {
+    private final UserRepository userRepository;
+    private final UserAddressService userAddressService;
+    private final CommonValidator commonValidator;
+    private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
+    private final SecuritySettingsConfiguration securitySettings;
+    private final DataValidator<User> userDataValidator;
+    private final ThreadPoolTaskExecutor taskExecutor;
     @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private UserAddressService userAddressService;
-    @Autowired
-    private CommonValidator commonValidator;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private MailService mailService;
-    @Autowired
-    private SecuritySettingsConfiguration securitySettings;
-    @Autowired
-    private DataValidator<User> userDataValidator;
-    @Autowired
+    @Lazy
     private UserService userDeletionService;
-    @Autowired
-    private ThreadPoolTaskExecutor taskExecutor;
     @Override
     public PageData<User> findUsers(PageParameter pageParameter) {
         log.info("Performing UserService findUsers");
@@ -84,11 +80,7 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
         if (StringUtils.isBlank(name)) {
             throw new InvalidDataException("Username should be specified");
         }
-        Optional<UserEntity> userEntityOptional = userRepository.findByName(name);
-        if (userEntityOptional.isEmpty()) {
-            throw new ItemNotFoundException(String.format("User with name [%s] is not found", name));
-        }
-        return DaoUtils.toData(userEntityOptional);
+        return DaoUtils.toData(userRepository.findByName(name));
     }
 
     @Override

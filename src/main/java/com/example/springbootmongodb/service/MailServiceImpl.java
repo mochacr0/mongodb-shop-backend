@@ -6,6 +6,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -22,18 +23,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-@Slf4j
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class MailServiceImpl implements MailService {
-    @Autowired
-    private JavaMailSenderImpl mailSender;
-    @Autowired
-    private Configuration freeMarkerConfiguration;
-    @Autowired
-    private ThreadPoolTaskExecutor mailServiceExecutor;
-    @Autowired
-    private MailConfiguration mailConfiguration;
+    private final JavaMailSenderImpl mailSender;
+    private final Configuration freeMarkerConfiguration;
+    private final ThreadPoolTaskExecutor mailServiceExecutor;
+    private final MailConfiguration mailConfiguration;
 
     @Override
     public void sendActivationMail(String mailTo, String activateLink) {

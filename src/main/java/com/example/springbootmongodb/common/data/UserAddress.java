@@ -2,6 +2,7 @@ package com.example.springbootmongodb.common.data;
 
 import com.example.springbootmongodb.model.ToEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;

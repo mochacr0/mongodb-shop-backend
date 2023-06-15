@@ -2,10 +2,8 @@ package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.ChangePasswordRequest;
 import com.example.springbootmongodb.common.data.User;
-import com.example.springbootmongodb.service.UserService;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.AUTH_ROUTE;
 import static com.example.springbootmongodb.service.UserCredentialsServiceImpl.ACCOUNT_LOCKED_MESSAGE;
@@ -14,9 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class AuthControllerTest extends AbstractControllerTest {
-    @Autowired
-    private UserService userService;
-
 
 //    @Test
 //    void testGetUserPasswordPolicy() throws Exception {

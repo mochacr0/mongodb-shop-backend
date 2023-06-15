@@ -4,6 +4,7 @@ import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.exception.ExpiredJwtTokenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +19,10 @@ import java.util.List;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JwtTokenFactory {
-    @Autowired
-    private JwtSettings jwtSettings;
-
-    @Autowired
-    private JwtTokenExtractor jwtTokenExtractor;
+    private final JwtSettings jwtSettings;
+    private final JwtTokenExtractor jwtTokenExtractor;
     private final String SCOPES = "scopes";
     private final String USER_ID = "userId";
 

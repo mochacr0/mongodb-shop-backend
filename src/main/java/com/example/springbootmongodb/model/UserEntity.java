@@ -9,10 +9,9 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import static com.example.springbootmongodb.model.ModelConstants.EMAIL_FIELD;
-import static com.example.springbootmongodb.model.ModelConstants.NAME_FIELD;
+import static com.example.springbootmongodb.model.ModelConstants.*;
 
-@Document(collection = "users")
+@Document(collection = USER_COLLECTION_NAME)
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -20,10 +19,10 @@ public class UserEntity extends AbstractEntity<User> {
     @Field(name = NAME_FIELD)
     @Indexed(unique = true)
     private String name;
-    @Field(name = EMAIL_FIELD)
+    @Field(name = USER_EMAIL_FIELD)
     @Indexed(unique = true)
     private String email;
-    @Field(name = ModelConstants.AUTHORITY_FIELD)
+    @Field(name = ModelConstants.USER_AUTHORITY_FIELD)
     private Authority authority;
     private UserCredentials userCredentials;
     private String defaultAddressId;
