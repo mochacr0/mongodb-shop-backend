@@ -3,6 +3,7 @@ package com.example.springbootmongodb.exception;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ValidationException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mapping.PropertyReferenceException;
@@ -17,12 +18,11 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.HashMap;
 import java.util.Map;
-
-@Slf4j
 @RestControllerAdvice
+@Slf4j
+@RequiredArgsConstructor
 public class ApplicationErrorHandler extends ResponseEntityExceptionHandler {
-    @Autowired
-    private ObjectMapper mapper;
+    private final ObjectMapper mapper;
 
     private static final Map<Class<? extends Exception>, HttpStatus> exceptionToStatusMap = new HashMap<>();
 
@@ -35,6 +35,7 @@ public class ApplicationErrorHandler extends ResponseEntityExceptionHandler {
         exceptionToStatusMap.put(AuthenticationException.class, HttpStatus.UNAUTHORIZED);
         exceptionToStatusMap.put(AccessDeniedException.class, HttpStatus.FORBIDDEN);
         exceptionToStatusMap.put(ItemNotFoundException.class, HttpStatus.NOT_FOUND);
+        exceptionToStatusMap.put(UnprocessableContentException.class, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     public static HttpStatus exceptionToStatus(Exception exception) {

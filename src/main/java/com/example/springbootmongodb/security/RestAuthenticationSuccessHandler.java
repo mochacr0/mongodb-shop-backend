@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,11 +18,10 @@ import java.io.IOException;
 
 @Component(value = "RestAuthenticationSuccessHandler")
 @Slf4j
+@RequiredArgsConstructor
 public class RestAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
-    @Autowired
-    private JwtTokenFactory jwtTokenFactory;
-    @Autowired
-    private ObjectMapper mapper;
+    private final JwtTokenFactory jwtTokenFactory;
+    private final ObjectMapper mapper;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {

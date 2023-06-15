@@ -54,10 +54,19 @@ public class ControllerConstants {
     public static final String USERS_GET_CURRENT_USER_ADDRESSES_ROUTE = USERS_ADDRESSES_ROUTE;
     public static final String USERS_CREATE_ADDRESSES_ROUTE = USERS_ADDRESSES_ROUTE;
     public static final String USERS_GET_ADDRESS_BY_ID_ROUTE = USERS_ADDRESSES_ROUTE + "/{addressId}";
-    public static final String USERS_UPDATE_ADDRESSES_ROUTE = USERS_GET_ADDRESS_BY_ID_ROUTE;
+    public static final String USERS_UPDATE_ADDRESS_ROUTE = USERS_GET_ADDRESS_BY_ID_ROUTE;
     public static final String USERS_DELETE_ADDRESS_BY_ID_ROUTE = USERS_GET_ADDRESS_BY_ID_ROUTE;
 
     //Swagger security schemes
     public static final String SWAGGER_SECURITY_SCHEME_BEARER_AUTH = "Bearer Auth";
+
+    //Category constants
+    public static final String CATEGORY_ROUTE = "/categories";
+    public static final String CATEGORY_CREATE_CATEGORY_ROUTE = CATEGORY_ROUTE;
+    public static final String CATEGORY_GET_CATEGORIES_ROUTE = CATEGORY_ROUTE;
+    public static final String CATEGORY_GET_CATEGORY_BY_ID_ROUTE = CATEGORY_ROUTE + "/{categoryId}";
+    public static final String CATEGORY_UPDATE_CATEGORY_ROUTE = CATEGORY_GET_CATEGORY_BY_ID_ROUTE;
+    public static final String CATEGORY_DELETE_CATEGORY_BY_ID_ROUTE = CATEGORY_GET_CATEGORY_BY_ID_ROUTE;
+    public static final String CATEGORY_GET_DEFAULT_CATEGORY_ROUTE = CATEGORY_ROUTE + "/default";
 
 }

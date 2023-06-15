@@ -4,6 +4,7 @@ import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.config.SecuritySettingsConfiguration;
 import com.example.springbootmongodb.model.FailedLoginAttempt;
 import com.example.springbootmongodb.model.UserCredentials;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -15,13 +16,11 @@ import java.util.Map;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserCredentialsServiceImpl implements UserCredentialsService {
-    @Autowired
-    PasswordEncoder passwordEncoder;
-    @Autowired
-    UserService userService;
-    @Autowired
-    SecuritySettingsConfiguration securitySettings;
+    private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
+    private final SecuritySettingsConfiguration securitySettings;
     public static final String USERNAME_PASSWORD_INCORRECT_MESSAGE = "Authentication failed: The username or password you entered is incorrect. Please try again";
     public static final String ACCOUNT_LOCKED_MESSAGE = "Authentication failed: Username was locked due to security policy";
     public static final String UNVERIFIED_ACCOUNT_MESSAGE = "Authentication failed: Email address has not yet been verified";

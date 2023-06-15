@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -18,11 +19,11 @@ import static com.example.springbootmongodb.controller.ControllerConstants.*;
 @RestController
 @Tag(name = "User")
 @Slf4j
+@RequiredArgsConstructor
 public class UserController {
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Operation(summary = "Returns a page of available users")
+    @Operation(summary = "Return a page of available users")
     @GetMapping(value = USERS_GET_USERS_ROUTE)
     PageData<User> getUsers(@Parameter(description = PAGE_NUMBER_DESCRIPTION)
                             @RequestParam(defaultValue = PAGE_NUMBER_DEFAULT_STRING_VALUE) int page,

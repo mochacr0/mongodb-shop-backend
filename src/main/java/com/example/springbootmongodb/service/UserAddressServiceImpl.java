@@ -10,10 +10,11 @@ import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.example.springbootmongodb.repository.UserAddressRepository;
 import io.micrometer.common.util.StringUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +23,13 @@ import java.util.Optional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAddressEntity> implements UserAddressService {
+    private final UserAddressRepository userAddressRepository;
+    private final DataValidator<UserAddress> userAddressDataValidator;
     @Autowired
-    private UserAddressRepository userAddressRepository;
-    @Autowired
+    @Lazy
     private UserService userService;
-    @Autowired
-    private DataValidator<UserAddress> userAddressDataValidator;
 
     public static final String MISMATCHED_USER_IDS_MESSAGE = "User ID mismatched. You aren't authorized to perform this address!";
     public static final String DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE = "This address's default label is unchangeable. Set another default address first";
@@ -37,11 +38,6 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
     public MongoRepository<UserAddressEntity, String> getRepository() {
         return this.userAddressRepository;
     }
-
-//    @Override
-//    public Class getEntityClass() {
-//        return UserAddressEntity.class;
-//    }
 
     @Override
     @Transactional
