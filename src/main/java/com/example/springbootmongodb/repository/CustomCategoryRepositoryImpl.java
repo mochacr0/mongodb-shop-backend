@@ -3,6 +3,8 @@ package com.example.springbootmongodb.repository;
 import com.example.springbootmongodb.model.CategoryEntity;
 import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;

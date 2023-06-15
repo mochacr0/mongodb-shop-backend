@@ -30,6 +30,16 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
     @Schema(title = "isDefault", description = "If this email address is the default for the user, this boolean value will be true", example = "false")
     private boolean isDefault;
 
+    public UserAddress (UserAddressRequest request) {
+        this.name = request.getName();
+        this.phoneNumber = request.getPhoneNumber();
+        this.province = request.getProvince();
+        this.district = request.getDistrict();
+        this.ward = request.getWard();
+        this.streetAddress = request.getStreetAddress();
+        this.isDefault = request.isDefault();
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

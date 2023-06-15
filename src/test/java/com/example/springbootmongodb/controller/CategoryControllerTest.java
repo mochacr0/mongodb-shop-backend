@@ -3,7 +3,6 @@ package com.example.springbootmongodb.controller;
 import com.example.springbootmongodb.common.data.Category;
 import com.example.springbootmongodb.common.data.CategoryRequest;
 import com.example.springbootmongodb.common.data.User;
-import com.example.springbootmongodb.service.AbstractService;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
