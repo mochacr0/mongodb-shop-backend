@@ -2,6 +2,7 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.UserAddress;
+import com.example.springbootmongodb.common.data.UserAddressRequest;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.common.validator.DataValidator;
@@ -41,8 +42,9 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
 
     @Override
     @Transactional
-    public UserAddress create(UserAddress userAddress) {
+    public UserAddress create(UserAddressRequest userAddressRequest) {
         log.info("Performing UserAddressService create");
+        UserAddress userAddress = new UserAddress(userAddressRequest);
         User existingUser = userService.findById(getCurrentUser().getId());
         userAddress.setUserId(existingUser.getId());
         userAddressDataValidator.validateOnCreate(userAddress);
@@ -56,8 +58,9 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
 
     @Override
     @Transactional
-    public UserAddress save(String addressId, UserAddress userAddress) {
+    public UserAddress save(String addressId, UserAddressRequest userAddressRequest) {
         log.info("Performing UserAddressService save");
+        UserAddress userAddress = new UserAddress(userAddressRequest);
         User existingUser = userService.findById(getCurrentUser().getId());
         UserAddress existingAddress = this.findById(addressId);
         if (!existingUser.getId().equals(existingAddress.getUserId())) {

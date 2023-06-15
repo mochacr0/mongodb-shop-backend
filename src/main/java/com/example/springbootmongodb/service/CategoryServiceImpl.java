@@ -61,7 +61,7 @@ public class CategoryServiceImpl extends DataBaseService<Category, CategoryEntit
     public PageData<Category> findCategories(PageParameter pageParameter) {
         log.info("Performing CategoryService find");
         commonValidator.validatePageParameter(pageParameter);
-        return DaoUtils.toPageData(categoryRepository.findAll(DaoUtils.toPageable(pageParameter)));
+        return DaoUtils.toPageData(categoryRepository.findParentCategories(DaoUtils.toPageable(pageParameter)));
     }
 
     @Override
