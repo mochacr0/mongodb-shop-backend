@@ -14,6 +14,7 @@ import com.example.springbootmongodb.model.UserCredentials;
 import com.example.springbootmongodb.security.JwtToken;
 import com.example.springbootmongodb.security.JwtTokenFactory;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,19 +25,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AuthServiceImpl extends AbstractService implements AuthService {
-    @Autowired
-    UserService userService;
-    @Autowired
-    SecuritySettingsConfiguration securitySettings;
-    @Autowired
-    MailService mailService;
-    @Autowired
-    CommonValidator commonValidator;
-    @Autowired
-    PasswordEncoder passwordEncoder;
-    @Autowired
-    JwtTokenFactory jwtTokenFactory;
+    private final UserService userService;
+    private final SecuritySettingsConfiguration securitySettings;
+    private final MailService mailService;
+    private final CommonValidator commonValidator;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenFactory jwtTokenFactory;
     @Override
     public void activateEmail(String activationToken) {
         log.info("Performing service activateEmail");

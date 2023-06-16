@@ -7,12 +7,16 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 
-@Document(value = "userAddresses")
+import static com.example.springbootmongodb.model.ModelConstants.USER_ADDRESS_COLLECTION_NAME;
+
+@Document(value = USER_ADDRESS_COLLECTION_NAME)
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class UserAddressEntity extends AbstractEntity<UserAddress> {
+    @Field(targetType = FieldType.OBJECT_ID)
     private String userId;
     private String name;
     private String phoneNumber;

@@ -2,6 +2,7 @@ package com.example.springbootmongodb.common.data;
 
 import com.example.springbootmongodb.model.ToEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,6 +29,16 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
     private String streetAddress;
     @Schema(title = "isDefault", description = "If this email address is the default for the user, this boolean value will be true", example = "false")
     private boolean isDefault;
+
+    public UserAddress (UserAddressRequest request) {
+        this.name = request.getName();
+        this.phoneNumber = request.getPhoneNumber();
+        this.province = request.getProvince();
+        this.district = request.getDistrict();
+        this.ward = request.getWard();
+        this.streetAddress = request.getStreetAddress();
+        this.isDefault = request.isDefault();
+    }
 
     @Override
     public String toString() {

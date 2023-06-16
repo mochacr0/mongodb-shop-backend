@@ -2,6 +2,7 @@ package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.UserAddress;
+import com.example.springbootmongodb.common.data.UserAddressRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +42,7 @@ class UserAddressControllerTest extends AbstractControllerTest {
         }
         @Test
         void testCreateAddressWithValidBody() throws Exception {
-            UserAddress createdUserAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressData());
+            UserAddress createdUserAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest());
             Assertions.assertNotNull(createdUserAddress);
             Assertions.assertEquals(user.getId(), createdUserAddress.getUserId());
             performDelete(USERS_DELETE_ADDRESS_BY_ID_ROUTE, createdUserAddress.getId());
@@ -51,7 +52,7 @@ class UserAddressControllerTest extends AbstractControllerTest {
         void testCreateValidNumberOfAddresses() throws Exception {
             List<UserAddress> userAddresses = new ArrayList<>();
             for (int i = 0; i < maxAddressesCount; i++) {
-                userAddresses.add(performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressData()));
+                userAddresses.add(performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest()));
             }
             ArrayList<UserAddress> createdUserAddresses = performGetWithReferencedType(USERS_GET_CURRENT_USER_ADDRESSES_ROUTE, new TypeReference<>(){});
             Assertions.assertFalse(createdUserAddresses.isEmpty());
@@ -66,10 +67,10 @@ class UserAddressControllerTest extends AbstractControllerTest {
         @Test
         void testCreateAddressWithMaxLimitExceeded() throws Exception {
             for (int i = 0; i < maxAddressesCount; i++) {
-                performPost(USERS_CREATE_ADDRESSES_ROUTE, createUserAddressData()).andExpect(status().isOk());
+                performPost(USERS_CREATE_ADDRESSES_ROUTE, createUserAddressRequest()).andExpect(status().isOk());
             }
-            UserAddress additionalAddress = createUserAddressData();
-            performPost(USERS_CREATE_ADDRESSES_ROUTE, additionalAddress).andExpect(status().isBadRequest());
+            UserAddressRequest additionalAddressRequest = createUserAddressRequest();
+            performPost(USERS_CREATE_ADDRESSES_ROUTE, additionalAddressRequest).andExpect(status().isBadRequest());
         }
     }
 
@@ -83,7 +84,7 @@ class UserAddressControllerTest extends AbstractControllerTest {
             user = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
             activateUser(user.getId());
             login(user.getName(), DEFAULT_PASSWORD);
-            userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressData());
+            userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest());
         }
 
         @AfterEach
@@ -100,11 +101,11 @@ class UserAddressControllerTest extends AbstractControllerTest {
             userAddress.setName(generateRandomString());
             //missing address id
             String missingId = null;
-            performPut(USERS_UPDATE_ADDRESSES_ROUTE, userAddress, missingId).andExpect(status().isNotFound());
+            performPut(USERS_UPDATE_ADDRESS_ROUTE, userAddress, missingId).andExpect(status().isNotFound());
             missingId = "";
-            performPut(USERS_UPDATE_ADDRESSES_ROUTE, userAddress, missingId).andExpect(status().isNotFound());
+            performPut(USERS_UPDATE_ADDRESS_ROUTE, userAddress, missingId).andExpect(status().isNotFound());
             String invalidAddressId = "64805c5bdb4a3449c81a9bed";
-            performPut(USERS_UPDATE_ADDRESSES_ROUTE, userAddress, invalidAddressId).andExpect(status().isNotFound());
+            performPut(USERS_UPDATE_ADDRESS_ROUTE, userAddress, invalidAddressId).andExpect(status().isNotFound());
         }
 
         @Test
@@ -112,7 +113,7 @@ class UserAddressControllerTest extends AbstractControllerTest {
             User newUser = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
             activateUser(newUser.getId());
             login(newUser.getName(), DEFAULT_PASSWORD);
-            performPut(USERS_UPDATE_ADDRESSES_ROUTE, userAddress, userAddress.getId())
+            performPut(USERS_UPDATE_ADDRESS_ROUTE, userAddress, userAddress.getId())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", Matchers.is(MISMATCHED_USER_IDS_MESSAGE)));
             deleteUser(newUser.getId());
@@ -121,7 +122,7 @@ class UserAddressControllerTest extends AbstractControllerTest {
         @Test
         void testSetAddressDefault() throws Exception {
             userAddress.setDefault(true);
-            userAddress = performPut(USERS_UPDATE_ADDRESSES_ROUTE, UserAddress.class, userAddress, userAddress.getId());
+            userAddress = performPut(USERS_UPDATE_ADDRESS_ROUTE, UserAddress.class, userAddress, userAddress.getId());
             user = performGet(USERS_GET_USER_BY_ID_ROUTE, User.class, user.getId());
             Assertions.assertEquals(user.getDefaultAddressId(), userAddress.getId());
         }
@@ -129,9 +130,9 @@ class UserAddressControllerTest extends AbstractControllerTest {
         @Test
         void testUnsetDefaultAddress() throws Exception {
             userAddress.setDefault(true);
-            performPut(USERS_UPDATE_ADDRESSES_ROUTE, userAddress, userAddress.getId()).andExpect(status().isOk());
+            performPut(USERS_UPDATE_ADDRESS_ROUTE, userAddress, userAddress.getId()).andExpect(status().isOk());
             userAddress.setDefault(false);
-            performPut(USERS_UPDATE_ADDRESSES_ROUTE, userAddress, userAddress.getId())
+            performPut(USERS_UPDATE_ADDRESS_ROUTE, userAddress, userAddress.getId())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", Matchers.is(DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE)));
         }
@@ -158,25 +159,23 @@ class UserAddressControllerTest extends AbstractControllerTest {
 
         @Test
         void testDeleteUserAddressWithValidArgs() throws Exception {
-            UserAddress userAddress = createUserAddressData();
-            userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, userAddress);
+            UserAddress userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest());
             performDelete(USERS_DELETE_ADDRESS_BY_ID_ROUTE, userAddress.getId()).andExpect(status().isOk());
             performGet(USERS_GET_ADDRESS_BY_ID_ROUTE, userAddress.getId()).andExpect(status().isNotFound());
         }
 
         @Test
         void testDeleteUserAndTheirAddresses() throws Exception {
-            UserAddress userAddress = createUserAddressData();
-            userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, userAddress);
+            UserAddress userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest());
             performDelete(USERS_DELETE_USER_BY_ID_ROUTE, user.getId());
             performGet(USERS_GET_ADDRESS_BY_ID_ROUTE, userAddress.getId()).andExpect(status().isUnauthorized());
         }
 
         @Test
         void testDeleteDefaultAddress() throws Exception {
-            UserAddress userAddress = createUserAddressData();
-            userAddress.setDefault(true);
-            userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, userAddress);
+            UserAddressRequest request = createUserAddressRequest();
+            request.setDefault(true);
+            UserAddress userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, request);
             performDelete(USERS_DELETE_ADDRESS_BY_ID_ROUTE, userAddress.getId())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", Matchers.is(DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE)));
@@ -191,9 +190,9 @@ class UserAddressControllerTest extends AbstractControllerTest {
         }
     }
 
-    private UserAddress createUserAddressData() {
-        UserAddress userAddress = new UserAddress();
-        userAddress.setName(generateRandomString());
-        return userAddress;
+    private UserAddressRequest createUserAddressRequest() {
+        UserAddressRequest request = new UserAddressRequest();
+        request.setName(generateRandomString());
+        return request;
     }
 }

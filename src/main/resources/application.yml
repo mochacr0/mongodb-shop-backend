@@ -1,6 +1,6 @@
 spring:
-  main:
-    allow-circular-references: true
+#  main:
+#    allow-circular-references: true
   data:
     mongodb:
       uri: mongodb+srv://nthai2001cr:H1q54razaxG0HE1T@cluster0.41zzcbg.mongodb.net/spring-boot-mongodb?retryWrites=true&w=majority
@@ -16,6 +16,10 @@ logging:
     org:
       springframework:
         security: "TRACE"
+        data:
+          mongodb:
+            core:
+              MongoTemplate: DEBUG
 server:
   port: 5000
 security:

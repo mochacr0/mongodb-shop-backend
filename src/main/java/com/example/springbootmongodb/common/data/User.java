@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-import static com.example.springbootmongodb.model.ModelConstants.EMAIL_FIELD;
+import static com.example.springbootmongodb.model.ModelConstants.USER_EMAIL_FIELD;
 import static com.example.springbootmongodb.model.ModelConstants.NAME_FIELD;
 
 @Data
@@ -27,7 +27,7 @@ public class User extends AbstractData implements ToEntity<UserEntity> {
     @Length(fieldName = NAME_FIELD)
     private String name;
     @Schema(title = "email", description = "User email", example = "nthai2001cr@gmail.com")
-    @Length(fieldName = EMAIL_FIELD)
+    @Length(fieldName = USER_EMAIL_FIELD)
     @Email
     private String email;
     @Schema(title = "role", description = "User role", example = "USER/ADMIN")
@@ -36,18 +36,20 @@ public class User extends AbstractData implements ToEntity<UserEntity> {
     private UserCredentials userCredentials;
     @Schema(title = "defaultAddressId", description = "User default address ID", example = "647d222a59a4582894a95c10")
     private String defaultAddressId;
-//    private List<UserAddress> userAddresses;
 
+    @Override
     @Schema(title = "id", description = "User ID", example = "647d222a59a4582894a95c10")
     public String getId() {
         return this.id;
     }
 
+    @Override
     @Schema(title = "createdAt", description = "Timestamp of the user creation", accessMode = Schema.AccessMode.READ_ONLY)
     public LocalDateTime getCreatedAt() {
         return this.createdAt;
     }
 
+    @Override
     @Schema(title = "updatedAt", description = "Timestamp of the user update", accessMode = Schema.AccessMode.READ_ONLY)
     public LocalDateTime getUpdatedAt() {
         return this.updatedAt;

@@ -4,7 +4,7 @@ import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.model.UserCredentials;
 import com.example.springbootmongodb.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.DisabledException;
@@ -15,11 +15,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 @Component
+@RequiredArgsConstructor
 public class JwtRefreshTokenAuthenticationProvider implements AuthenticationProvider {
-    @Autowired
-    private JwtTokenFactory jwtTokenFactory;
-    @Autowired
-    private UserService userService;
+    private final JwtTokenFactory jwtTokenFactory;
+    private final  UserService userService;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {

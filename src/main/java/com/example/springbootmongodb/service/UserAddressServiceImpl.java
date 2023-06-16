@@ -2,6 +2,7 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.UserAddress;
+import com.example.springbootmongodb.common.data.UserAddressRequest;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.common.validator.DataValidator;
@@ -10,10 +11,11 @@ import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.example.springbootmongodb.repository.UserAddressRepository;
 import io.micrometer.common.util.StringUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +24,13 @@ import java.util.Optional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAddressEntity> implements UserAddressService {
+    private final UserAddressRepository userAddressRepository;
+    private final DataValidator<UserAddress> userAddressDataValidator;
     @Autowired
-    private UserAddressRepository userAddressRepository;
-    @Autowired
+    @Lazy
     private UserService userService;
-    @Autowired
-    private DataValidator<UserAddress> userAddressDataValidator;
 
     public static final String MISMATCHED_USER_IDS_MESSAGE = "User ID mismatched. You aren't authorized to perform this address!";
     public static final String DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE = "This address's default label is unchangeable. Set another default address first";
@@ -38,15 +40,11 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
         return this.userAddressRepository;
     }
 
-//    @Override
-//    public Class getEntityClass() {
-//        return UserAddressEntity.class;
-//    }
-
     @Override
     @Transactional
-    public UserAddress create(UserAddress userAddress) {
+    public UserAddress create(UserAddressRequest userAddressRequest) {
         log.info("Performing UserAddressService create");
+        UserAddress userAddress = new UserAddress(userAddressRequest);
         User existingUser = userService.findById(getCurrentUser().getId());
         userAddress.setUserId(existingUser.getId());
         userAddressDataValidator.validateOnCreate(userAddress);
@@ -60,8 +58,9 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
 
     @Override
     @Transactional
-    public UserAddress save(String addressId, UserAddress userAddress) {
+    public UserAddress save(String addressId, UserAddressRequest userAddressRequest) {
         log.info("Performing UserAddressService save");
+        UserAddress userAddress = new UserAddress(userAddressRequest);
         User existingUser = userService.findById(getCurrentUser().getId());
         UserAddress existingAddress = this.findById(addressId);
         if (!existingUser.getId().equals(existingAddress.getUserId())) {
