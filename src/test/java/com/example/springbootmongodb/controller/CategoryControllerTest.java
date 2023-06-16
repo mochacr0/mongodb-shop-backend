@@ -2,10 +2,16 @@ package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.Category;
 import com.example.springbootmongodb.common.data.CategoryRequest;
+import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.User;
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 import static com.example.springbootmongodb.service.CategoryServiceImpl.*;
@@ -232,6 +238,46 @@ class CategoryControllerTest extends AbstractControllerTest {
         }
     }
 
+    @Test
+    void testFindCategories() throws Exception {
+        List<CategoryRequest> requests = new ArrayList<>();
+        int totalRequests = 10;
+        for (int i = 0; i < totalRequests; i++) {
+            CategoryRequest request = createCategoryRequest();
+            createCategory(request);
+            requests.add(request);
+        }
+        PageData<Category> pageData;
+        List<Category> createdCategories = new ArrayList<>();
+        int currentPage = 0;
+        do {
+            pageData = performGetWithReferencedType(CATEGORY_GET_CATEGORIES_ROUTE +
+                            "?page={page}&pageSize={pageSize}&sortDirection={sortDirection}&sortProperty={sortProperty}",
+                    new TypeReference<>(){},
+                    currentPage,
+                    3,
+                    "desc",
+                    "createdAt");
+            createdCategories.addAll(pageData.getData());
+            if (pageData.hasNext()) {
+                currentPage++;
+            }
+        } while (pageData.hasNext());
+        createdCategories = createdCategories.subList(0, totalRequests);
+        for (Category category : createdCategories) {
+            deleteCategory(category.getId());
+        }
+        createdCategories.sort(new CategoryComparator<>());
+        boolean areListsTheSame = true;
+        for (int i = 0; i < requests.size(); i++) {
+            if (!requests.get(i).getName().equals(createdCategories.get(i).getName())) {
+                areListsTheSame = false;
+                break;
+            }
+        }
+        Assertions.assertTrue(areListsTheSame, "The expected list and the actual list are not equal");
+    }
+
     private Category getDefaultCategory() throws Exception {
         return performGet(CATEGORY_GET_DEFAULT_CATEGORY_ROUTE, Category.class);
     }
@@ -254,5 +300,13 @@ class CategoryControllerTest extends AbstractControllerTest {
 
     private void deleteCategory(String categoryId) throws Exception {
         performDelete(CATEGORY_DELETE_CATEGORY_BY_ID_ROUTE, categoryId);
+    }
+
+    public class CategoryComparator<T extends Category> implements Comparator<T> {
+
+        @Override
+        public int compare(T o1, T o2) {
+            return o1.getCreatedAt().compareTo(o2.getCreatedAt());
+        }
     }
 }
