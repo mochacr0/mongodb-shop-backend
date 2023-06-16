@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -20,12 +21,11 @@ import org.springframework.web.bind.annotation.*;
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 
 @RestController
+@RequiredArgsConstructor
 @Tag(name = "Auth", description = "Authentication/Authorization APIs")
 public class AuthController {
-    @Autowired
-    private AuthService authService;
-    @Autowired
-    private SecuritySettingsConfiguration securitySettings;
+    private final AuthService authService;
+    private final SecuritySettingsConfiguration securitySettings;
 
     @Operation(summary = "Activate a user account using the activation token retrieved from the email")
     @PostMapping(value = AUTH_ACTIVATE_EMAIL_ROUTE)

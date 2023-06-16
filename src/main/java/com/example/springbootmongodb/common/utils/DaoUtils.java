@@ -8,7 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.util.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,6 +24,9 @@ public class DaoUtils {
     }
 
     public static <D> List<D> toListData(List<? extends ToData<D>> list) {
+        if (list == null || list.isEmpty()) {
+            return Collections.emptyList();
+        }
         return list.stream().map(ToData::toData).collect(Collectors.toList());
     }
     public static <D> D toData(ToData<D> entity) {

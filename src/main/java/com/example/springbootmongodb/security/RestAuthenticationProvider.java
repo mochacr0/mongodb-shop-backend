@@ -4,6 +4,7 @@ import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.service.UserCredentialsService;
 import com.example.springbootmongodb.service.UserService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -17,13 +18,11 @@ import org.springframework.util.Assert;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class RestAuthenticationProvider implements AuthenticationProvider {
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private UserCredentialsService userCredentialsService;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserService userService;
+    private final UserCredentialsService userCredentialsService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
