@@ -2,10 +2,8 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.UserAddress;
-import com.example.springbootmongodb.common.data.UserAddressRequest;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.common.utils.DaoUtils;
-import com.example.springbootmongodb.common.validator.DataValidator;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserAddressEntity;
@@ -25,9 +23,8 @@ import java.util.Optional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAddressEntity> implements UserAddressService {
+public class UserAddressServiceImpl extends DataBaseService<UserAddressEntity> implements UserAddressService {
     private final UserAddressRepository userAddressRepository;
-    private final DataValidator<UserAddress> userAddressDataValidator;
     @Autowired
     @Lazy
     private UserService userService;
@@ -42,50 +39,54 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
 
     @Override
     @Transactional
-    public UserAddress create(UserAddressRequest userAddressRequest) {
+    public UserAddress create(UserAddress address) {
         log.info("Performing UserAddressService create");
-        UserAddress userAddress = new UserAddress(userAddressRequest);
         User existingUser = userService.findById(getCurrentUser().getId());
-        userAddress.setUserId(existingUser.getId());
-        userAddressDataValidator.validateOnCreate(userAddress);
-        UserAddress createdUserAddress = super.insert(userAddress);
-        if (userAddress.isDefault()) {
+        long totalAddresses = userAddressRepository.countByUserId(existingUser.getId());
+        if (totalAddresses >= 5) {
+            throw new InvalidDataException("Only 5 addresses are allowed per user.");
+        }
+        if (StringUtils.isEmpty(existingUser.getDefaultAddressId())) {
+            address.setDefault(true);
+        }
+        address.setUserId(getCurrentUser().getId());
+        UserAddressEntity createdUserAddress = super.insert(address.toEntity());
+        if (address.isDefault()) {
             existingUser.setDefaultAddressId(createdUserAddress.getId());
             userService.save(existingUser);
         }
-        return createdUserAddress;
+        return DaoUtils.toData(createdUserAddress, UserAddress::fromEntity);
     }
 
     @Override
     @Transactional
-    public UserAddress save(String addressId, UserAddressRequest userAddressRequest) {
+    public UserAddress save(String addressId, UserAddress updateRequest) {
         log.info("Performing UserAddressService save");
-        UserAddress userAddress = new UserAddress(userAddressRequest);
+        Optional<UserAddressEntity> existingAddressEntityOpt = userAddressRepository.findById(addressId);
+        if (existingAddressEntityOpt.isEmpty()) {
+            throw new ItemNotFoundException(String.format("User address with id [%s] is not found", addressId));
+        }
+        UserAddressEntity existingAddressEntity = existingAddressEntityOpt.get();
         User existingUser = userService.findById(getCurrentUser().getId());
-        UserAddress existingAddress = this.findById(addressId);
-        if (!existingUser.getId().equals(existingAddress.getUserId())) {
+        if (!existingUser.getId().equals(existingAddressEntity.getUserId())) {
             throw new InvalidDataException(MISMATCHED_USER_IDS_MESSAGE);
         }
-        userAddress.setId(addressId);
-        userAddress.setUserId(existingUser.getId());
-        UserAddress savedUserAddress = super.save(userAddress);
-        if (userAddress.isDefault()) {
-            existingUser.setDefaultAddressId(savedUserAddress.getId());
-            userService.save(existingUser);
+        //if the current  address is the default address
+        if (existingUser.getDefaultAddressId().equals(existingAddressEntity.getId()) && !updateRequest.isDefault()) {
+            throw new InvalidDataException(DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE);
         }
-        else {
-            if (StringUtils.isNotEmpty(existingUser.getDefaultAddressId()) && existingUser.getDefaultAddressId().equals(userAddress.getId())) {
-                throw new InvalidDataException(DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE);
-            }
-        }
-        return savedUserAddress;
+        existingAddressEntity.fromData(updateRequest);
+        UserAddressEntity savedAddress = super.save(existingAddressEntity);
+        existingUser.setDefaultAddressId(savedAddress.getId());
+        userService.save(existingUser);
+        return DaoUtils.toData(savedAddress, UserAddress::fromEntity);
     }
 
     @Override
     public List<UserAddress> findUserAddressesByUserId(String userId) {
         log.info("Performing UserAddressService findUserAddressesByUserId");
         User user = userService.findById(userId);
-        List<UserAddress> userAddresses = DaoUtils.toListData(userAddressRepository.findByUserId(userId));
+        List<UserAddress> userAddresses = DaoUtils.toListData(userAddressRepository.findByUserId(userId), UserAddress::fromEntity);
         for (UserAddress userAddress : userAddresses) {
             if (userAddress.getId().equals(user.getDefaultAddressId())) {
                 userAddress.setDefault(true);
@@ -127,7 +128,7 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddress, UserAdd
         if (!securityUser.getId().equals(addressEntity.getUserId())) {
             throw new InvalidDataException(MISMATCHED_USER_IDS_MESSAGE);
         }
-        return DaoUtils.toData(addressEntity);
+        return DaoUtils.toData(addressEntity, UserAddress::fromEntity);
     }
 
     @Override

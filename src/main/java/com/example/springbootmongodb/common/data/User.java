@@ -9,9 +9,11 @@ import com.example.springbootmongodb.security.oauth2.OAuth2UserInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +22,8 @@ import static com.example.springbootmongodb.model.ModelConstants.NAME_FIELD;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 @Schema
 public class User extends AbstractData implements ToEntity<UserEntity> {
@@ -113,4 +117,27 @@ public class User extends AbstractData implements ToEntity<UserEntity> {
         entity.setDefaultAddressId(this.getDefaultAddressId());
         return entity;
     }
+
+    public static User fromEntity(UserEntity entity) {
+        return builder()
+                .id(entity.getId())
+                .defaultAddressId(entity.getDefaultAddressId())
+                .name(entity.getName())
+                .email(entity.getEmail())
+                .authority(entity.getAuthority())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .userCredentials(entity.getUserCredentials())
+                .build();
+    }
+
+    //        User user = new User();
+//        user.setId(this.getId());
+//        user.setName(this.getName());
+//        user.setEmail(this.getEmail());
+//        user.setAuthority(this.getAuthority());
+//        user.setCreatedAt(this.getCreatedAt());
+//        user.setUpdatedAt(this.getUpdatedAt());
+//        user.setUserCredentials(this.getUserCredentials());
+//        user.setDefaultAddressId(this.getDefaultAddressId());
 }

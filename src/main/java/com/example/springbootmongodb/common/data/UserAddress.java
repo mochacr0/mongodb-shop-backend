@@ -8,9 +8,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class UserAddress extends AbstractData implements ToEntity<UserAddressEntity> {
     @Schema(title = "userId", description = "User ID", example = "647d222a59a4582894a95c10")
@@ -29,16 +32,6 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
     private String streetAddress;
     @Schema(title = "isDefault", description = "If this email address is the default for the user, this boolean value will be true", example = "false")
     private boolean isDefault;
-
-    public UserAddress (UserAddressRequest request) {
-        this.name = request.getName();
-        this.phoneNumber = request.getPhoneNumber();
-        this.province = request.getProvince();
-        this.district = request.getDistrict();
-        this.ward = request.getWard();
-        this.streetAddress = request.getStreetAddress();
-        this.isDefault = request.isDefault();
-    }
 
     @Override
     public String toString() {
@@ -67,7 +60,6 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
     @Override
     public UserAddressEntity toEntity() {
         UserAddressEntity entity = new UserAddressEntity();
-        entity.setId(this.getId());
         entity.setUserId(this.getUserId());
         entity.setName(this.getName());
         entity.setProvince(this.getProvince());
@@ -76,4 +68,18 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
         entity.setStreetAddress(this.getStreetAddress());
         return entity;
     }
+
+    public static UserAddress fromEntity(UserAddressEntity entity) {
+        return builder()
+                .id(entity.getId())
+                .userId(entity.getUserId())
+                .name(entity.getName())
+                .phoneNumber(entity.getPhoneNumber())
+                .province(entity.getProvince())
+                .district(entity.getDistrict())
+                .ward(entity.getWard())
+                .streetAddress(entity.getStreetAddress())
+                .build();
+    }
+
 }

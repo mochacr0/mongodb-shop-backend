@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.Category;
-import com.example.springbootmongodb.common.data.CategoryRequest;
 import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.User;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -52,18 +51,18 @@ class CategoryControllerTest extends AbstractControllerTest {
         @Test
         void testCreateCategoryWithInvalidName() throws Exception {
             //missing name
-            CategoryRequest categoryRequest = createCategoryRequest();
-            categoryRequest.setName(null);
-            performPost(CATEGORY_CREATE_CATEGORY_ROUTE, categoryRequest)
+            Category category = createCategoryData();
+            category.setName(null);
+            performPost(CATEGORY_CREATE_CATEGORY_ROUTE, category)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", is(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE)));
-            categoryRequest.setName("");
-            performPost(CATEGORY_CREATE_CATEGORY_ROUTE, categoryRequest)
+            category.setName("");
+            performPost(CATEGORY_CREATE_CATEGORY_ROUTE, category)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", is(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE)));
             //duplicated name
             Category defaultCategory = getDefaultCategory();
-            CategoryRequest newCategory = new CategoryRequest();
+            Category newCategory = createCategoryData();
             newCategory.setName(defaultCategory.getName());
             performPost(CATEGORY_CREATE_CATEGORY_ROUTE, newCategory)
                     .andExpect(status().isBadRequest())
@@ -72,9 +71,9 @@ class CategoryControllerTest extends AbstractControllerTest {
 
         @Test
         void testCreateCategoryWithNonExistentParentId() throws Exception {
-            CategoryRequest categoryRequest = createCategoryRequest();
-            categoryRequest.setParentCategoryId(NON_EXISTENT_ID);
-            performPost(CATEGORY_CREATE_CATEGORY_ROUTE, categoryRequest)
+            Category category = createCategoryData();
+            category.setParentCategoryId(NON_EXISTENT_ID);
+            performPost(CATEGORY_CREATE_CATEGORY_ROUTE, category)
                     .andExpect(status().isUnprocessableEntity());
         }
 
@@ -82,7 +81,7 @@ class CategoryControllerTest extends AbstractControllerTest {
         void testCreateCategoryWithSubcategoryParent() throws Exception {
             //setup: create parent category and subcategory
             Category parentCategory = createCategory();
-            Category subcategory = createCategory(new CategoryRequest(generateRandomString(), parentCategory.getId(), false));
+            Category subcategory = createCategory(new Category(generateRandomString(), parentCategory.getId()));
             //create invalid subcategory
             Category invalidSubCategory = new Category(generateRandomString(), subcategory.getId());
             performPost(CATEGORY_CREATE_CATEGORY_ROUTE, invalidSubCategory)
@@ -95,7 +94,7 @@ class CategoryControllerTest extends AbstractControllerTest {
         @Test
         void testCreateCategoryHierarchyWithValidBody() throws Exception {
             Category parentCategory = createCategory();
-            Category subcategory = createCategory(new CategoryRequest(generateRandomString(), parentCategory.getId(), false));
+            Category subcategory = createCategory(new Category(generateRandomString(), parentCategory.getId()));
             Assertions.assertEquals(subcategory.getParentCategoryId(), parentCategory.getId());
             parentCategory = performGet(CATEGORY_GET_CATEGORY_BY_ID_ROUTE, Category.class, parentCategory.getId());
             Assertions.assertEquals(parentCategory.getSubCategories().get(0).getId(), subcategory.getId());
@@ -127,25 +126,24 @@ class CategoryControllerTest extends AbstractControllerTest {
 
         @Test
         void testUpdateCategoryWithNonExistentId() throws Exception {
-            CategoryRequest categoryRequest = new CategoryRequest(generateRandomString(), category.getParentCategoryId());
-            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, categoryRequest, NON_EXISTENT_ID)
+            Category updateRequest = new Category(generateRandomString(), category.getParentCategoryId());
+            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, updateRequest, NON_EXISTENT_ID)
                     .andExpect(status().isNotFound());
         }
 
         @Test
         void testUpdateCategoryWithInvalidName() throws Exception {
-            Category defaultCategory = getDefaultCategory();
-            CategoryRequest categoryRequest = createCategoryRequest();
-            categoryRequest.setName(null);
-            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, categoryRequest, category.getId())
+            Category updateRequest = createCategoryData();
+            updateRequest.setName(null);
+            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, updateRequest, category.getId())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", is(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE)));
-            categoryRequest.setName("");
-            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, categoryRequest, category.getId())
+            updateRequest.setName("");
+            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, updateRequest, category.getId())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", is(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE)));
-            categoryRequest.setName(defaultCategory.getName());
-            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, categoryRequest, category.getId())
+            updateRequest.setName(getDefaultCategory().getName());
+            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, updateRequest, category.getId())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", is(DUPLICATED_CATEGORY_NAME_ERROR_MESSAGE)));
         }
@@ -157,7 +155,7 @@ class CategoryControllerTest extends AbstractControllerTest {
         void testUpdateCategoryWithNonExistentParentId() throws Exception {
             //non-existent parent id
             String nonExistentParentId = "64805c5bdb4a3449c81a9bed";
-            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, new CategoryRequest(generateRandomString(), nonExistentParentId), category.getId())
+            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, new Category(generateRandomString(), nonExistentParentId), category.getId())
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.message", is(NON_EXISTENT_PARENT_CATEGORY_ERROR_MESSAGE)));
         }
@@ -165,9 +163,11 @@ class CategoryControllerTest extends AbstractControllerTest {
         @Test
         void testUpdateCategoryWithHierarchyViolation() throws Exception {
             Category parentCategory = createCategory();
-            Category subcategory = createCategory(new CategoryRequest(generateRandomString(), parentCategory.getId(), false));
+            Category subcategory = createCategory(new Category(generateRandomString(), parentCategory.getId()));
             //create invalid subcategory
-            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, new CategoryRequest(category.getName(), subcategory.getId()), category.getId())
+            Category invalidUpdateRequest = createCategoryData();
+            invalidUpdateRequest.setParentCategoryId(subcategory.getId());
+            performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, invalidUpdateRequest, category.getId())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", is(SUBCATEGORY_HIERARCHY_VIOLATION_ERROR_MESSAGE)));
             deleteCategory(parentCategory.getId());
@@ -176,10 +176,10 @@ class CategoryControllerTest extends AbstractControllerTest {
 
         @Test
         void testUpdateCategoryWithValidBody() throws Exception {
-            CategoryRequest categoryRequest = new CategoryRequest(generateRandomString(), null);
-            Category updatedCategory = performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, Category.class, categoryRequest, category.getId());
-            Assertions.assertEquals(categoryRequest.getName(), updatedCategory.getName());
-            Assertions.assertEquals(categoryRequest.getParentCategoryId(), updatedCategory.getParentCategoryId());
+            Category updateRequest = new Category(generateRandomString(), null);
+            Category updatedCategory = performPut(CATEGORY_UPDATE_CATEGORY_ROUTE, Category.class, updateRequest, category.getId());
+            Assertions.assertEquals(updateRequest.getName(), updatedCategory.getName());
+            Assertions.assertEquals(updateRequest.getParentCategoryId(), updatedCategory.getParentCategoryId());
         }
     }
 
@@ -219,8 +219,8 @@ class CategoryControllerTest extends AbstractControllerTest {
         //check subcategory parent id after deleting
         @Test
         void testDeleteCategoryAndDetachSubcategories() throws Exception {
-            Category subcategory1 = createCategory(new CategoryRequest(generateRandomString(), category.getId()));
-            Category subcategory2 = createCategory(new CategoryRequest(generateRandomString(), category.getId()));
+            Category subcategory1 = createCategory(new Category(generateRandomString(), category.getId()));
+            Category subcategory2 = createCategory(new Category(generateRandomString(), category.getId()));
             Assertions.assertEquals(subcategory1.getParentCategoryId(), category.getId());
             Assertions.assertEquals(subcategory2.getParentCategoryId(), category.getId());
             category = performGet(CATEGORY_GET_CATEGORY_BY_ID_ROUTE, Category.class, category.getId());
@@ -240,12 +240,12 @@ class CategoryControllerTest extends AbstractControllerTest {
 
     @Test
     void testFindCategories() throws Exception {
-        List<CategoryRequest> requests = new ArrayList<>();
+        List<Category> requests = new ArrayList<>();
         int totalRequests = 10;
         for (int i = 0; i < totalRequests; i++) {
-            CategoryRequest request = createCategoryRequest();
-            createCategory(request);
-            requests.add(request);
+            Category category = createCategoryData();
+            createCategory(category);
+            requests.add(category);
         }
         PageData<Category> pageData;
         List<Category> createdCategories = new ArrayList<>();
@@ -282,20 +282,21 @@ class CategoryControllerTest extends AbstractControllerTest {
         return performGet(CATEGORY_GET_DEFAULT_CATEGORY_ROUTE, Category.class);
     }
 
-    private CategoryRequest createCategoryRequest() {
-        CategoryRequest categoryRequest = new CategoryRequest();
-        categoryRequest.setName(generateRandomString());
-        categoryRequest.setDefault(false);
-        categoryRequest.setParentCategoryId(null);
-        return categoryRequest;
+    private Category createCategoryData() {
+        return Category
+                .builder()
+                .name(generateRandomString())
+                .isDefault(false)
+                .parentCategoryId(null)
+                .build();
     }
 
     private Category createCategory() throws Exception {
-        return createCategory(createCategoryRequest());
+        return createCategory(createCategoryData());
     }
 
-    private Category createCategory(CategoryRequest categoryRequest) throws Exception {
-        return performPost(CATEGORY_CREATE_CATEGORY_ROUTE, Category.class, categoryRequest);
+    private Category createCategory(Category category) throws Exception {
+        return performPost(CATEGORY_CREATE_CATEGORY_ROUTE, Category.class, category);
     }
 
     private void deleteCategory(String categoryId) throws Exception {

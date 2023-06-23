@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.Category;
-import com.example.springbootmongodb.common.data.CategoryRequest;
 import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.PageParameter;
 import com.example.springbootmongodb.exception.InvalidDataException;
@@ -16,7 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
-import static com.example.springbootmongodb.controller.ControllerConstants.SORT_PROPERTY_DEFAULT_VALUE;
 
 @RestController
 @Tag(name = "Category")
@@ -59,15 +57,15 @@ public class CategoryController {
     @PostMapping(value = CATEGORY_CREATE_CATEGORY_ROUTE)
     Category create(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
                                                                           description = "Category object containing the category details")
-                    @RequestBody CategoryRequest categoryRequest) {
-        return categoryService.create(categoryRequest);
+                    @RequestBody Category category) {
+        return categoryService.create(category);
     }
     @Operation(summary = "Update an existing category by the provided categoryId")
     @PutMapping(value = CATEGORY_UPDATE_CATEGORY_ROUTE)
     Category update(@Parameter(description = "ID of the category to update", required = true)
                     @PathVariable(name = "categoryId") String categoryId,
-                    @RequestBody CategoryRequest categoryRequest) {
-        return categoryService.save(categoryId, categoryRequest);
+                    @RequestBody Category category) {
+        return categoryService.save(categoryId, category);
     }
     @Operation(summary = "Delete an existing category by the provided categoryId")
     @DeleteMapping(value = CATEGORY_DELETE_CATEGORY_BY_ID_ROUTE)
