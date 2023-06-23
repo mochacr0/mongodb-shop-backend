@@ -2,7 +2,6 @@ package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.UserAddress;
-import com.example.springbootmongodb.common.data.UserAddressRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -40,19 +39,19 @@ class UserAddressControllerTest extends AbstractControllerTest {
                 deleteUser(user.getId());
             }
         }
+
         @Test
         void testCreateAddressWithValidBody() throws Exception {
-            UserAddress createdUserAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest());
+            UserAddress createdUserAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddress());
             Assertions.assertNotNull(createdUserAddress);
             Assertions.assertEquals(user.getId(), createdUserAddress.getUserId());
-            performDelete(USERS_DELETE_ADDRESS_BY_ID_ROUTE, createdUserAddress.getId());
         }
 
         @Test
         void testCreateValidNumberOfAddresses() throws Exception {
             List<UserAddress> userAddresses = new ArrayList<>();
             for (int i = 0; i < maxAddressesCount; i++) {
-                userAddresses.add(performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest()));
+                userAddresses.add(performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddress()));
             }
             ArrayList<UserAddress> createdUserAddresses = performGetWithReferencedType(USERS_GET_CURRENT_USER_ADDRESSES_ROUTE, new TypeReference<>(){});
             Assertions.assertFalse(createdUserAddresses.isEmpty());
@@ -67,10 +66,10 @@ class UserAddressControllerTest extends AbstractControllerTest {
         @Test
         void testCreateAddressWithMaxLimitExceeded() throws Exception {
             for (int i = 0; i < maxAddressesCount; i++) {
-                performPost(USERS_CREATE_ADDRESSES_ROUTE, createUserAddressRequest()).andExpect(status().isOk());
+                performPost(USERS_CREATE_ADDRESSES_ROUTE, createUserAddress()).andExpect(status().isOk());
             }
-            UserAddressRequest additionalAddressRequest = createUserAddressRequest();
-            performPost(USERS_CREATE_ADDRESSES_ROUTE, additionalAddressRequest).andExpect(status().isBadRequest());
+            UserAddress additionalAddress = createUserAddress();
+            performPost(USERS_CREATE_ADDRESSES_ROUTE, additionalAddress).andExpect(status().isBadRequest());
         }
     }
 
@@ -84,7 +83,7 @@ class UserAddressControllerTest extends AbstractControllerTest {
             user = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
             activateUser(user.getId());
             login(user.getName(), DEFAULT_PASSWORD);
-            userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest());
+            userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddress());
         }
 
         @AfterEach
@@ -147,6 +146,7 @@ class UserAddressControllerTest extends AbstractControllerTest {
             user = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
             activateUser(user.getId());
             login(user.getName(), DEFAULT_PASSWORD);
+            performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddress());
         }
 
         @AfterEach
@@ -158,24 +158,25 @@ class UserAddressControllerTest extends AbstractControllerTest {
         }
 
         @Test
+        //TODO: 1st address is the default address
         void testDeleteUserAddressWithValidArgs() throws Exception {
-            UserAddress userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest());
+            UserAddress userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddress());
             performDelete(USERS_DELETE_ADDRESS_BY_ID_ROUTE, userAddress.getId()).andExpect(status().isOk());
             performGet(USERS_GET_ADDRESS_BY_ID_ROUTE, userAddress.getId()).andExpect(status().isNotFound());
         }
 
         @Test
         void testDeleteUserAndTheirAddresses() throws Exception {
-            UserAddress userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddressRequest());
+            UserAddress userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, createUserAddress());
             performDelete(USERS_DELETE_USER_BY_ID_ROUTE, user.getId());
             performGet(USERS_GET_ADDRESS_BY_ID_ROUTE, userAddress.getId()).andExpect(status().isUnauthorized());
         }
 
         @Test
         void testDeleteDefaultAddress() throws Exception {
-            UserAddressRequest request = createUserAddressRequest();
-            request.setDefault(true);
-            UserAddress userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, request);
+            UserAddress address = createUserAddress();
+            address.setDefault(true);
+            UserAddress userAddress = performPost(USERS_CREATE_ADDRESSES_ROUTE, UserAddress.class, address);
             performDelete(USERS_DELETE_ADDRESS_BY_ID_ROUTE, userAddress.getId())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", Matchers.is(DEFAULT_ADDRESS_CHANGE_REQUIRED_MESSAGE)));
@@ -190,9 +191,9 @@ class UserAddressControllerTest extends AbstractControllerTest {
         }
     }
 
-    private UserAddressRequest createUserAddressRequest() {
-        UserAddressRequest request = new UserAddressRequest();
-        request.setName(generateRandomString());
-        return request;
+    private UserAddress createUserAddress() {
+        UserAddress address = new UserAddress();
+        address.setName(generateRandomString());
+        return address;
     }
 }

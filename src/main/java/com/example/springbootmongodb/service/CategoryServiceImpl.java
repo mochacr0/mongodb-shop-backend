@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.Category;
-import com.example.springbootmongodb.common.data.CategoryRequest;
 import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.PageParameter;
 import com.example.springbootmongodb.common.utils.DaoUtils;
@@ -15,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +22,7 @@ import java.util.Optional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class CategoryServiceImpl extends DataBaseService<Category, CategoryEntity> implements CategoryService {
+public class CategoryServiceImpl extends DataBaseService<CategoryEntity> implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CommonValidator commonValidator;
     @Override
@@ -45,7 +43,7 @@ public class CategoryServiceImpl extends DataBaseService<Category, CategoryEntit
         if (StringUtils.isEmpty(id)) {
             throw new InvalidDataException(REQUIRED_CATEGORY_ID_ERROR_MESSAGE);
         }
-        return DaoUtils.toData(categoryRepository.findById(id));
+        return DaoUtils.toData(categoryRepository.findById(id), Category::fromEntity);
     }
 
     @Override
@@ -54,35 +52,36 @@ public class CategoryServiceImpl extends DataBaseService<Category, CategoryEntit
         if (StringUtils.isEmpty(name)) {
             throw new InvalidDataException(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE);
         }
-        return DaoUtils.toData(categoryRepository.findByName(name));
+        return DaoUtils.toData(categoryRepository.findByName(name), Category::fromEntity);
     }
 
     @Override
     public PageData<Category> findCategories(PageParameter pageParameter) {
         log.info("Performing CategoryService find");
         commonValidator.validatePageParameter(pageParameter);
-        return DaoUtils.toPageData(categoryRepository.findParentCategories(DaoUtils.toPageable(pageParameter)));
+//        return DaoUtils.toPageData(categoryRepository.findParentCategories(DaoUtils.toPageable(pageParameter)));
+        return DaoUtils.toPageData(categoryRepository.findParentCategories(DaoUtils.toPageable(pageParameter)), Category::fromEntity);
     }
 
     @Override
     @Transactional
-    public Category create(CategoryRequest categoryRequest) {
+    public Category create(Category category) {
         log.info("Performing CategoryService create");
-        if (StringUtils.isEmpty(categoryRequest.getName())) {
+        if (StringUtils.isEmpty(category.getName())) {
             throw new InvalidDataException(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE);
         }
-        Category nameDuplicatedCategory = this.findByName(categoryRequest.getName());
+        Category nameDuplicatedCategory = this.findByName(category.getName());
         if (nameDuplicatedCategory != null) {
             throw new InvalidDataException(DUPLICATED_CATEGORY_NAME_ERROR_MESSAGE);
         }
-        if (categoryRequest.isDefault()) {
+        if (category.isDefault()) {
             CategoryEntity defaultCategoryEntity = categoryRepository.findDefaultCategory();
             if (defaultCategoryEntity != null) {
                 throw new InvalidDataException(DEFAULT_CATEGORY_SINGLETON_ERROR_MESSAGE);
             }
         }
-        if (StringUtils.isNotEmpty(categoryRequest.getParentCategoryId())) {
-            Category parentCategory = this.findById(categoryRequest.getParentCategoryId());
+        if (StringUtils.isNotEmpty(category.getParentCategoryId())) {
+            Category parentCategory = this.findById(category.getParentCategoryId());
             if (parentCategory == null) {
                 throw new UnprocessableContentException(NON_EXISTENT_PARENT_CATEGORY_ERROR_MESSAGE);
             }
@@ -90,35 +89,34 @@ public class CategoryServiceImpl extends DataBaseService<Category, CategoryEntit
                 throw new InvalidDataException(SUBCATEGORY_HIERARCHY_VIOLATION_ERROR_MESSAGE);
             }
         }
-        Category newCategory = new Category(categoryRequest);
-        newCategory = super.insert(newCategory);
-        return newCategory;
+        CategoryEntity newCategory = super.insert(category.toEntity());
+        return DaoUtils.toData(newCategory, Category::fromEntity);
     }
 
     @Override
-    public Category save(String id, CategoryRequest categoryRequest) {
+    public Category save(String id, Category category) {
         log.info("Performing CategoryService create");
-        if (StringUtils.isEmpty(categoryRequest.getName())) {
+        if (StringUtils.isEmpty(category.getName())) {
             throw new InvalidDataException(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE);
         }
-        Category existingCategory = findById(id);
-        if (existingCategory == null) {
+        Optional<CategoryEntity> existingCategoryEntityOpt = categoryRepository.findById(id);
+        if (existingCategoryEntityOpt.isEmpty()) {
             throw new ItemNotFoundException(String.format("Category with id [%s] is not found", id));
         }
-        Category nameDuplicatedCategory = this.findByName(categoryRequest.getName());
+        CategoryEntity existingCategoryEntity = existingCategoryEntityOpt.get();
+        Category nameDuplicatedCategory = this.findByName(category.getName());
         if (nameDuplicatedCategory != null && !nameDuplicatedCategory.getId().equals(id)) {
             throw new InvalidDataException(DUPLICATED_CATEGORY_NAME_ERROR_MESSAGE);
         }
-        if (categoryRequest.isDefault()) {
+        if (category.isDefault()) {
             CategoryEntity defaultCategoryEntity = categoryRepository.findDefaultCategory();
             if (defaultCategoryEntity != null && !defaultCategoryEntity.getId().equals(id)) {
                 throw new InvalidDataException(DEFAULT_CATEGORY_SINGLETON_ERROR_MESSAGE);
             }
         }
-        Category savedCategory = null;
-        String parentCategoryId = categoryRequest.getParentCategoryId();
+        String parentCategoryId = category.getParentCategoryId();
         if (StringUtils.isNotEmpty(parentCategoryId)
-                && !parentCategoryId.equals(existingCategory.getParentCategoryId())) {
+                && !parentCategoryId.equals(existingCategoryEntity.getParentCategoryId())) {
             Category parentCategory = this.findById(parentCategoryId);
             if (parentCategory == null) {
                 throw new UnprocessableContentException(NON_EXISTENT_PARENT_CATEGORY_ERROR_MESSAGE);
@@ -127,10 +125,9 @@ public class CategoryServiceImpl extends DataBaseService<Category, CategoryEntit
                 throw new InvalidDataException(SUBCATEGORY_HIERARCHY_VIOLATION_ERROR_MESSAGE);
             }
         }
-        Category category = new Category(categoryRequest);
-        category.setId(id);
-        savedCategory = super.save(category);
-        return savedCategory;
+        existingCategoryEntity.fromData(category);
+        CategoryEntity savedCategory = super.save(existingCategoryEntity);
+        return DaoUtils.toData(savedCategory, Category::fromEntity);
     }
 
     @Override
@@ -140,7 +137,6 @@ public class CategoryServiceImpl extends DataBaseService<Category, CategoryEntit
     }
 
 
-    //DEFAULT CATEGORY
     @Override
     @Transactional
     public void deleteById(String id) {
@@ -162,19 +158,6 @@ public class CategoryServiceImpl extends DataBaseService<Category, CategoryEntit
     @Override
     public Category findDefaultCategory() {
         log.info("Performing CategoryService findDefaultCategory");
-        return DaoUtils.toData(categoryRepository.findDefaultCategory());
+        return DaoUtils.toData(categoryRepository.findDefaultCategory(), Category::fromEntity);
     }
-
-//    private Category getOrCreateDefaultCategory() {
-//        log.info("Performing CategoryService getOrCreateDefaultCategory");
-//        Category defaultCategory = DaoUtils.toData(categoryRepository.findDefaultCategory());
-//        if (defaultCategory == null) {
-//            //create new default category
-//            defaultCategory = new Category();
-//            defaultCategory.setName(CATEGORY_DEFAULT_CATEGORY_NAME);
-//            defaultCategory.setParentCategoryId(null);
-//            defaultCategory = this.create(defaultCategory);
-//        }
-//        return defaultCategory;
-//    }
 }

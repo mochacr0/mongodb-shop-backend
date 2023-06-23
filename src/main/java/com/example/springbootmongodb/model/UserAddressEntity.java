@@ -4,7 +4,6 @@ import com.example.springbootmongodb.common.data.UserAddress;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
@@ -15,7 +14,7 @@ import static com.example.springbootmongodb.model.ModelConstants.USER_ADDRESS_CO
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class UserAddressEntity extends AbstractEntity<UserAddress> {
+public class UserAddressEntity extends AbstractEntity {
     @Field(targetType = FieldType.OBJECT_ID)
     private String userId;
     private String name;
@@ -46,18 +45,26 @@ public class UserAddressEntity extends AbstractEntity<UserAddress> {
         builder.append(this.getStreetAddress());
         return builder.toString();
     }
-    @Override
-    public UserAddress toData() {
-        UserAddress data = new UserAddress();
-        data.setId(this.getId());
-        data.setUserId(this.getUserId());
-        data.setName(this.getName());
-        data.setProvince(this.getProvince());
-        data.setDistrict(this.getDistrict());
-        data.setWard(this.getWard());
-        data.setStreetAddress(this.getStreetAddress());
-        data.setCreatedAt(this.getCreatedAt());
-        data.setUpdatedAt(this.getUpdatedAt());
-        return data;
+//    @Override
+//    public UserAddress toData() {
+//        UserAddress data = new UserAddress();
+//        data.setId(this.getId());
+//        data.setUserId(this.getUserId());
+//        data.setName(this.getName());
+//        data.setProvince(this.getProvince());
+//        data.setDistrict(this.getDistrict());
+//        data.setWard(this.getWard());
+//        data.setStreetAddress(this.getStreetAddress());
+//        data.setCreatedAt(this.getCreatedAt());
+//        data.setUpdatedAt(this.getUpdatedAt());
+//        return data;
+//    }
+
+    public void fromData(UserAddress data) {
+        this.setName(data.getName());
+        this.setProvince(data.getProvince());
+        this.setDistrict(data.getDistrict());
+        this.setWard(data.getWard());
+        this.setStreetAddress(data.getStreetAddress());
     }
 }

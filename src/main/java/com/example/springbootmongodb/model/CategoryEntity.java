@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.model;
 
 import com.example.springbootmongodb.common.data.Category;
-import com.example.springbootmongodb.common.utils.DaoUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -20,7 +19,7 @@ import static com.example.springbootmongodb.model.ModelConstants.CATEGORY_COLLEC
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CategoryEntity extends AbstractEntity<Category> {
+public class CategoryEntity extends AbstractEntity {
     @Indexed(unique = true)
     private String name;
     @Field(targetType = FieldType.OBJECT_ID)
@@ -44,16 +43,23 @@ public class CategoryEntity extends AbstractEntity<Category> {
         builder.append("]");
         return builder.toString();
     }
-    @Override
-    public Category toData() {
-        Category data = new Category();
-        data.setId(this.getId());
-        data.setName(this.getName());
-        data.setParentCategoryId(this.getParentCategoryId());
-        data.setDefault(this.isDefault());
-        data.setSubCategories(DaoUtils.toListData(this.getSubCategories()));
-        data.setCreatedAt(this.getCreatedAt());
-        data.setUpdatedAt(this.getUpdatedAt());
-        return data;
+//    @Override
+//    public Category toData() {
+//        Category data = new Category();
+//        data.setId(this.getId());
+//        data.setName(this.getName());
+//        data.setParentCategoryId(this.getParentCategoryId());
+//        data.setDefault(this.isDefault());
+//        data.setSubCategories(DaoUtils.toListData(this.getSubCategories()));
+//        data.setCreatedAt(this.getCreatedAt());
+//        data.setUpdatedAt(this.getUpdatedAt());
+//        return data;
+//    }
+
+    public void fromData(Category category) {
+        this.setId(this.getId());
+        this.setName(category.getName());
+        this.setDefault(category.isDefault());
+        this.setParentCategoryId(category.getParentCategoryId());
     }
 }
