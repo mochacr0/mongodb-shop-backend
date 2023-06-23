@@ -37,14 +37,14 @@ public class UserDataValidator extends DataValidator<User>{
     @Override
     protected void validateCommon(User data) {
         if (data.getName() != null) {
-            User existingUserWithGivenName = DaoUtils.toData(userRepository.findByName(data.getName()));
-            if (existingUserWithGivenName != null && !existingUserWithGivenName.getId().equals(data.getId())) {
+            Optional<UserEntity> existingUserWithGivenName = userRepository.findByName(data.getName());
+            if (existingUserWithGivenName.isPresent() && (!existingUserWithGivenName.get().getId().equals(data.getId()))) {
                 throw new InvalidDataException(String.format("User with name [%s] already exists", data.getName()));
             }
         }
         if (data.getEmail() != null) {
-            User existingUserWithGivenEmail = DaoUtils.toData(userRepository.findByEmail(data.getEmail()));
-            if (existingUserWithGivenEmail != null && !existingUserWithGivenEmail.getId().equals(data.getId())) {
+            Optional<UserEntity> existingUserWithGivenEmail = userRepository.findByEmail(data.getEmail());
+            if (existingUserWithGivenEmail.isPresent() && (!existingUserWithGivenEmail.get().getId().equals(data.getId()))) {
                 throw new InvalidDataException(String.format("User with email [%s] already exists", data.getEmail()));
             }
         }

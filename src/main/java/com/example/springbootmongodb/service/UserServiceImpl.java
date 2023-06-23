@@ -14,7 +14,6 @@ import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserCredentials;
 import com.example.springbootmongodb.model.UserEntity;
-import com.example.springbootmongodb.repository.UserAddressRepository;
 import com.example.springbootmongodb.repository.UserRepository;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,7 +35,7 @@ import java.util.Optional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserServiceImpl extends DataBaseService<User, UserEntity> implements UserService {
+public class UserServiceImpl extends DataBaseService<UserEntity> implements UserService {
     private final UserRepository userRepository;
     private final UserAddressService userAddressService;
     private final CommonValidator commonValidator;
@@ -52,7 +51,7 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
     public PageData<User> findUsers(PageParameter pageParameter) {
         log.info("Performing UserService findUsers");
         commonValidator.validatePageParameter(pageParameter);
-        return DaoUtils.toPageData(userRepository.findAll(DaoUtils.toPageable(pageParameter)));
+        return DaoUtils.toPageData(userRepository.findAll(DaoUtils.toPageable(pageParameter)), User::fromEntity);
     }
 
     @Override
@@ -64,7 +63,15 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
     public User save(User user) {
         log.info("Performing UserService save");
         userDataValidator.validateOnUpdate(user);
-        return super.save(user);
+        Optional<UserEntity> existingUserEntityOpt = userRepository.findById(user.getId());
+        if (existingUserEntityOpt.isEmpty()) {
+            throw new ItemNotFoundException(String.format("User with id [%s] is not found", user.getId()));
+        }
+        UserEntity existingUserEntity = existingUserEntityOpt.get();
+        existingUserEntity.setName(user.getName());
+        existingUserEntity.setDefaultAddressId(user.getDefaultAddressId());
+        existingUserEntity.setUserCredentials(user.getUserCredentials());
+        return DaoUtils.toData(super.save(existingUserEntity), User::fromEntity);
     }
 
     public User saveCurrentUser(User user) {
@@ -80,7 +87,7 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
         if (StringUtils.isBlank(name)) {
             throw new InvalidDataException("Username should be specified");
         }
-        return DaoUtils.toData(userRepository.findByName(name));
+        return DaoUtils.toData(userRepository.findByName(name), User::fromEntity);
     }
 
     @Override
@@ -93,7 +100,7 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
         if (userEntityOptional.isEmpty()) {
             throw new ItemNotFoundException(String.format("User with id [%s] is not found", userId));
         }
-        return DaoUtils.toData(userEntityOptional);
+        return DaoUtils.toData(userEntityOptional, User::fromEntity);
     }
 
     @Override
@@ -106,7 +113,7 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
         if (userEntityOptional.isEmpty()) {
             throw new ItemNotFoundException(String.format("User with email [%s] is not found", email));
         }
-        return DaoUtils.toData(userEntityOptional);
+        return DaoUtils.toData(userEntityOptional, User::fromEntity);
     }
 
     @Override
@@ -124,15 +131,15 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
             userCredentials.setActivationTokenExpirationMillis(System.currentTimeMillis() + securitySettings.getActivationTokenExpirationMillis());
         }
         user.setUserCredentials(userCredentials);
-        User savedUser = super.insert(user);
-        if (StringUtils.isNotBlank(savedUser.getId())) {
-            UserCredentials savedUserCredentials = savedUser.getUserCredentials();
-            if (StringUtils.isNotBlank(savedUser.getUserCredentials().getActivationToken())) {
+        UserEntity savedUserEntity = super.insert(user.toEntity());
+        if (StringUtils.isNotBlank(savedUserEntity.getId())) {
+            UserCredentials savedUserCredentials = savedUserEntity.getUserCredentials();
+            if (StringUtils.isNotBlank(savedUserEntity.getUserCredentials().getActivationToken())) {
                 String activateLink = String.format(this.ACTIVATION_URL_PATTERN, UrlUtils.getBaseUrl(request), savedUserCredentials.getActivationToken());
                 mailService.sendActivationMail(user.getEmail(), activateLink);
             }
         }
-        return savedUser;
+        return DaoUtils.toData(savedUserEntity, User::fromEntity);
     }
 
     @Override
@@ -147,7 +154,7 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
     @Override
     public void deleteUnverifiedUsers() {
         log.info("Performing UserService deleteUnverifiedUsers");
-        List<User> unverifiedUsers = DaoUtils.toListData(userRepository.findUnverifiedUsers());
+        List<User> unverifiedUsers = DaoUtils.toListData(userRepository.findUnverifiedUsers(), User::fromEntity);
         List<List<User>> chunks = new ArrayList<>();
         int chunkSize = 2;
         for (int currentIndex = 0; currentIndex < unverifiedUsers.size(); currentIndex += chunkSize) {
@@ -177,7 +184,7 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
         if (userEntity == null) {
             throw new ItemNotFoundException(String.format("User credentials with activation token [%s] is not found", activationToken));
         }
-        return DaoUtils.toData(userEntity);
+        return DaoUtils.toData(userEntity, User::fromEntity);
     }
 
     @Override
@@ -187,7 +194,7 @@ public class UserServiceImpl extends DataBaseService<User, UserEntity> implement
         if (userEntity == null) {
             throw new ItemNotFoundException(String.format("User credentials with password reset token [%s] is not found", passwordResetToken));
         }
-        return DaoUtils.toData(userEntity);
+        return DaoUtils.toData(userEntity, User::fromEntity);
     }
 
     @Override

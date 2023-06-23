@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.UserAddress;
-import com.example.springbootmongodb.common.data.UserAddressRequest;
 import com.example.springbootmongodb.service.UserAddressService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,8 +27,8 @@ public class UserAddressController {
     @PostMapping(value = USERS_CREATE_ADDRESSES_ROUTE)
     UserAddress createAddress(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
                                                                                     description = "UserAddress object containing the address details")
-                              @RequestBody UserAddressRequest userAddressRequest) {
-        return userAddressService.create(userAddressRequest);
+                              @RequestBody UserAddress address) {
+        return userAddressService.create(address);
     }
 
     @Operation(summary = "Retrieve all addresses associated with the current user",
@@ -53,8 +52,8 @@ public class UserAddressController {
                               @PathVariable(name = "addressId") String addressId,
                               @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
                                                                                     description = "UserAddress object containing the updated address details.")
-                              @RequestBody UserAddressRequest UserAddressRequest) {
-        return userAddressService.save(addressId, UserAddressRequest);
+                              @RequestBody UserAddress address) {
+        return userAddressService.save(addressId, address);
     }
 
     @Operation(summary = "Delete an existing user address by the provided addressId")

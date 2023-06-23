@@ -1,6 +1,5 @@
 package com.example.springbootmongodb.model;
 
-import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.security.Authority;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,7 +14,7 @@ import static com.example.springbootmongodb.model.ModelConstants.*;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class UserEntity extends AbstractEntity<User> {
+public class UserEntity extends AbstractEntity {
     @Field(name = NAME_FIELD)
     @Indexed(unique = true)
     private String name;
@@ -50,18 +49,21 @@ public class UserEntity extends AbstractEntity<User> {
         return builder.toString();
     }
 
-    @Override
-    public User toData() {
-        User user = new User();
-        user.setId(this.getId());
-        user.setName(this.getName());
-        user.setEmail(this.getEmail());
-        user.setAuthority(this.getAuthority());
-        user.setCreatedAt(this.getCreatedAt());
-        user.setUpdatedAt(this.getUpdatedAt());
-        user.setUserCredentials(this.getUserCredentials());
-        user.setDefaultAddressId(this.getDefaultAddressId());
-        return user;
-    }
+//    @Override
+//    public User toData() {
+//        User user = new User();
+//        user.setId(this.getId());
+//        user.setName(this.getName());
+//        user.setEmail(this.getEmail());
+//        user.setAuthority(this.getAuthority());
+//        user.setCreatedAt(this.getCreatedAt());
+//        user.setUpdatedAt(this.getUpdatedAt());
+//        user.setUserCredentials(this.getUserCredentials());
+//        user.setDefaultAddressId(this.getDefaultAddressId());
+//        return user;
+//    }
+
+
+
 
 }
