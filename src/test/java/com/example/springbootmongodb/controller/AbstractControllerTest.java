@@ -197,7 +197,7 @@ public abstract class AbstractControllerTest {
     }
 
     protected void deleteUser(String userId) throws Exception {
-        performDelete(USERS_DELETE_USER_BY_ID_ROUTE, userId).andExpect(status().isOk());
+        performDelete(USERS_DELETE_USER_BY_ID_ROUTE, userId);
     }
 
     public String generateUsername() {

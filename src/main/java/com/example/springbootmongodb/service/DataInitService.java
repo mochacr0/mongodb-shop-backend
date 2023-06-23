@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.Category;
-import com.example.springbootmongodb.common.data.CategoryRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +17,13 @@ public class DataInitService {
     private void createDefaultCategory() {
         Category defaultCategory = categoryService.findDefaultCategory();
         if (defaultCategory == null) {
-            CategoryRequest categoryRequest = new CategoryRequest();
-            categoryRequest.setName(CATEGORY_DEFAULT_CATEGORY_NAME);
-            categoryRequest.setDefault(true);
-            categoryRequest.setParentCategoryId(null);
-            categoryService.create(categoryRequest);
+            Category category = Category
+                    .builder()
+                    .name(CATEGORY_DEFAULT_CATEGORY_NAME)
+                    .isDefault(true)
+                    .parentCategoryId(null)
+                    .build();
+            categoryService.create(category);
         }
     }
 }

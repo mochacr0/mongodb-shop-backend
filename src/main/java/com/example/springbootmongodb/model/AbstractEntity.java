@@ -1,6 +1,5 @@
 package com.example.springbootmongodb.model;
 
-import com.example.springbootmongodb.common.data.ToData;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -9,10 +8,11 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
-import static com.example.springbootmongodb.model.ModelConstants.*;
+import static com.example.springbootmongodb.model.ModelConstants.CREATED_AT_FIELD;
+import static com.example.springbootmongodb.model.ModelConstants.UPDATED_AT_FIELD;
 
 @Data
-public abstract class AbstractEntity<T> implements ToData<T> {
+public class AbstractEntity {
     @Id
     protected String id;
     @CreatedDate
