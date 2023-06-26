@@ -4,6 +4,7 @@ import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.config.SecuritySettingsConfiguration;
 import com.example.springbootmongodb.model.FailedLoginAttempt;
 import com.example.springbootmongodb.model.UserCredentials;
+import com.example.springbootmongodb.model.UserEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ public class UserCredentialsServiceImpl implements UserCredentialsService {
     public static final String UNVERIFIED_ACCOUNT_MESSAGE = "Authentication failed: Email address has not yet been verified";
 
     @Override
-    public void validatePassword(User user, String password, String clientIpAddress) {
+    public void validatePassword(UserEntity user, String password, String clientIpAddress) {
         log.info("Performing UserCredentialsService validatePassword");
         UserCredentials userCredentials = user.getUserCredentials();
         if (!userCredentials.isVerified()) {

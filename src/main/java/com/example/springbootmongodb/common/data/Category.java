@@ -12,12 +12,12 @@ import org.springframework.data.annotation.ReadOnlyProperty;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @SuperBuilder
-@EqualsAndHashCode(callSuper = true)
-public class Category extends AbstractData implements ToEntity<CategoryEntity>  {
+public class Category extends AbstractData {
     @Schema(title = "name", description = "Category name", example = "Shirt")
     private String name;
     @Schema(title = "parentCategoryId", description = "Parent category id", example = "64805c5bdb4a3449c81a9bed")
@@ -64,25 +64,5 @@ public class Category extends AbstractData implements ToEntity<CategoryEntity>  
         builder.append(this.isDefault());
         builder.append("]");
         return builder.toString();
-    }
-    @Override
-    public CategoryEntity toEntity() {
-        CategoryEntity entity = new CategoryEntity();
-        entity.setName(this.getName());
-        entity.setParentCategoryId(this.getParentCategoryId());
-        entity.setDefault(this.isDefault());
-        return entity;
-    }
-
-    public static Category fromEntity(CategoryEntity entity) {
-        return builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .isDefault(entity.isDefault())
-                .parentCategoryId(entity.getParentCategoryId())
-                .subCategories(DaoUtils.toListData(entity.getSubCategories(), Category::fromEntity))
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
-                .build();
     }
 }

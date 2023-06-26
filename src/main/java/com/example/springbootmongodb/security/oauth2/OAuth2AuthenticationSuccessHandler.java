@@ -2,9 +2,12 @@ package com.example.springbootmongodb.security.oauth2;
 
 import com.example.springbootmongodb.common.data.RegisterUserRequest;
 import com.example.springbootmongodb.common.data.User;
+import com.example.springbootmongodb.common.data.mapper.UserMapper;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.config.SecuritySettingsConfiguration;
 import com.example.springbootmongodb.config.UserPasswordPolicy;
+import com.example.springbootmongodb.exception.ItemNotFoundException;
+import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.security.JwtToken;
 import com.example.springbootmongodb.security.JwtTokenFactory;
 import com.example.springbootmongodb.service.UserService;
@@ -39,6 +42,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private SecuritySettingsConfiguration securitySettings;
     @Autowired
     private HttpCookieOAuth2AuthorizationRequestRepository authorizationRequestRepository;
+    @Autowired
+    private UserMapper mapper;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -60,8 +65,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private SecurityUser getOrCreateSecurityUserFromOAuth2User(OAuth2User oauth2User, String registrationId, HttpServletRequest request) {
         OAuth2UserInfo oauth2UserInfo = OAuth2UserInfoMapper.getOAuth2UserInfo(oauth2User.getAttributes(), registrationId);
-        User user = userService.findByEmail(oauth2UserInfo.getEmail());
-        if (user == null) {
+        UserEntity user;
+        try {
+            user = userService.findByEmail(oauth2UserInfo.getEmail());
+        }
+        catch (ItemNotFoundException ex) {
             RegisterUserRequest registerUserRequest = new RegisterUserRequest();
             PasswordGenerator passwordGenerator = new PasswordGenerator();
             UserPasswordPolicy passwordPolicy = securitySettings.getPasswordPolicy();
@@ -71,9 +79,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             registerUserRequest.setMatchedPasswords(rawPassword);
             user = userService.register(registerUserRequest, request, false);
         }
-
-        SecurityUser securityUser = new SecurityUser(user);
-        return securityUser;
+        return new SecurityUser(mapper.toUser(user));
     }
     protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
         super.clearAuthenticationAttributes(request);

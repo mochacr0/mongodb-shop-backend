@@ -3,6 +3,7 @@ package com.example.springbootmongodb.service;
 import com.example.springbootmongodb.common.data.Category;
 import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.PageParameter;
+import com.example.springbootmongodb.common.data.mapper.CategoryMapper;
 import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.common.validator.CommonValidator;
 import com.example.springbootmongodb.exception.InvalidDataException;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ import java.util.Optional;
 public class CategoryServiceImpl extends DataBaseService<CategoryEntity> implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CommonValidator commonValidator;
+    private final CategoryMapper mapper;
     @Override
     public MongoRepository<CategoryEntity, String> getRepository() {
         return this.categoryRepository;
@@ -38,40 +41,46 @@ public class CategoryServiceImpl extends DataBaseService<CategoryEntity> impleme
     public static final String NON_EXISTENT_PARENT_CATEGORY_ERROR_MESSAGE = "Cannot refer to a non-existent parent category";
 
     @Override
-    public Category findById(String id) {
+    public CategoryEntity findById(String id) {
         log.info("Performing CategoryService findById");
         if (StringUtils.isEmpty(id)) {
             throw new InvalidDataException(REQUIRED_CATEGORY_ID_ERROR_MESSAGE);
         }
-        return DaoUtils.toData(categoryRepository.findById(id), Category::fromEntity);
+        Optional<CategoryEntity> categoryEntityOpt = categoryRepository.findById(id);
+        if (categoryEntityOpt.isEmpty()) {
+            throw new ItemNotFoundException(String.format("Category with id [%s] is not found", id));
+        }
+        return categoryEntityOpt.get();
     }
 
     @Override
-    public Category findByName(String name) {
+    public CategoryEntity findByName(String name) {
         log.info("Performing CategoryService findByName");
         if (StringUtils.isEmpty(name)) {
             throw new InvalidDataException(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE);
         }
-        return DaoUtils.toData(categoryRepository.findByName(name), Category::fromEntity);
+        Optional<CategoryEntity> categoryEntityOpt = categoryRepository.findByName(name);
+        if (categoryEntityOpt.isEmpty()) {
+            throw new ItemNotFoundException(String.format("Category with name [%s] is not found", name));
+        }
+        return categoryEntityOpt.get();
     }
 
     @Override
     public PageData<Category> findCategories(PageParameter pageParameter) {
         log.info("Performing CategoryService find");
         commonValidator.validatePageParameter(pageParameter);
-//        return DaoUtils.toPageData(categoryRepository.findParentCategories(DaoUtils.toPageable(pageParameter)));
-        return DaoUtils.toPageData(categoryRepository.findParentCategories(DaoUtils.toPageable(pageParameter)), Category::fromEntity);
+        return DaoUtils.toPageData(categoryRepository.findParentCategories(DaoUtils.toPageable(pageParameter)), mapper::fromEntity);
     }
 
     @Override
     @Transactional
-    public Category create(Category category) {
+    public CategoryEntity create(Category category) {
         log.info("Performing CategoryService create");
         if (StringUtils.isEmpty(category.getName())) {
             throw new InvalidDataException(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE);
         }
-        Category nameDuplicatedCategory = this.findByName(category.getName());
-        if (nameDuplicatedCategory != null) {
+        if (existsByName(category.getName())) {
             throw new InvalidDataException(DUPLICATED_CATEGORY_NAME_ERROR_MESSAGE);
         }
         if (category.isDefault()) {
@@ -81,20 +90,21 @@ public class CategoryServiceImpl extends DataBaseService<CategoryEntity> impleme
             }
         }
         if (StringUtils.isNotEmpty(category.getParentCategoryId())) {
-            Category parentCategory = this.findById(category.getParentCategoryId());
-            if (parentCategory == null) {
+            CategoryEntity parentCategory;
+            try {
+                parentCategory = this.findById(category.getParentCategoryId());
+            } catch (ItemNotFoundException ex) {
                 throw new UnprocessableContentException(NON_EXISTENT_PARENT_CATEGORY_ERROR_MESSAGE);
             }
             if (StringUtils.isNotEmpty(parentCategory.getParentCategoryId())) {
                 throw new InvalidDataException(SUBCATEGORY_HIERARCHY_VIOLATION_ERROR_MESSAGE);
             }
         }
-        CategoryEntity newCategory = super.insert(category.toEntity());
-        return DaoUtils.toData(newCategory, Category::fromEntity);
+        return super.insert(mapper.toEntity(category));
     }
 
     @Override
-    public Category save(String id, Category category) {
+    public CategoryEntity save(String id, Category category) {
         log.info("Performing CategoryService create");
         if (StringUtils.isEmpty(category.getName())) {
             throw new InvalidDataException(REQUIRED_CATEGORY_NAME_ERROR_MESSAGE);
@@ -104,8 +114,7 @@ public class CategoryServiceImpl extends DataBaseService<CategoryEntity> impleme
             throw new ItemNotFoundException(String.format("Category with id [%s] is not found", id));
         }
         CategoryEntity existingCategoryEntity = existingCategoryEntityOpt.get();
-        Category nameDuplicatedCategory = this.findByName(category.getName());
-        if (nameDuplicatedCategory != null && !nameDuplicatedCategory.getId().equals(id)) {
+        if (existsByName(category.getName())) {
             throw new InvalidDataException(DUPLICATED_CATEGORY_NAME_ERROR_MESSAGE);
         }
         if (category.isDefault()) {
@@ -117,17 +126,18 @@ public class CategoryServiceImpl extends DataBaseService<CategoryEntity> impleme
         String parentCategoryId = category.getParentCategoryId();
         if (StringUtils.isNotEmpty(parentCategoryId)
                 && !parentCategoryId.equals(existingCategoryEntity.getParentCategoryId())) {
-            Category parentCategory = this.findById(parentCategoryId);
-            if (parentCategory == null) {
+            CategoryEntity parentCategory;
+            try {
+                parentCategory = this.findById(category.getParentCategoryId());
+            } catch (ItemNotFoundException ex) {
                 throw new UnprocessableContentException(NON_EXISTENT_PARENT_CATEGORY_ERROR_MESSAGE);
             }
             if (StringUtils.isNotEmpty(parentCategory.getParentCategoryId())) {
                 throw new InvalidDataException(SUBCATEGORY_HIERARCHY_VIOLATION_ERROR_MESSAGE);
             }
         }
-        existingCategoryEntity.fromData(category);
-        CategoryEntity savedCategory = super.save(existingCategoryEntity);
-        return DaoUtils.toData(savedCategory, Category::fromEntity);
+        mapper.updateFields(existingCategoryEntity, category);
+        return super.save(existingCategoryEntity);
     }
 
     @Override
@@ -136,7 +146,6 @@ public class CategoryServiceImpl extends DataBaseService<CategoryEntity> impleme
         return this.categoryRepository.existsById(id);
     }
 
-
     @Override
     @Transactional
     public void deleteById(String id) {
@@ -144,10 +153,7 @@ public class CategoryServiceImpl extends DataBaseService<CategoryEntity> impleme
         if (StringUtils.isEmpty(id)) {
             throw new InvalidDataException(REQUIRED_CATEGORY_ID_ERROR_MESSAGE);
         }
-        Category existingCategory = this.findById(id);
-        if (existingCategory == null) {
-            throw new ItemNotFoundException(String.format("Category with id [%s] is not found", id));
-        }
+        CategoryEntity existingCategory = this.findById(id);
         if (existingCategory.isDefault()) {
             throw new InvalidDataException(DEFAULT_CATEGORY_CANNOT_BE_REMOVED_ERROR_MESSAGE);
         }
@@ -156,8 +162,18 @@ public class CategoryServiceImpl extends DataBaseService<CategoryEntity> impleme
     }
 
     @Override
-    public Category findDefaultCategory() {
+    public CategoryEntity findDefaultCategory() {
         log.info("Performing CategoryService findDefaultCategory");
-        return DaoUtils.toData(categoryRepository.findDefaultCategory(), Category::fromEntity);
+        CategoryEntity defaultCategory = categoryRepository.findDefaultCategory();
+        if (defaultCategory == null) {
+            throw new ItemNotFoundException("There is no default category at this time");
+        }
+        return defaultCategory;
+    }
+
+    @Override
+    public boolean existsByName(String name) {
+        log.info("Performing CategoryService existsByName");
+        return categoryRepository.existsByName(name);
     }
 }

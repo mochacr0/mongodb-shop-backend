@@ -14,4 +14,5 @@ public interface CategoryRepository extends MongoRepository<CategoryEntity,Strin
     @Query("{'parentCategoryId' : null}")
     Page<CategoryEntity> findParentCategories(@NonNull Pageable pageable);
     Optional<CategoryEntity> findByName(String name);
+    boolean existsByName(String name);
 }

@@ -4,15 +4,13 @@ import com.example.springbootmongodb.model.ToEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class UserAddress extends AbstractData implements ToEntity<UserAddressEntity> {
@@ -59,14 +57,15 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
 
     @Override
     public UserAddressEntity toEntity() {
-        UserAddressEntity entity = new UserAddressEntity();
-        entity.setUserId(this.getUserId());
-        entity.setName(this.getName());
-        entity.setProvince(this.getProvince());
-        entity.setDistrict(this.getDistrict());
-        entity.setWard(this.getWard());
-        entity.setStreetAddress(this.getStreetAddress());
-        return entity;
+        return UserAddressEntity
+                .builder()
+                .userId(this.getUserId())
+                .name(this.getName())
+                .province(this.getProvince())
+                .district(this.getDistrict())
+                .ward(this.getWard())
+                .streetAddress(this.getStreetAddress())
+                .build();
     }
 
     public static UserAddress fromEntity(UserAddressEntity entity) {

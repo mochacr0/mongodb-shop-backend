@@ -6,7 +6,6 @@ public class JwtAccessAuthenticationToken extends AbstractJwtAuthenticationToken
     public JwtAccessAuthenticationToken(String unsafeToken) {
         super(unsafeToken);
     }
-
     public JwtAccessAuthenticationToken(SecurityUser securityUser) {
         super(securityUser);
     }

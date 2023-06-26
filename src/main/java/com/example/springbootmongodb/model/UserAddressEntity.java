@@ -1,9 +1,8 @@
 package com.example.springbootmongodb.model;
 
 import com.example.springbootmongodb.common.data.UserAddress;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
@@ -11,8 +10,10 @@ import org.springframework.data.mongodb.core.mapping.FieldType;
 import static com.example.springbootmongodb.model.ModelConstants.USER_ADDRESS_COLLECTION_NAME;
 
 @Document(value = USER_ADDRESS_COLLECTION_NAME)
-@Data
 @NoArgsConstructor
+@Getter
+@Setter
+@SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class UserAddressEntity extends AbstractEntity {
     @Field(targetType = FieldType.OBJECT_ID)
@@ -60,11 +61,4 @@ public class UserAddressEntity extends AbstractEntity {
 //        return data;
 //    }
 
-    public void fromData(UserAddress data) {
-        this.setName(data.getName());
-        this.setProvince(data.getProvince());
-        this.setDistrict(data.getDistrict());
-        this.setWard(data.getWard());
-        this.setStreetAddress(data.getStreetAddress());
-    }
 }

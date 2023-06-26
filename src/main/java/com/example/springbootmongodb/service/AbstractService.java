@@ -7,6 +7,11 @@ import org.springframework.security.authentication.AuthenticationServiceExceptio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+
 public abstract class AbstractService {
     protected final int DEFAULT_TOKEN_LENGTH = 30;
     protected final String ACTIVATION_URL_PATTERN = "%s/auth/activate?activationToken=%s";
@@ -18,5 +23,15 @@ public abstract class AbstractService {
             throw new AuthenticationServiceException("You aren't authorized to perform this operation!");
         }
         return (SecurityUser)authentication.getPrincipal();
+    }
+
+    public <T> boolean containsDuplicates(List<T> list, Function<T, String> getStringValue) {
+        Set<String> checkSet = new HashSet<>();
+        for (T element : list) {
+            if (!checkSet.add(getStringValue.apply(element))) {
+                return true;
+            }
+        }
+        return false;
     }
 }
