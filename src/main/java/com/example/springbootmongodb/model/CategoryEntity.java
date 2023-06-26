@@ -1,9 +1,8 @@
 package com.example.springbootmongodb.model;
 
 import com.example.springbootmongodb.common.data.Category;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,7 +15,9 @@ import java.util.List;
 import static com.example.springbootmongodb.model.ModelConstants.CATEGORY_COLLECTION_NAME;
 
 @Document(collection = CATEGORY_COLLECTION_NAME)
-@Data
+@SuperBuilder
+@Getter
+@Setter
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class CategoryEntity extends AbstractEntity {
@@ -42,24 +43,5 @@ public class CategoryEntity extends AbstractEntity {
         builder.append(this.isDefault());
         builder.append("]");
         return builder.toString();
-    }
-//    @Override
-//    public Category toData() {
-//        Category data = new Category();
-//        data.setId(this.getId());
-//        data.setName(this.getName());
-//        data.setParentCategoryId(this.getParentCategoryId());
-//        data.setDefault(this.isDefault());
-//        data.setSubCategories(DaoUtils.toListData(this.getSubCategories()));
-//        data.setCreatedAt(this.getCreatedAt());
-//        data.setUpdatedAt(this.getUpdatedAt());
-//        return data;
-//    }
-
-    public void fromData(Category category) {
-        this.setId(this.getId());
-        this.setName(category.getName());
-        this.setDefault(category.isDefault());
-        this.setParentCategoryId(category.getParentCategoryId());
     }
 }

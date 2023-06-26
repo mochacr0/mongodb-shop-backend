@@ -3,7 +3,9 @@ package com.example.springbootmongodb.common.utils;
 import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.PageParameter;
 import com.example.springbootmongodb.common.data.ToData;
+import com.example.springbootmongodb.common.data.UserAddress;
 import com.example.springbootmongodb.model.AbstractEntity;
+import com.example.springbootmongodb.model.UserAddressEntity;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -58,11 +60,12 @@ public class DaoUtils {
         return optionalEntity.map(fromEntity::apply).orElse(null);
     }
 
-    public static <D, E extends AbstractEntity> D toData(E entity, Function<E, D> fromEntity) {
-        return entity == null ? null : fromEntity.apply(entity);
+    public static <D, E extends AbstractEntity> D toData(E entity, Function<E, D> toData) {
+        return entity == null ? null : toData.apply(entity);
     }
 
     public static Pageable toPageable(PageParameter pageParameter) {
         return PageRequest.of(pageParameter.getPage(), pageParameter.getPageSize(), pageParameter.toSort());
     }
+
 }

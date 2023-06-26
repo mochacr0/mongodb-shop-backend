@@ -1,6 +1,8 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.UserAddress;
+import com.example.springbootmongodb.common.data.mapper.UserAddressMapper;
+import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.service.UserAddressService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,20 +24,21 @@ import static com.example.springbootmongodb.controller.ControllerConstants.*;
 @RequiredArgsConstructor
 public class UserAddressController {
     private final UserAddressService userAddressService;
+    private final UserAddressMapper mapper;
 
     @Operation(summary = "Create a new user address")
     @PostMapping(value = USERS_CREATE_ADDRESSES_ROUTE)
     UserAddress createAddress(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
                                                                                     description = "UserAddress object containing the address details")
                               @RequestBody UserAddress address) {
-        return userAddressService.create(address);
+        return mapper.toUserAddress(userAddressService.create(address));
     }
 
     @Operation(summary = "Retrieve all addresses associated with the current user",
                security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @GetMapping(value = USERS_GET_CURRENT_USER_ADDRESSES_ROUTE)
-    List<UserAddress> getAddressByUserId() {
-        return userAddressService.findCurrentUserAddresses();
+    List<UserAddress> getAddressesByUserId() {
+        return mapper.toUserAddressList(userAddressService.findCurrentUserAddresses());
     }
 
 
@@ -43,7 +46,7 @@ public class UserAddressController {
     @GetMapping(value = USERS_GET_ADDRESS_BY_ID_ROUTE)
     UserAddress getAddressById(@Parameter(description = "ID of the address to retrieve", required = true)
                                @PathVariable(name = "addressId") String addressId) {
-        return userAddressService.findById(addressId);
+        return mapper.toUserAddress(userAddressService.findById(addressId));
     }
 
     @Operation(summary = "Update an existing user address by the provided addressId")
@@ -53,7 +56,7 @@ public class UserAddressController {
                               @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
                                                                                     description = "UserAddress object containing the updated address details.")
                               @RequestBody UserAddress address) {
-        return userAddressService.save(addressId, address);
+        return mapper.toUserAddress(userAddressService.save(addressId, address));
     }
 
     @Operation(summary = "Delete an existing user address by the provided addressId")

@@ -11,20 +11,19 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
-public class UserDataValidator extends DataValidator<User>{
-
+public class UserDataValidator extends DataValidator<UserEntity>{
     @Autowired
     private UserRepository userRepository;
 
     @Override
-    protected void validateOnCreateImpl(User data) {
+    protected void validateOnCreateImpl(UserEntity data) {
         if (data.getId() != null) {
             throw new InvalidDataException(String.format("Cannot create user with id [%s]", data.getId()));
         }
     }
 
     @Override
-    protected void validateOnUpdateImpl(User data) {
+    protected void validateOnUpdateImpl(UserEntity data) {
         if (data.getId() == null) {
             throw new InvalidDataException("User ID should be specified");
         }
@@ -35,7 +34,7 @@ public class UserDataValidator extends DataValidator<User>{
     }
 
     @Override
-    protected void validateCommon(User data) {
+    protected void validateCommon(UserEntity data) {
         if (data.getName() != null) {
             Optional<UserEntity> existingUserWithGivenName = userRepository.findByName(data.getName());
             if (existingUserWithGivenName.isPresent() && (!existingUserWithGivenName.get().getId().equals(data.getId()))) {

@@ -42,7 +42,7 @@ public class ModelConstants {
     /**
      * User address constants
      */
-    public static final String USER_ADDRESS_COLLECTION_NAME = "userAddresses";
+    public static final String USER_ADDRESS_COLLECTION_NAME = "addresses";
 
 
     /**
@@ -50,4 +50,12 @@ public class ModelConstants {
      */
     public static final String CATEGORY_COLLECTION_NAME = "categories";
     public static final String CATEGORY_DEFAULT_CATEGORY_NAME = "Uncategorized";
+
+    /**
+     * Product constants
+     */
+    public static final String PRODUCT_COLLECTION_NAME = "products";
+    public static final String PRODUCT_ITEM_COLLECTION_NAME = "items";
+    public static final String PRODUCT_VARIATION_COLLECTION_NAME = "variants";
+    public static final String PRODUCT_VARIATION_OPTION_COLLECTION_NAME = "options";
 }

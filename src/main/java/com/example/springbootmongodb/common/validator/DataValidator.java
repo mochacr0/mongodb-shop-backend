@@ -2,13 +2,14 @@ package com.example.springbootmongodb.common.validator;
 
 import com.example.springbootmongodb.common.data.AbstractData;
 import com.example.springbootmongodb.exception.InvalidDataException;
+import com.example.springbootmongodb.model.AbstractEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
-public abstract class DataValidator<D extends AbstractData> {
+public abstract class DataValidator<E extends AbstractEntity> {
     //separate validateOnCreate and validateOnUpdate
-    public void validateOnCreate(D data) {
+    public void validateOnCreate(E data) {
         if (data == null) {
             throw new InvalidDataException("Data object can't be null");
         }
@@ -18,7 +19,7 @@ public abstract class DataValidator<D extends AbstractData> {
         validateCommon(data);
     }
 
-    public void validateOnUpdate(D data) {
+    public void validateOnUpdate(E data) {
         if (data == null) {
             throw new InvalidDataException("Data object can't be null");
         }
@@ -31,10 +32,10 @@ public abstract class DataValidator<D extends AbstractData> {
         validateCommon(data);
     }
 
-    protected abstract void validateOnCreateImpl(D data);
+    protected abstract void validateOnCreateImpl(E data);
 
-    protected abstract void validateOnUpdateImpl(D data);
+    protected abstract void validateOnUpdateImpl(E data);
 
-    protected abstract void validateCommon(D data);
+    protected abstract void validateCommon(E data);
 
 }

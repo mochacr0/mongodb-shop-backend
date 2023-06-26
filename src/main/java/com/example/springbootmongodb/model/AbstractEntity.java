@@ -1,6 +1,9 @@
 package com.example.springbootmongodb.model;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -11,7 +14,10 @@ import java.time.LocalDateTime;
 import static com.example.springbootmongodb.model.ModelConstants.CREATED_AT_FIELD;
 import static com.example.springbootmongodb.model.ModelConstants.UPDATED_AT_FIELD;
 
-@Data
+@NoArgsConstructor
+@Getter
+@Setter
+@SuperBuilder
 public class AbstractEntity {
     @Id
     protected String id;
