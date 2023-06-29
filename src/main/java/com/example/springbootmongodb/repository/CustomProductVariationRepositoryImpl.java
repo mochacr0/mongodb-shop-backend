@@ -15,8 +15,6 @@ public class CustomProductVariationRepositoryImpl implements CustomProductVariat
     private final MongoTemplate mongoTemplate;
     @Override
     public List<ProductVariationEntity> bulkCreate(List<ProductVariationEntity> requests) {
-        Collection<ProductVariationEntity> createdEntities = mongoTemplate
-                .insertAll(null);
-        return createdEntities.stream().toList();
+        return mongoTemplate.insertAll(requests).stream().collect(Collectors.toList());
     }
 }

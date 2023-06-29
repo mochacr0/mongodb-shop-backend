@@ -1,11 +1,9 @@
 package com.example.springbootmongodb.common.data.mapper;
 
-import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.UserAddress;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.service.UserService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;

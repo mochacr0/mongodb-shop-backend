@@ -27,6 +27,9 @@ public abstract class AbstractService {
 
     public <T> boolean containsDuplicates(List<T> list, Function<T, String> getStringValue) {
         Set<String> checkSet = new HashSet<>();
+        if (list == null || list.isEmpty()) {
+            return false;
+        }
         for (T element : list) {
             if (!checkSet.add(getStringValue.apply(element))) {
                 return true;

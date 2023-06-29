@@ -4,30 +4,19 @@ import com.example.springbootmongodb.model.ProductVariationEntity;
 import com.example.springbootmongodb.model.ToEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
-public class ProductVariationRequest implements ToEntity<ProductVariationEntity>{
+@Getter
+@Setter
+public class ProductVariationRequest {
     private String id;
     private String productId;
     private String name;
-    @JsonIgnore
-    private int index;
-    List<VariationOptionRequest> options;
-
-    @Override
-    public ProductVariationEntity toEntity() {
-        return ProductVariationEntity
-                .builder()
-                .name(this.getName())
-                .productId(this.getProductId())
-                .index(this.getIndex())
-                .build();
-    }
+    List<VariationOptionRequest> options = new ArrayList<>();
 }

@@ -1,20 +1,30 @@
 package com.example.springbootmongodb.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.example.springbootmongodb.model.ModelConstants.PRODUCT_VARIATION_COLLECTION_NAME;
 
 @Document(value = PRODUCT_VARIATION_COLLECTION_NAME)
-@Data
+@NoArgsConstructor
+@Getter
+@Setter
 @SuperBuilder
-@EqualsAndHashCode(callSuper = true)
 public class ProductVariationEntity extends AbstractEntity {
-    private String productId;
     private String name;
     private int index;
+    @Field(name = "productId")
+    @DocumentReference(lazy = true)
+    private ProductEntity product;
+    @ReadOnlyProperty
+    @DocumentReference(lookup = "{'variationId' : ?#{#self._id}}", lazy = true)
+    List<VariationOptionEntity> options = new ArrayList<>();
 }
