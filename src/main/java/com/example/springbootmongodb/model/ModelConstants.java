@@ -56,6 +56,6 @@ public class ModelConstants {
      */
     public static final String PRODUCT_COLLECTION_NAME = "products";
     public static final String PRODUCT_ITEM_COLLECTION_NAME = "items";
-    public static final String PRODUCT_VARIATION_COLLECTION_NAME = "variants";
+    public static final String PRODUCT_VARIATION_COLLECTION_NAME = "variations";
     public static final String PRODUCT_VARIATION_OPTION_COLLECTION_NAME = "options";
 }

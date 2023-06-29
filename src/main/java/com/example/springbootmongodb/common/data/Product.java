@@ -1,39 +1,23 @@
 package com.example.springbootmongodb.common.data;
 
-import com.example.springbootmongodb.model.ProductEntity;
-import com.example.springbootmongodb.model.ToEntity;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-@Data
-@SuperBuilder
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class Product extends AbstractData implements ToEntity<ProductEntity> {
+@Getter
+@Setter
+@SuperBuilder
+public class Product extends AbstractData {
     private String name;
     private String description;
     private long totalSales;
     private float rating;
-
-    @Override
-    public ProductEntity toEntity() {
-        return ProductEntity
-                .builder()
-                .name(this.getName())
-                .description(this.getDescription())
-                .build();
-    }
-
-    public static Product fromEntity(ProductEntity entity) {
-        return builder()
-                .id(entity.getId())
-                .description(entity.getDescription())
-                .rating(entity.getRating())
-                .totalSales(entity.getTotalSales())
-                .build();
-    }
+    private Map<String, ProductItem> itemMap;
+    private List<ProductVariation> variations;
 }
