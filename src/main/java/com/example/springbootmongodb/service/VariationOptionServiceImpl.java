@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.service;
 
+import com.example.springbootmongodb.common.data.BulkUpdateResult;
 import com.example.springbootmongodb.common.data.VariationOptionRequest;
 import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
@@ -7,14 +8,17 @@ import com.example.springbootmongodb.model.ProductVariationEntity;
 import com.example.springbootmongodb.model.VariationOptionEntity;
 import com.example.springbootmongodb.repository.ProductVariationRepository;
 import com.example.springbootmongodb.repository.VariationOptionRepository;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -24,7 +28,7 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
     private final ProductVariationRepository variationRepository;
     private final VariationOptionMapper mapper;
 
-    public static final String DUPLICATED_OPTION_NAME_ERROR_MESSAGE = "Cannot create options with same name";
+    public static final String DUPLICATED_OPTION_NAME_ERROR_MESSAGE = "Cannot save options with same name";
     public static final String NON_EXISTENT_VARIATION_ERROR_MESSAGE = "Cannot refer to a non-existent variation";
     @Override
     public MongoRepository<VariationOptionEntity, String> getRepository() {
@@ -34,20 +38,74 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
     @Transactional
     public List<VariationOptionEntity> bulkCreate(List<VariationOptionRequest> requests, ProductVariationEntity variation) {
         log.info("Performing VariationOptionService bulkCreate");
+        validateRequest(requests, variation);
+        List<VariationOptionEntity> newOptions = new ArrayList<>();
+        for (int i = 0; i < requests.size(); i++) {
+            newOptions.add(createNewOptionData(requests.get(i), variation, i));
+        }
+        return optionRepository.bulkCreate(newOptions);
+    }
+
+    @Override
+    @Transactional
+    public BulkUpdateResult<VariationOptionEntity> bulkUpdate(List<VariationOptionRequest> requests, ProductVariationEntity variation) {
+        log.info("Performing VariationOptionService bulkUpdate");
+        validateRequest(requests, variation);
+        boolean isModified = false;
+        if (requests.size() != variation.getOptions().size()) {
+            isModified = true;
+        }
+        List<VariationOptionEntity> savedOptions = new ArrayList<>();
+        List<VariationOptionEntity> newOptions = new ArrayList<>();
+        for (int i = 0; i < requests.size(); i++) {
+            VariationOptionRequest request = requests.get(i);
+            //TODO: Check to see if a product with this option is currently in the purchase flow. Return error
+            VariationOptionEntity option = findActiveVariation(request, i);
+            if (option != null && option.getName().equals(request.getName()) && option.getIndex() == i) {
+                savedOptions.add(option);
+            }
+            else {
+                isModified = true;
+                newOptions.add(createNewOptionData(request, variation, i));
+            }
+        }
+        savedOptions.addAll(optionRepository.bulkCreate(newOptions));
+        return new BulkUpdateResult<>(savedOptions, isModified);
+    }
+
+    @Override
+    public void bulkDisable(List<VariationOptionEntity> disableOptions) {
+        log.info("Performing VariationOptionService bulkDisable");
+        if (!CollectionUtils.isEmpty(disableOptions)) {
+            optionRepository.bulkDisable(disableOptions);
+        }
+    }
+
+    private void validateRequest(List<VariationOptionRequest> requests, ProductVariationEntity variation) {
         if (containsDuplicates(requests, VariationOptionRequest::getName)) {
             throw new UnprocessableContentException(DUPLICATED_OPTION_NAME_ERROR_MESSAGE);
         }
         if (!variationRepository.existsById(variation.getId())) {
             throw new UnprocessableContentException(NON_EXISTENT_VARIATION_ERROR_MESSAGE);
         }
-        List<VariationOptionEntity> newOptions = new ArrayList<>();
-        for (int i = 0; i < requests.size(); i++) {
-            VariationOptionEntity newOption = mapper.toEntity(requests.get(i));
-            newOption.setVariation(variation);
-            newOption.setIndex(i);
-            newOptions.add(newOption);
+    }
+
+    private VariationOptionEntity createNewOptionData(VariationOptionRequest request, ProductVariationEntity variation, int index) {
+        VariationOptionEntity newOption = mapper.toEntity(request);
+        newOption.setVariation(variation);
+        newOption.setIndex(index);
+        return newOption;
+    }
+
+    private VariationOptionEntity findActiveVariation(VariationOptionRequest request, int index) {
+        if (StringUtils.isNotEmpty(request.getId())) {
+            Optional<VariationOptionEntity> optionOpt = optionRepository.findById(request.getId());
+            if (optionOpt.isEmpty() || optionOpt.get().isDisabled()) {
+                 return null;
+            }
+            return optionOpt.get();
         }
-        return optionRepository.bulkCreate(newOptions);
+        return null;
     }
 
 }

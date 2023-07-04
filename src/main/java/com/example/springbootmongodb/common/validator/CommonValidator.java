@@ -5,6 +5,7 @@ import com.example.springbootmongodb.config.SecuritySettingsConfiguration;
 import com.example.springbootmongodb.exception.IncorrectParameterException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.passay.PasswordData;
 import org.passay.PasswordValidator;
@@ -12,6 +13,8 @@ import org.passay.Rule;
 import org.passay.RuleResult;
 
 import java.util.List;
+
+import static com.example.springbootmongodb.common.data.PageParameter.*;
 
 @RequiredArgsConstructor
 public class CommonValidator {
@@ -46,6 +49,15 @@ public class CommonValidator {
         }
         if (pageParameter.getPageSize() < 0) {
             throw new IncorrectParameterException("Page size should be positive");
+        }
+        if (StringUtils.isEmpty(pageParameter.getSortDirection())) {
+            pageParameter.setSortDirection(DEFAULT_SORT_DIRECTION.name());
+        }
+        if (StringUtils.isEmpty(pageParameter.getSortProperty())) {
+            pageParameter.setSortProperty(DEFAULT_SORT_PROPERTY);
+        }
+        if (StringUtils.isEmpty(pageParameter.getTextSearch())) {
+            pageParameter.setTextSearch(DEFAULT_TEXT_SEARCH);
         }
     }
 }

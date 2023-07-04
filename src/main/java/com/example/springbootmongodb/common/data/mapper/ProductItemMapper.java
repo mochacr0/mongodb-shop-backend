@@ -47,4 +47,10 @@ public class ProductItemMapper {
                 .updatedAt(entity.getUpdatedAt())
                 .build();
     }
+
+    public void updateFields(ProductItemEntity entity, ProductItemRequest request) {
+        entity.setSku(request.getSku());
+        entity.setPrice(request.getPrice());
+    }
+
 }

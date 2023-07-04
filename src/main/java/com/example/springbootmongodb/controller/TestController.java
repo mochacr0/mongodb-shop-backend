@@ -1,5 +1,7 @@
 package com.example.springbootmongodb.controller;
 
+import com.example.springbootmongodb.common.data.VariationOption;
+import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
 import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductItemEntity;
 import com.example.springbootmongodb.model.VariationOptionEntity;
@@ -8,19 +10,27 @@ import com.example.springbootmongodb.repository.ProductRepository;
 import com.example.springbootmongodb.repository.VariationOptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
 @Slf4j
-@RestController
+@RestController()
+@RequestMapping(value = "/test")
 @RequiredArgsConstructor
 public class TestController {
     private final ProductRepository productRepository;
     private final ProductItemRepository itemRepository;
     private final VariationOptionRepository optionRepository;
+    private final MongoTemplate mongoTemplate;
+    private final VariationOptionMapper optionMapper;
 //    @GetMapping(value = "/test")
 //    ProductEntity test() {
 //        ProductEntity product = ProductEntity.builder().name("product").build();
@@ -34,7 +44,7 @@ public class TestController {
 //        return productRepository.findById(product.getId()).get();
 //    }
 
-    @GetMapping(value = "/test2")
+    @GetMapping(value = "/2")
     String test2() {
         ProductEntity product = new ProductEntity();
         product.setName("product");
@@ -49,7 +59,7 @@ public class TestController {
         return null;
     }
 
-    @GetMapping(value = "/test3")
+    @GetMapping(value = "/3")
     ProductItemEntity test3() {
 //        ProductItemEntity item = itemRepository.save(new ProductItemEntity());
 //        VariationOptionEntity option = optionRepository.save(new VariationOptionEntity());
@@ -62,5 +72,15 @@ public class TestController {
 //        itemRepository.delete(retrievedItem);
 //        retrievedOption = optionRepository.findById(savedOption.getId()).get();
         return null;
+    }
+
+    @PostMapping(value = "/4")
+    int test4(@RequestBody List<String> productIds) {
+        return itemRepository.bulkDelete(productIds);
+    }
+
+    @GetMapping(value = "/5")
+    VariationOption test5(@RequestParam String variationId) {
+        return optionMapper.fromEntity(mongoTemplate.findOne(Query.query(where("variationId").in(Collections.singleton(variationId))), VariationOptionEntity.class));
     }
 }

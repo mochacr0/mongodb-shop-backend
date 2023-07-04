@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface CustomProductVariationRepository {
     List<ProductVariationEntity> bulkCreate(List<ProductVariationEntity> requests);
+//    List<ProductVariationEntity> bulkUpdate(List<ProductVariationEntity> requests);
+    void bulkDisable(List<ProductVariationEntity> requests);
 }

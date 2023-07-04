@@ -23,6 +23,9 @@ public class VariationOptionMapper {
     }
 
     public VariationOption fromEntity(VariationOptionEntity entity) {
+        if (entity == null) {
+            return null;
+        }
         return VariationOption
                 .builder()
                 .id(entity.getId())

@@ -72,8 +72,11 @@ public class ControllerConstants {
     /**
      * Product constants
      */
-    public static final String PRODUCT_CREATE_PRODUCT_ROUTE = "/products";
-    public static final String PRODUCT_GET_PRODUCT_BY_ID_ROUTE = PRODUCT_CREATE_PRODUCT_ROUTE + "/{productId}";
+    public static final String PRODUCT_GET_PRODUCTS_ROUTE = "/products";
+    public static final String PRODUCT_CREATE_PRODUCT_ROUTE = PRODUCT_GET_PRODUCTS_ROUTE;
+    public static final String PRODUCT_GET_PRODUCT_BY_ID_ROUTE = PRODUCT_GET_PRODUCTS_ROUTE + "/{productId}";
+    public static final String PRODUCT_UPDATE_PRODUCT_ROUTE = PRODUCT_GET_PRODUCT_BY_ID_ROUTE;
+    public static final String PRODUCT_SEARCH_PRODUCTS_ROUTE = PRODUCT_GET_PRODUCTS_ROUTE + "/search";
 
 
 }
