@@ -1,9 +1,7 @@
 package com.example.springbootmongodb.common.data.mapper;
 
-import com.example.springbootmongodb.common.data.Product;
-import com.example.springbootmongodb.common.data.ProductItem;
-import com.example.springbootmongodb.common.data.ProductRequest;
-import com.example.springbootmongodb.common.data.ProductSimplification;
+import com.example.springbootmongodb.common.data.*;
+import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductItemEntity;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +37,10 @@ public class ProductMapper {
                 .description(entity.getDescription())
                 .rating(entity.getRating())
                 .totalSales(entity.getTotalSales())
+                .minPrice(entity.getMinPrice())
+                .maxPrice(entity.getMaxPrice())
                 .itemMap(itemMap)
+                .variations(DaoUtils.toListData(entity.getVariations(), variationMapper::fromEntity))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -51,5 +52,30 @@ public class ProductMapper {
                 .id(entity.getId())
                 .name(entity.getName())
                 .build();
+    }
+
+    public ProductPaginationResult fromEntityToPaginationResult(ProductEntity entity) {
+        return ProductPaginationResult
+                .builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .totalSales(entity.getTotalSales())
+                .rating(entity.getRating())
+                .minPrice(entity.getMinPrice())
+                .maxPrice(entity.getMaxPrice())
+                .build();
+    }
+
+    public ProductSearchResult fromEntityToSearchResult(ProductEntity entity) {
+        return ProductSearchResult
+                .builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .build();
+    }
+
+    public void updateFields(ProductEntity entity, ProductRequest request) {
+        entity.setName(request.getName());
+        entity.setDescription(request.getDescription());
     }
 }

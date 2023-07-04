@@ -21,10 +21,11 @@ import static com.example.springbootmongodb.model.ModelConstants.PRODUCT_VARIATI
 public class ProductVariationEntity extends AbstractEntity {
     private String name;
     private int index;
+    private boolean isDisabled;
     @Field(name = "productId")
     @DocumentReference(lazy = true)
     private ProductEntity product;
     @ReadOnlyProperty
-    @DocumentReference(lookup = "{'variationId' : ?#{#self._id}}", lazy = true)
+    @DocumentReference(lookup = "{'variationId' : ?#{#self._id}, 'isDisabled': false}", lazy = true)
     List<VariationOptionEntity> options = new ArrayList<>();
 }

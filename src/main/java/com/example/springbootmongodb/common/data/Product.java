@@ -17,6 +17,8 @@ public class Product extends AbstractData {
     private String name;
     private String description;
     private long totalSales;
+    private float minPrice;
+    private float maxPrice;
     private float rating;
     private Map<String, ProductItem> itemMap;
     private List<ProductVariation> variations;
