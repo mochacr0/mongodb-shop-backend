@@ -76,7 +76,7 @@ import java.util.stream.Collectors;
         //disable old variations
         disabledOldVariations(oldVariations, updatedVariations);
         List<ProductItemEntity> savedItems;
-        if (updateVariationsResult.isModified()) {
+        if (updateVariationsResult.getIsModified().get()) {
             itemService.bulkDisableByProductId(existingProduct.getId());
             savedItems = itemService.bulkCreate(request.getItems(), updatedVariations);
         }
