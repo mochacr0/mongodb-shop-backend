@@ -12,6 +12,7 @@ import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -19,6 +20,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @Slf4j
@@ -51,9 +53,9 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
     public BulkUpdateResult<VariationOptionEntity> bulkUpdate(List<VariationOptionRequest> requests, ProductVariationEntity variation) {
         log.info("Performing VariationOptionService bulkUpdate");
         validateRequest(requests, variation);
-        boolean isModified = false;
+        AtomicBoolean isModified = new AtomicBoolean(false);
         if (requests.size() != variation.getOptions().size()) {
-            isModified = true;
+            isModified.set(true);
         }
         List<VariationOptionEntity> savedOptions = new ArrayList<>();
         List<VariationOptionEntity> newOptions = new ArrayList<>();
@@ -65,7 +67,7 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
                 savedOptions.add(option);
             }
             else {
-                isModified = true;
+                isModified.set(true);
                 newOptions.add(createNewOptionData(request, variation, i));
             }
         }
@@ -85,7 +87,7 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
         if (containsDuplicates(requests, VariationOptionRequest::getName)) {
             throw new UnprocessableContentException(DUPLICATED_OPTION_NAME_ERROR_MESSAGE);
         }
-        if (!variationRepository.existsById(variation.getId())) {
+        if (StringUtils.isEmpty(variation.getId())) {
             throw new UnprocessableContentException(NON_EXISTENT_VARIATION_ERROR_MESSAGE);
         }
     }
