@@ -1,7 +1,10 @@
 package com.example.springbootmongodb.security;
 
 import com.example.springbootmongodb.common.data.User;
+import com.example.springbootmongodb.common.data.mapper.UserMapper;
 import com.example.springbootmongodb.common.security.SecurityUser;
+import com.example.springbootmongodb.exception.ItemNotFoundException;
+import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.service.UserCredentialsService;
 import com.example.springbootmongodb.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +25,7 @@ import org.springframework.util.Assert;
 public class RestAuthenticationProvider implements AuthenticationProvider {
     private final UserService userService;
     private final UserCredentialsService userCredentialsService;
-    private final PasswordEncoder passwordEncoder;
+    private final UserMapper mapper;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -30,8 +33,11 @@ public class RestAuthenticationProvider implements AuthenticationProvider {
         String username = authentication.getPrincipal().toString();
         String password = authentication.getCredentials().toString();
         RestAuthenticationDetails details = (RestAuthenticationDetails) authentication.getDetails();
-        User existingUser = userService.findByName(username);
-        if (existingUser == null) {
+        UserEntity existingUser;
+        try {
+            existingUser = userService.findByName(username);
+        }
+        catch (ItemNotFoundException ex) {
             throw new UsernameNotFoundException("User not found: " + username);
         }
         //authenticate with password
@@ -40,7 +46,7 @@ public class RestAuthenticationProvider implements AuthenticationProvider {
         }
         userCredentialsService.validatePassword(existingUser, password, details.getClientIpAddress());
         //password matched
-        SecurityUser securityUser = new SecurityUser(existingUser);
+        SecurityUser securityUser = new SecurityUser(mapper.toUser(existingUser));
         return new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
     }
 

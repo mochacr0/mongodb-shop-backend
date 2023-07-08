@@ -1,6 +1,8 @@
 package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.Category;
+import com.example.springbootmongodb.exception.ItemNotFoundException;
+import com.example.springbootmongodb.model.CategoryEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +17,9 @@ public class DataInitService {
     }
 
     private void createDefaultCategory() {
-        Category defaultCategory = categoryService.findDefaultCategory();
-        if (defaultCategory == null) {
+        try {
+            categoryService.findDefaultCategory();
+        } catch (ItemNotFoundException ex) {
             Category category = Category
                     .builder()
                     .name(CATEGORY_DEFAULT_CATEGORY_NAME)

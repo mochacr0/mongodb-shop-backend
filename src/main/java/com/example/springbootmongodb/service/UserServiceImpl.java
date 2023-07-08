@@ -4,6 +4,7 @@ import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.PageParameter;
 import com.example.springbootmongodb.common.data.RegisterUserRequest;
 import com.example.springbootmongodb.common.data.User;
+import com.example.springbootmongodb.common.data.mapper.UserMapper;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.common.utils.UrlUtils;
@@ -42,8 +43,9 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final SecuritySettingsConfiguration securitySettings;
-    private final DataValidator<User> userDataValidator;
+    private final DataValidator<UserEntity> userDataValidator;
     private final ThreadPoolTaskExecutor taskExecutor;
+    private final UserMapper mapper;
     @Autowired
     @Lazy
     private UserService userDeletionService;
@@ -60,9 +62,8 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
     }
 
     @Override
-    public User save(User user) {
+    public UserEntity save(UserEntity user) {
         log.info("Performing UserService save");
-        userDataValidator.validateOnUpdate(user);
         Optional<UserEntity> existingUserEntityOpt = userRepository.findById(user.getId());
         if (existingUserEntityOpt.isEmpty()) {
             throw new ItemNotFoundException(String.format("User with id [%s] is not found", user.getId()));
@@ -71,56 +72,60 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
         existingUserEntity.setName(user.getName());
         existingUserEntity.setDefaultAddressId(user.getDefaultAddressId());
         existingUserEntity.setUserCredentials(user.getUserCredentials());
-        return DaoUtils.toData(super.save(existingUserEntity), User::fromEntity);
+        userDataValidator.validateOnUpdate(existingUserEntity);
+        return super.save(existingUserEntity);
     }
 
-    public User saveCurrentUser(User user) {
+    public UserEntity saveCurrentUser(User user) {
         log.info("Performing UserService saveCurrentUser");
-        SecurityUser securityUser = getCurrentUser();
-        findById(securityUser.getId());
-        return save(user);
+        getCurrentUser();
+        return save(mapper.toEntity(user));
     }
 
     @Override
-    public User findByName(String name) {
+    public UserEntity findByName(String name) {
         log.info("Performing UserService findByName");
         if (StringUtils.isBlank(name)) {
             throw new InvalidDataException("Username should be specified");
         }
-        return DaoUtils.toData(userRepository.findByName(name), User::fromEntity);
+        Optional<UserEntity> userOpt = userRepository.findByName(name);
+        if (userOpt.isEmpty()) {
+            throw new ItemNotFoundException(String.format("User with name [%s] is not found", name));
+        }
+        return userOpt.get();
     }
 
     @Override
-    public User findById(String userId) {
+    public UserEntity findById(String userId) {
         log.info("Performing UserService findById");
         if (StringUtils.isBlank(userId)) {
             throw new InvalidDataException("User ID should be specified");
         }
-        Optional<UserEntity> userEntityOptional = userRepository.findById(userId);
-        if (userEntityOptional.isEmpty()) {
+        Optional<UserEntity> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
             throw new ItemNotFoundException(String.format("User with id [%s] is not found", userId));
         }
-        return DaoUtils.toData(userEntityOptional, User::fromEntity);
+        return userOpt.get();
     }
 
     @Override
-    public User findByEmail(String email) {
+    public UserEntity findByEmail(String email) {
         log.info("Performing UserService findByEmail");
         if (StringUtils.isBlank(email)) {
             throw new InvalidDataException("User email should be specified");
         }
-        Optional<UserEntity> userEntityOptional = userRepository.findByEmail(email);
-        if (userEntityOptional.isEmpty()) {
+        Optional<UserEntity> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
             throw new ItemNotFoundException(String.format("User with email [%s] is not found", email));
         }
-        return DaoUtils.toData(userEntityOptional, User::fromEntity);
+        return userOpt.get();
     }
 
     @Override
-    public User register(RegisterUserRequest registerRequest, HttpServletRequest request, boolean isMailRequired) {
+    public UserEntity register(RegisterUserRequest registerRequest, HttpServletRequest request, boolean isMailRequired) {
         log.info("Performing UserService registerUser");
         commonValidator.validatePasswords(registerRequest.getPassword(), registerRequest.getConfirmPassword());
-        User user = new User(registerRequest);
+        UserEntity user = mapper.toEntity(registerRequest);
         userDataValidator.validateOnCreate(user);
         UserCredentials userCredentials = new UserCredentials();
         userCredentials.setHashedPassword(passwordEncoder.encode(registerRequest.getPassword()));
@@ -131,7 +136,7 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
             userCredentials.setActivationTokenExpirationMillis(System.currentTimeMillis() + securitySettings.getActivationTokenExpirationMillis());
         }
         user.setUserCredentials(userCredentials);
-        UserEntity savedUserEntity = super.insert(user.toEntity());
+        UserEntity savedUserEntity = super.insert(user);
         if (StringUtils.isNotBlank(savedUserEntity.getId())) {
             UserCredentials savedUserCredentials = savedUserEntity.getUserCredentials();
             if (StringUtils.isNotBlank(savedUserEntity.getUserCredentials().getActivationToken())) {
@@ -139,7 +144,7 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
                 mailService.sendActivationMail(user.getEmail(), activateLink);
             }
         }
-        return DaoUtils.toData(savedUserEntity, User::fromEntity);
+        return savedUserEntity;
     }
 
     @Override
@@ -163,7 +168,12 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
         for (List<User> chunk : chunks) {
             taskExecutor.submit(() -> {
                 for (User user : chunk) {
-                    userDeletionService.deleteById(user.getId());
+                    try {
+                        userDeletionService.deleteById(user.getId());
+                    }
+                    catch (Exception ex) {
+                        log.error(ex.getMessage());
+                    }
                 }
             });
         }
@@ -172,33 +182,33 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
     @Override
     public void activateById(String id) {
         log.info("Performing userService activateByName");
-        User user = this.findById(id);
+        UserEntity user = this.findById(id);
         user.getUserCredentials().setVerified(true);
         this.save(user);
     }
 
     @Override
-    public User findByActivationToken(String activationToken) {
+    public UserEntity findByActivationToken(String activationToken) {
         log.info("Performing UserService findByActivationToken");
         UserEntity userEntity = userRepository.findByActivationToken(activationToken);
         if (userEntity == null) {
             throw new ItemNotFoundException(String.format("User credentials with activation token [%s] is not found", activationToken));
         }
-        return DaoUtils.toData(userEntity, User::fromEntity);
+        return userEntity;
     }
 
     @Override
-    public User findByPasswordResetToken(String passwordResetToken) {
+    public UserEntity findByPasswordResetToken(String passwordResetToken) {
         log.info("Performing UserService findByPasswordResetToken");
         UserEntity userEntity = userRepository.findByPasswordResetToken(passwordResetToken);
         if (userEntity == null) {
             throw new ItemNotFoundException(String.format("User credentials with password reset token [%s] is not found", passwordResetToken));
         }
-        return DaoUtils.toData(userEntity, User::fromEntity);
+        return userEntity;
     }
 
     @Override
-    public User findCurrentUser() {
+    public UserEntity findCurrentUser() {
         log.info("Performing UserService findCurrentUser");
         SecurityUser securityUser = getCurrentUser();
         return this.findById(securityUser.getId());

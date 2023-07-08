@@ -11,6 +11,7 @@ import com.example.springbootmongodb.exception.IncorrectParameterException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserCredentials;
+import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.security.JwtToken;
 import com.example.springbootmongodb.security.JwtTokenFactory;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,10 +40,7 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
         if (StringUtils.isEmpty(activationToken)) {
             throw new IncorrectParameterException("Activation token cannot be empty");
         }
-        User user = userService.findByActivationToken(activationToken);
-        if (user == null) {
-            throw new ItemNotFoundException(String.format("Unable to find user with given activation token [%s]", activationToken));
-        }
+        UserEntity user = userService.findByActivationToken(activationToken);
         UserCredentials userCredentials = user.getUserCredentials();
         //expired activation token
         if (userCredentials.getActivationTokenExpirationMillis() <= System.currentTimeMillis()) {
@@ -64,7 +62,7 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
         if (StringUtils.isEmpty(email)) {
             throw new IncorrectParameterException("Email cannot be empty");
         }
-        User user = userService.findByEmail(email);
+        UserEntity user = userService.findByEmail(email);
         if (user == null) {
             throw new ItemNotFoundException(String.format("Unable to find user with given email [%s]", email));
         }
@@ -88,8 +86,10 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
         }
         commonValidator.validatePasswords(request.getNewPassword(), request.getConfirmPassword());
         SecurityUser currentUser = this.getCurrentUser();
-        User user = userService.findById(currentUser.getId());
-        if (user == null) {
+        UserEntity user;
+        try {
+            user = userService.findById(currentUser.getId());
+        } catch (ItemNotFoundException ex) {
             throw new ItemNotFoundException("Unable to find current user");
         }
         UserCredentials userCredentials = user.getUserCredentials();
@@ -111,7 +111,7 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
         if (StringUtils.isBlank(email)) {
             throw new InvalidDataException("Email cannot be empty");
         }
-        User user = userService.findByEmail(email);
+        UserEntity user = userService.findByEmail(email);
         if (user == null) {
             throw new ItemNotFoundException(String.format("Unable to find user with given email [%s]", email));
         }
@@ -134,7 +134,7 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
             throw new InvalidDataException("Password reset token cannot be empty");
         }
         commonValidator.validatePasswords(request.getNewPassword(), request.getConfirmPassword());
-        User user = userService.findByPasswordResetToken(request.getPasswordResetToken());
+        UserEntity user = userService.findByPasswordResetToken(request.getPasswordResetToken());
         UserCredentials userCredentials = user.getUserCredentials();
         if (userCredentials.getPasswordResetTokenExpirationMillis() < System.currentTimeMillis()) {
             throw new InvalidDataException("Invalid password reset token");
