@@ -3,6 +3,7 @@ package com.example.springbootmongodb.service;
 import com.example.springbootmongodb.common.data.BulkUpdateResult;
 import com.example.springbootmongodb.common.data.VariationOptionRequest;
 import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
+import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.ProductVariationEntity;
 import com.example.springbootmongodb.model.VariationOptionEntity;
@@ -32,6 +33,8 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
 
     public static final String DUPLICATED_OPTION_NAME_ERROR_MESSAGE = "Cannot save options with same name";
     public static final String NON_EXISTENT_VARIATION_ERROR_MESSAGE = "Cannot refer to a non-existent variation";
+    public static final String REQUIRED_MINIMUM_OPTIONS_ERROR_MESSAGE = "Product variation should have at least 1 option";
+
     @Override
     public MongoRepository<VariationOptionEntity, String> getRepository() {
         return null;
@@ -83,9 +86,20 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
         }
     }
 
+    @Override
+    public void deleteByVariationId(String variationId) {
+        log.info("Performing VariationOptionService deleteByVariationId");
+        if (StringUtils.isNotEmpty(variationId)) {
+            optionRepository.deleteByVariationId(variationId);
+        }
+    }
+
     private void validateRequest(List<VariationOptionRequest> requests, ProductVariationEntity variation) {
+        if (CollectionUtils.isEmpty(requests)) {
+            throw new InvalidDataException(REQUIRED_MINIMUM_OPTIONS_ERROR_MESSAGE);
+        }
         if (containsDuplicates(requests, VariationOptionRequest::getName)) {
-            throw new UnprocessableContentException(DUPLICATED_OPTION_NAME_ERROR_MESSAGE);
+            throw new InvalidDataException(DUPLICATED_OPTION_NAME_ERROR_MESSAGE);
         }
         if (StringUtils.isEmpty(variation.getId())) {
             throw new UnprocessableContentException(NON_EXISTENT_VARIATION_ERROR_MESSAGE);

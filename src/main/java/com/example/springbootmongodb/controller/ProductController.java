@@ -20,9 +20,14 @@ public class ProductController {
     private final ProductService productService;
     private final ProductMapper mapper;
     @PostMapping(value = PRODUCT_CREATE_PRODUCT_ROUTE)
-    Product create(@RequestBody ProductRequest request) {
-        return mapper.fromEntity(productService.create(request));
+    Product createAsync(@RequestBody ProductRequest request) {
+        return mapper.fromEntity(productService.createAsync(request));
     }
+
+//    @PostMapping(value = PRODUCT_CREATE_PRODUCT_ROUTE)
+//    Product create(@RequestBody ProductRequest request) {
+//        return mapper.fromEntity(productService.create(request));
+//    }
 
     @GetMapping(value = PRODUCT_GET_PRODUCT_BY_ID_ROUTE)
     Product getProductById (@PathVariable(name = "productId") String productId) {
@@ -32,7 +37,7 @@ public class ProductController {
     @PutMapping(value = PRODUCT_UPDATE_PRODUCT_ROUTE)
     Product update (@PathVariable(name = "productId") String productId,
                     @RequestBody ProductRequest request) {
-        return mapper.fromEntity(productService.update(productId, request));
+        return mapper.fromEntity(productService.updateAsync(productId, request));
     }
 
     @Operation(summary = "Return a page of available products")
@@ -71,5 +76,10 @@ public class ProductController {
     List<ProductSearchResult> searchProducts(@RequestParam(required = false) String textSearch,
                                  @RequestParam(required = false) Integer limit) {
         return DaoUtils.toListData(productService.searchProducts(textSearch, limit), mapper::fromEntityToSearchResult);
+    }
+
+    @DeleteMapping(value = PRODUCT_DELETE_PRODUCT_BY_ID_ROUTE)
+    void deleteProductById(@PathVariable(name = "productId") String productId) {
+        productService.deleteById(productId);
     }
 }

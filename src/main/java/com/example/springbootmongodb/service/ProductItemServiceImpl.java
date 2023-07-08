@@ -11,6 +11,7 @@ import com.example.springbootmongodb.model.ProductVariationEntity;
 import com.example.springbootmongodb.model.VariationOptionEntity;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import io.jsonwebtoken.lang.Collections;
+import io.micrometer.common.util.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,9 @@ import java.util.Map;
 public class ProductItemServiceImpl implements ProductItemService {
     private final ProductItemRepository itemRepository;
     private final ProductItemMapper mapper;
+    public static final String PRODUCT_MISSING_ITEMS_ERROR_MESSAGE = "Product is missing some items";
+    public static final String NON_POSITIVE_SKU_ERROR_MESSAGE = "Product sku must be equal or greater than 0";
+    public static final String MINIMUM_PRICE_VIOLATION_ERROR_MESSAGE = "Product price must be equal or greater than 0";
     @Autowired
     @Lazy
     private ProductService productService;
@@ -60,7 +64,7 @@ public class ProductItemServiceImpl implements ProductItemService {
         validateRequest(requests, variations);
         ProductEntity product = variations.get(0).getProduct();
         if (requests.size() != product.getItems().size()) {
-            throw new InvalidDataException("Product is missing some items");
+            throw new InvalidDataException(PRODUCT_MISSING_ITEMS_ERROR_MESSAGE);
         }
         Map<String, ProductItemRequest> requestMap = new HashMap<>();
         for (ProductItemRequest request : requests) {
@@ -70,7 +74,7 @@ public class ProductItemServiceImpl implements ProductItemService {
         for (ProductItemEntity updateItem : product.getItems()) {
             ProductItemRequest updateRequest = requestMap.get(updateItem.getId());
             if (updateRequest == null) {
-                throw new InvalidDataException("Product is missing some items");
+                throw new InvalidDataException(PRODUCT_MISSING_ITEMS_ERROR_MESSAGE);
             }
             mapper.updateFields(updateItem, updateRequest);
         }
@@ -82,6 +86,14 @@ public class ProductItemServiceImpl implements ProductItemService {
         log.info("Performing ProductItemService bulKDisableByProductId");
         productService.findById(productId);
         itemRepository.bulkDisableByProductId(productId);
+    }
+
+    @Override
+    public void deleteByProductId(String productId) {
+        log.info("Performing ProductItemService bulKDisableByProductId");
+        if (StringUtils.isNotEmpty(productId)) {
+            itemRepository.deleteByProductId(productId);
+        }
     }
 
     private void validateRequest(List<ProductItemRequest> requests, List<ProductVariationEntity> variations) {
@@ -96,16 +108,16 @@ public class ProductItemServiceImpl implements ProductItemService {
             totalItems *= variations.get(i).getOptions().size();
         }
         if (requests.size() != totalItems) {
-            throw new InvalidDataException("Product is missing some items");
+            throw new InvalidDataException(PRODUCT_MISSING_ITEMS_ERROR_MESSAGE);
         }
     }
 
     private void validateItemRequest(ProductItemRequest request) {
         if (request.getSku() < 0) {
-            throw new InvalidDataException("Product sku must be equal or greater than 0");
+            throw new InvalidDataException(NON_POSITIVE_SKU_ERROR_MESSAGE);
         }
-        if (request.getPrice() < 0) {
-            throw new InvalidDataException("Product sku must be equal or greater than 0");
+        if (request.getPrice() <= 0) {
+            throw new InvalidDataException(MINIMUM_PRICE_VIOLATION_ERROR_MESSAGE);
         }
     }
 }

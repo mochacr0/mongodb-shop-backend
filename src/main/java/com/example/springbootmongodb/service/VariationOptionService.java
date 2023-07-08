@@ -11,4 +11,5 @@ public interface VariationOptionService {
     List<VariationOptionEntity> bulkCreate(List<VariationOptionRequest> requests, ProductVariationEntity variation);
     BulkUpdateResult<VariationOptionEntity> bulkUpdate(List<VariationOptionRequest> requests, ProductVariationEntity variation);
     void bulkDisable(List<VariationOptionEntity> disableOptions);
+    void deleteByVariationId(String variationId);
 }

@@ -3,7 +3,6 @@ package com.example.springbootmongodb.service;
 import com.example.springbootmongodb.common.data.*;
 import com.example.springbootmongodb.common.data.mapper.ProductMapper;
 import com.example.springbootmongodb.common.validator.CommonValidator;
-import com.example.springbootmongodb.exception.IncorrectParameterException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.ProductEntity;
@@ -14,14 +13,19 @@ import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import io.jsonwebtoken.lang.Collections;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.query.Criteria;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +37,7 @@ import java.util.stream.Collectors;
     private final ProductMapper mapper;
     private final ProductItemService itemService;
     private final CommonValidator commonValidator;
+    private final ThreadPoolTaskExecutor taskExecutor;
     public static final String DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE = "There is already a product with that name";
     @Override
     public MongoRepository<ProductEntity, String> getRepository() {
@@ -47,9 +52,6 @@ import java.util.stream.Collectors;
           throw new InvalidDataException(DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE);
       }
       ProductEntity createdProduct = super.insert(mapper.toEntity(request));
-      if (Collections.isEmpty(request.getVariations())) {
-          return createdProduct;
-      }
       List<ProductVariationEntity> createdVariations = variationService.bulkCreate(request.getVariations(), createdProduct);
       List<ProductItemEntity> createdItems = itemService.bulkCreate(request.getItems(), createdVariations);
       createdProduct.setVariations(createdVariations);
@@ -60,8 +62,25 @@ import java.util.stream.Collectors;
 
     @Override
     @Transactional
-    public ProductEntity update(String id, ProductRequest request) {
-        log.info("Performing ProductService update");
+    public ProductEntity createAsync(ProductRequest request) {
+        log.info("Performing ProductService create");
+        //TODO: validate non-existent category id
+        if (existsByName(request.getName())) {
+            throw new InvalidDataException(DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE);
+        }
+        ProductEntity createdProduct = super.insert(mapper.toEntity(request));
+        List<ProductVariationEntity> createdVariations = variationService.bulkCreateAsync(request.getVariations(), createdProduct);
+        List<ProductItemEntity> createdItems = itemService.bulkCreate(request.getItems(), createdVariations);
+        createdProduct.setVariations(createdVariations);
+        createdProduct.setItems(createdItems);
+        updatePriceRange(createdProduct);
+        return super.save(createdProduct);
+    }
+
+    @Override
+    @Transactional
+    public ProductEntity updateAsync(String id, ProductRequest request) {
+        log.info("Performing ProductService updateAsync");
         ProductEntity existingProduct = findById(id);
         if (!existingProduct.getName().equals(request.getName())) {
             Optional<ProductEntity> nameDuplicatedProductOpt = productRepository.findByName(request.getName());
@@ -71,7 +90,7 @@ import java.util.stream.Collectors;
         }
         mapper.updateFields(existingProduct, request);
         List<ProductVariationEntity> oldVariations = existingProduct.getVariations();
-        BulkUpdateResult<ProductVariationEntity> updateVariationsResult = variationService.bulkUpdate(request.getVariations(), existingProduct);
+        BulkUpdateResult<ProductVariationEntity> updateVariationsResult = variationService.bulkUpdateAsync(request.getVariations(), existingProduct);
         List<ProductVariationEntity> updatedVariations = updateVariationsResult.getData();
         //disable old variations
         disabledOldVariations(oldVariations, updatedVariations);
@@ -133,6 +152,27 @@ import java.util.stream.Collectors;
     public List<ProductEntity> searchProducts(String textSearch, Integer limit) {
         log.info("Performing ProductService searchProducts");
         return productRepository.searchProducts(textSearch, limit);
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(String id) {
+        log.info("Performing ProductService deleteById");
+        ProductEntity product = findById(id);
+        List<CompletableFuture<Void>> deleteVariationsFuture = null;
+        if (CollectionUtils.isNotEmpty(product.getVariations())) {
+            deleteVariationsFuture = product.getVariations().stream().map(variation -> {
+                CompletableFuture<Void> bulkCreateFuture = CompletableFuture.supplyAsync(() -> {
+                    variationService.deleteById(variation.getId());
+                    return null;
+                }, taskExecutor);
+                return bulkCreateFuture;
+            }).collect(Collectors.toList());
+        }
+        CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(deleteVariationsFuture.toArray(new CompletableFuture[deleteVariationsFuture.size()]));
+        combinedFuture.join();
+        itemService.deleteByProductId(product.getId());
+        productRepository.deleteById(product.getId());
     }
 
     private void disabledOldVariations(List<ProductVariationEntity> oldVariations, List<ProductVariationEntity> updatedVariations) {
