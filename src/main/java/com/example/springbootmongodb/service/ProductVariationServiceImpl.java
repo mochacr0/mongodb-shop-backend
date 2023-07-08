@@ -2,8 +2,10 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.BulkUpdateResult;
 import com.example.springbootmongodb.common.data.ProductVariationRequest;
+import com.example.springbootmongodb.common.data.VariationOptionRequest;
 import com.example.springbootmongodb.common.data.mapper.ProductVariationMapper;
 import com.example.springbootmongodb.exception.InvalidDataException;
+import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductVariationEntity;
@@ -15,6 +17,7 @@ import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,9 +35,10 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
     private final ProductVariationMapper variationMapper;
     private final ProductRepository productRepository;
     private final VariationOptionService optionService;
-    private final ThreadPoolTaskScheduler taskExecutor;
+    private final ThreadPoolTaskExecutor taskExecutor;
     public static final String DUPLICATED_VARIANT_NAME_ERROR_MESSAGE = "Cannot save variations with same name";
     public static final String NON_EXISTENT_PRODUCT_ERROR_MESSAGE = "Cannot refer to a non-existent product";
+    public static final String REQUIRED_MINIMUM_VARIATIONS_ERROR_MESSAGE = "Product should have at least 1 variation";
 
     @Override
     public MongoRepository<ProductVariationEntity, String> getRepository() {
@@ -90,21 +94,59 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
 
     @Override
     @Transactional
-    public BulkUpdateResult<ProductVariationEntity> bulkUpdate(List<ProductVariationRequest> requests, ProductEntity product) {
+    public List<ProductVariationEntity> bulkCreateAsync(List<ProductVariationRequest> requests, ProductEntity product) {
+        log.info("Performing ProductVariationService bulkCreateAsync");
+        validateRequest(requests, product);
+        List<ProductVariationEntity> createdVariations = new ArrayList<>();
+        List<CompletableFuture<ProductVariationEntity>> bulkCreateFutures = new ArrayList<>();
+        for (int i = 0; i < requests.size(); i++) {
+            ProductVariationEntity newVariation = createNewVariationData(requests.get(i), product, i);
+            //create new single variation parallel
+            bulkCreateFutures.add(createVariationAsync(requests.get(i), newVariation, product));
+        }
+        CompletableFuture<Void> combinedFutures = CompletableFuture.allOf(bulkCreateFutures.toArray(new CompletableFuture[bulkCreateFutures.size()]));
+        combinedFutures.join();
+        createdVariations.addAll(bulkCreateFutures.stream().map(CompletableFuture::join).collect(Collectors.toList()));
+        createdVariations.sort(new ProductVariationComparator());
+        return createdVariations;
+    }
+
+    @Transactional
+    public CompletableFuture<ProductVariationEntity> createVariationAsync(ProductVariationRequest request, ProductVariationEntity variation, ProductEntity product) {
+        return CompletableFuture.supplyAsync(() -> {
+            //TODO: upload images
+            ProductVariationEntity createdVariation = super.insert(variation);
+            List<VariationOptionEntity> createdOptions = optionService.bulkCreate(request.getOptions(), createdVariation);
+            createdOptions.sort(new VariationOptionComparator());
+            createdVariation.getOptions().addAll(createdOptions);
+            return createdVariation;
+        }, taskExecutor);
+    }
+
+    @Override
+    @Transactional
+    public BulkUpdateResult<ProductVariationEntity> bulkUpdateAsync(List<ProductVariationRequest> requests, ProductEntity product) {
         log.info("Performing ProductVariationService bulkUpdate");
-        AtomicBoolean isModified = new AtomicBoolean(false);
         validateRequest(requests, product);
         List<ProductVariationEntity> savedVariations = new ArrayList<>();
         List<ProductVariationEntity> newVariations = new ArrayList<>();
-        if (requests.size() != product.getVariations().size()) {
-            isModified.set(true);
-        }
-        List<CompletableFuture<Void>> bulkOperationFutures = new ArrayList<>();
+        AtomicBoolean isModified = new AtomicBoolean(requests.size() != product.getVariations().size());
+        List<CompletableFuture<ProductVariationEntity>> bulkOperationFutures = new ArrayList<>();
         for (int i = 0; i < requests.size(); i++) {
             ProductVariationRequest request = requests.get(i);
             ProductVariationEntity variation = findActiveVariation(request);
             if (variation != null && variation.getName().equals(request.getName()) && variation.getIndex() == i) {
-                CompletableFuture<Void> bulkUpdateFuture = performVariationUpdate(requests.get(i), variation, isModified);
+//                CompletableFuture<Void> bulkUpdateFuture = CompletableFuture.supplyAsync(() -> {
+//                    BulkUpdateResult<VariationOptionEntity> optionsUpdateResult = optionService.bulkUpdate(request.getOptions(), variation);
+//                    List<VariationOptionEntity> savedOptions = optionsUpdateResult.getData();
+//                    disabledOldOptions(variation.getOptions(), savedOptions);
+//                    savedOptions.sort(new VariationOptionComparator());
+//                    variation.setOptions(savedOptions);
+//                    savedVariations.add(variation);
+//                    isModified.set(isModified.get() || optionsUpdateResult.getIsModified().get());
+//                    return null;
+//                }, taskExecutor);
+                CompletableFuture<ProductVariationEntity> bulkUpdateFuture = performBulkUpdateOptions(request.getOptions(), variation, isModified);
                 bulkOperationFutures.add(bulkUpdateFuture);
             }
             else {
@@ -114,11 +156,12 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
         }
         List<ProductVariationEntity> createdVariations = variationRepository.bulkCreate(newVariations);
         for (ProductVariationEntity createdVariation : createdVariations) {
-            CompletableFuture<Void> bulkCreateFuture = performVariationCreation(requests, createdVariation, savedVariations);
+            CompletableFuture<ProductVariationEntity> bulkCreateFuture  = performBulkCreateOptions(requests.get(createdVariation.getIndex()).getOptions(), createdVariation);
             bulkOperationFutures.add(bulkCreateFuture);
         }
         CompletableFuture<Void> combinedFutures = CompletableFuture.allOf(bulkOperationFutures.toArray(new CompletableFuture[bulkOperationFutures.size()]));
         combinedFutures.join();
+        savedVariations.addAll(bulkOperationFutures.stream().map(CompletableFuture::join).collect(Collectors.toList()));
         savedVariations.sort(new ProductVariationComparator());
         return new BulkUpdateResult<>(savedVariations, isModified);
     }
@@ -128,13 +171,43 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
         log.info("Performing ProductVariationService bulkDisable");
         if (!CollectionUtils.isEmpty(disableVariations)) {
             variationRepository.bulkDisable(disableVariations);
-
         }
+    }
+
+    @Override
+    public void deleteByProductId(String productId) {
+        log.info("Performing ProductVariationService deleteByProductId");
+        if (StringUtils.isEmpty(productId)) {
+            throw new InvalidDataException("Product Id should be specified");
+        }
+        variationRepository.deleteByProductId(productId);
+    }
+
+    @Override
+    public ProductVariationEntity findById(String id) {
+        log.info("Performing ProductVariationService findById");
+        if (StringUtils.isEmpty(id)) {
+            throw new InvalidDataException("Proudct variation Id should be specified");
+        }
+        Optional<ProductVariationEntity> variationOpt = variationRepository.findById(id);
+        if (variationOpt.isEmpty()) {
+            throw new ItemNotFoundException(String.format("Product variation with id [%s] is not found", id));
+        }
+        return variationOpt.get();
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(String id) {
+        log.info("Performing ProductVariationService deleteByiD");
+        ProductVariationEntity variation = findById(id);
+        optionService.deleteByVariationId(variation.getId());
+        variationRepository.deleteById(id);
     }
 
     private void validateRequest(List<ProductVariationRequest> requests, ProductEntity product) {
         if (CollectionUtils.isEmpty(requests)) {
-            throw new InvalidDataException("Product should have at least 1 variation");
+            throw new InvalidDataException(REQUIRED_MINIMUM_VARIATIONS_ERROR_MESSAGE);
         }
         if (containsDuplicates(requests, ProductVariationRequest::getName)) {
             throw new InvalidDataException(DUPLICATED_VARIANT_NAME_ERROR_MESSAGE);
@@ -171,27 +244,26 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
         }
     }
 
-    private CompletableFuture<Void> performVariationUpdate(ProductVariationRequest request, ProductVariationEntity variation, AtomicBoolean isModified) {
+    private CompletableFuture<ProductVariationEntity> performBulkUpdateOptions(List<VariationOptionRequest> requests, ProductVariationEntity variation, AtomicBoolean isModified) {
         return CompletableFuture.supplyAsync(() -> {
-            BulkUpdateResult<VariationOptionEntity> optionsUpdateResult = optionService.bulkUpdate(request.getOptions(), variation);
+            BulkUpdateResult<VariationOptionEntity> optionsUpdateResult = optionService.bulkUpdate(requests, variation);
             List<VariationOptionEntity> savedOptions = optionsUpdateResult.getData();
             disabledOldOptions(variation.getOptions(), savedOptions);
             savedOptions.sort(new VariationOptionComparator());
             variation.setOptions(savedOptions);
             isModified.set(isModified.get() || optionsUpdateResult.getIsModified().get());
-            return null;
+            return variation;
         }, taskExecutor);
     }
 
-    private CompletableFuture<Void> performVariationCreation(List<ProductVariationRequest> requests, ProductVariationEntity createdVariation, List<ProductVariationEntity> savedVariations) {
-        int index = createdVariation.getIndex();
+    private CompletableFuture<ProductVariationEntity> performBulkCreateOptions(List<VariationOptionRequest> requests, ProductVariationEntity createdVariation) {
         return CompletableFuture.supplyAsync(() -> {
-            List<VariationOptionEntity> options = optionService.bulkCreate(requests.get(index).getOptions(), createdVariation);
+            List<VariationOptionEntity> options = optionService.bulkCreate(requests, createdVariation);
             options.sort(new VariationOptionComparator());
             createdVariation.getOptions().addAll(options);
-            savedVariations.add(createdVariation);
-            return null;
+            return createdVariation;
         }, taskExecutor);
+
     }
 
     static class ProductVariationComparator implements Comparator<ProductVariationEntity> {

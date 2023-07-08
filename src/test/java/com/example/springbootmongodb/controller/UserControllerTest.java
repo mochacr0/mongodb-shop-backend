@@ -87,7 +87,7 @@ class UserControllerTest extends AbstractControllerTest {
                 if (data.hasNext()) {
                     currentPage++;
                 }
-            } while (data.hasNext());
+            } while (data.hasNext() & savedUsers.size() < totalUsers);
             savedUsers = savedUsers.subList(0, totalUsers);
             for (User savedUser : savedUsers) {
                 deleteUser(savedUser.getId());

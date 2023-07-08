@@ -63,6 +63,8 @@ public class ProductMapper {
                 .rating(entity.getRating())
                 .minPrice(entity.getMinPrice())
                 .maxPrice(entity.getMaxPrice())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 

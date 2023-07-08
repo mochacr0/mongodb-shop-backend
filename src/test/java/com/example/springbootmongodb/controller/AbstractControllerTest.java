@@ -92,7 +92,7 @@ public abstract class AbstractControllerTest {
     }
 
     public <T, V> T performPost(String urlTemplate, Class<T> responseClass, V content, Object... urlVariables) throws Exception {
-        return readResponse(performPost(urlTemplate, content, urlVariables), responseClass);
+        return readResponse(performPost(urlTemplate, content, urlVariables).andExpect(status().isOk()), responseClass);
     }
 
     public <V> ResultActions performPost(String urlTemplate, V content, Object...urlVariables) throws Exception {
@@ -111,7 +111,7 @@ public abstract class AbstractControllerTest {
     }
 
     public <T> T performPostWithEmptyBody(String urlTemplate, Class<T> responseClass, Object... urlVariables) throws Exception {
-        return readResponse(performPostWithEmptyBody(urlTemplate, urlVariables), responseClass);
+        return readResponse(performPostWithEmptyBody(urlTemplate, urlVariables).andExpect(status().isOk()), responseClass);
     }
 
     public <V> ResultActions performPostWithEmptyBody(String urlTemplate, Object...urlVariables) throws Exception {
@@ -121,7 +121,7 @@ public abstract class AbstractControllerTest {
     }
 
     public <T, V> T performPut(String urlTemplate, Class<T> responseClass, V content, Object... urlVariables) throws Exception {
-        return readResponse(performPut(urlTemplate, content, urlVariables), responseClass);
+        return readResponse(performPut(urlTemplate, content, urlVariables).andExpect(status().isOk()), responseClass);
     }
 
     public <V> ResultActions performPut(String urlTemplate, V content, Object...urlVariables) throws Exception {
@@ -162,6 +162,10 @@ public abstract class AbstractControllerTest {
         JwtTokenPair jwtTokenPair = readResponse(result, JwtTokenPair.class);
         this.accessToken = jwtTokenPair.getAccessToken();
         this.refreshToken = jwtTokenPair.getRefreshToken();
+    }
+
+    void logout() {
+        resetJwtTokenPair();
     }
 
     public void resetJwtTokenPair() {

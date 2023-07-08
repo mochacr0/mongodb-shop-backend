@@ -29,7 +29,7 @@ public class ProductItemMapper {
 
     public ProductItem fromEntity(ProductItemEntity entity) {
         String variationDescription = String
-                .join(", ",entity
+                .join(",",entity
                         .getOptions()
                         .stream()
                         .map(option -> String.format("%s:%s",
