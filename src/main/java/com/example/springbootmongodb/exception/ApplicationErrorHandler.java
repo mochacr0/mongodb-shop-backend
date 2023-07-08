@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
+
 @RestControllerAdvice
 @Slf4j
 @RequiredArgsConstructor
@@ -48,7 +50,11 @@ public class ApplicationErrorHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     public void handle(Exception exception, HttpServletResponse response) throws IOException {
         log.error("Error: ", exception);
+        //TODO: find a better solution to get the exact caused exception.
         if (!response.isCommitted()) {
+            if (exception.getCause() != null) {
+                exception = (Exception)exception.getCause();
+            }
             ApplicationErrorResponse exceptionResponse = new ApplicationErrorResponse(exceptionToStatus(exception), exception.getMessage());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setStatus(exceptionResponse.getStatus());

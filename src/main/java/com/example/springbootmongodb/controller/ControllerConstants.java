@@ -69,4 +69,14 @@ public class ControllerConstants {
     public static final String CATEGORY_DELETE_CATEGORY_BY_ID_ROUTE = CATEGORY_GET_CATEGORY_BY_ID_ROUTE;
     public static final String CATEGORY_GET_DEFAULT_CATEGORY_ROUTE = CATEGORY_ROUTE + "/default";
 
+    /**
+     * Product constants
+     */
+    public static final String PRODUCT_GET_PRODUCTS_ROUTE = "/products";
+    public static final String PRODUCT_CREATE_PRODUCT_ROUTE = PRODUCT_GET_PRODUCTS_ROUTE;
+    public static final String PRODUCT_GET_PRODUCT_BY_ID_ROUTE = PRODUCT_GET_PRODUCTS_ROUTE + "/{productId}";
+    public static final String PRODUCT_UPDATE_PRODUCT_ROUTE = PRODUCT_GET_PRODUCT_BY_ID_ROUTE;
+    public static final String PRODUCT_SEARCH_PRODUCTS_ROUTE = PRODUCT_GET_PRODUCTS_ROUTE + "/search";
+    public static final String PRODUCT_DELETE_PRODUCT_BY_ID_ROUTE = PRODUCT_GET_PRODUCT_BY_ID_ROUTE;
+
 }

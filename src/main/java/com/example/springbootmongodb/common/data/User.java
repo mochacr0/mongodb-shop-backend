@@ -9,10 +9,7 @@ import com.example.springbootmongodb.security.oauth2.OAuth2UserInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
@@ -20,9 +17,10 @@ import java.time.LocalDateTime;
 import static com.example.springbootmongodb.model.ModelConstants.USER_EMAIL_FIELD;
 import static com.example.springbootmongodb.model.ModelConstants.NAME_FIELD;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 @Schema
@@ -108,14 +106,15 @@ public class User extends AbstractData implements ToEntity<UserEntity> {
 
     @Override
     public UserEntity toEntity() {
-        UserEntity entity = new UserEntity();
-        entity.setId(this.getId());
-        entity.setName(this.getName());
-        entity.setEmail(this.getEmail());
-        entity.setAuthority(this.getAuthority());
-        entity.setUserCredentials(this.getUserCredentials());
-        entity.setDefaultAddressId(this.getDefaultAddressId());
-        return entity;
+        return UserEntity
+                .builder()
+                .id(this.getId())
+                .name(this.getName())
+                .email(this.getEmail())
+                .authority(this.getAuthority())
+                .userCredentials(this.getUserCredentials())
+                .defaultAddressId(this.getDefaultAddressId())
+                .build();
     }
 
     public static User fromEntity(UserEntity entity) {

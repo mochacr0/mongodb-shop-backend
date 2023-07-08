@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.*;
+import com.example.springbootmongodb.common.data.mapper.UserMapper;
 import com.example.springbootmongodb.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,6 +23,7 @@ import static com.example.springbootmongodb.controller.ControllerConstants.*;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final UserMapper mapper;
 
     @Operation(summary = "Return a page of available users")
     @GetMapping(value = USERS_GET_USERS_ROUTE)
@@ -43,13 +45,13 @@ public class UserController {
     @GetMapping(value = USERS_GET_USER_BY_ID_ROUTE)
     User getUserById (@Parameter(description = "A string value representing the user id", required = true)
                       @PathVariable(name = "userId") String userId) {
-        return userService.findById(userId);
+        return mapper.toUser(userService.findById(userId));
     }
 
     @Operation(summary = "Fetch the Current User object")
     @GetMapping(value = USERS_GET_CURRENT_USER_ROUTE)
     User getCurrentUser () {
-        return userService.findCurrentUser();
+        return mapper.toUser(userService.findCurrentUser());
     }
 
     @Operation(summary = "Update current user", description = "Update the Current User. " +
@@ -58,7 +60,7 @@ public class UserController {
     User saveUser(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
                                                                         description = "User payload to update")
                   @RequestBody User user) {
-        return userService.saveCurrentUser(user);
+        return mapper.toUser(userService.saveCurrentUser(user));
     }
 
     @Operation(summary = "Register new user", description = "Register new user. " +
@@ -71,7 +73,7 @@ public class UserController {
                       @Parameter(description = "A boolean indicates whether or not mail verification is required.")
                       @RequestParam(defaultValue = "false") boolean isMailRequired,
                       HttpServletRequest request) {
-        return userService.register(registerUserRequest, request, isMailRequired);
+        return mapper.toUser(userService.register(registerUserRequest, request, isMailRequired));
     }
 
     @Operation(summary = "Delete the User specified by userId and its credentials. A non-existent User Id will result in an error.")

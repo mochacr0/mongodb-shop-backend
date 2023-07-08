@@ -262,7 +262,7 @@ class CategoryControllerTest extends AbstractControllerTest {
             if (pageData.hasNext()) {
                 currentPage++;
             }
-        } while (pageData.hasNext());
+        } while (pageData.hasNext() && createdCategories.size() < totalRequests);
         createdCategories = createdCategories.subList(0, totalRequests);
         for (Category category : createdCategories) {
             deleteCategory(category.getId());

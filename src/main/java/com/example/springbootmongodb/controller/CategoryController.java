@@ -3,6 +3,8 @@ package com.example.springbootmongodb.controller;
 import com.example.springbootmongodb.common.data.Category;
 import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.PageParameter;
+import com.example.springbootmongodb.common.data.mapper.CategoryMapper;
+import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +23,7 @@ import static com.example.springbootmongodb.controller.ControllerConstants.*;
 @RequiredArgsConstructor
 public class CategoryController {
     private final CategoryService categoryService;
+    private final CategoryMapper mapper;
     @Operation(summary = "Return a page of available users")
     @GetMapping(value = CATEGORY_GET_CATEGORIES_ROUTE)
     PageData<Category> getCategories(@Parameter(description = PAGE_NUMBER_DESCRIPTION)
@@ -40,17 +43,13 @@ public class CategoryController {
     @GetMapping(value = CATEGORY_GET_CATEGORY_BY_ID_ROUTE)
     Category getCategoryById(@Parameter(description = "ID of the category to retrieve", required = true)
                              @PathVariable(name = "categoryId") String categoryId) {
-        Category category = categoryService.findById(categoryId);
-        if (category == null) {
-            throw new InvalidDataException(String.format("Category with id [%s] is not found",categoryId));
-        }
-        return category;
+        return DaoUtils.toData(categoryService.findById(categoryId), mapper::fromEntity);
     }
 
     @Operation(summary = "Retrieve the default category")
     @GetMapping(value = CATEGORY_GET_DEFAULT_CATEGORY_ROUTE)
     Category getDefaultCategory() {
-        return categoryService.findDefaultCategory();
+        return DaoUtils.toData(categoryService.findDefaultCategory(), mapper::fromEntity);
     }
 
     @Operation(summary = "Create a new category")
@@ -58,14 +57,14 @@ public class CategoryController {
     Category create(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
                                                                           description = "Category object containing the category details")
                     @RequestBody Category category) {
-        return categoryService.create(category);
+        return DaoUtils.toData(categoryService.create(category), mapper::fromEntity);
     }
     @Operation(summary = "Update an existing category by the provided categoryId")
     @PutMapping(value = CATEGORY_UPDATE_CATEGORY_ROUTE)
     Category update(@Parameter(description = "ID of the category to update", required = true)
                     @PathVariable(name = "categoryId") String categoryId,
                     @RequestBody Category category) {
-        return categoryService.save(categoryId, category);
+        return DaoUtils.toData(categoryService.save(categoryId, category), mapper::fromEntity);
     }
     @Operation(summary = "Delete an existing category by the provided categoryId")
     @DeleteMapping(value = CATEGORY_DELETE_CATEGORY_BY_ID_ROUTE)

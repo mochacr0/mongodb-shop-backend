@@ -1,9 +1,10 @@
 package com.example.springbootmongodb.model;
 
+import com.example.springbootmongodb.common.validator.Length;
 import com.example.springbootmongodb.security.Authority;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Email;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -11,18 +12,23 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import static com.example.springbootmongodb.model.ModelConstants.*;
 
 @Document(collection = USER_COLLECTION_NAME)
-@Data
 @NoArgsConstructor
+@Setter
+@Getter
+@SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class UserEntity extends AbstractEntity {
     @Field(name = NAME_FIELD)
     @Indexed(unique = true)
+    @Length(fieldName = NAME_FIELD)
     private String name;
     @Field(name = USER_EMAIL_FIELD)
     @Indexed(unique = true)
+    @Length(fieldName = USER_EMAIL_FIELD)
+    @Email
     private String email;
     @Field(name = ModelConstants.USER_AUTHORITY_FIELD)
-    private Authority authority;
+    private Authority authority = Authority.USER;
     private UserCredentials userCredentials;
     private String defaultAddressId;
 
@@ -44,7 +50,7 @@ public class UserEntity extends AbstractEntity {
         builder.append(", defaultAddressId=");
         builder.append(this.getDefaultAddressId());
         builder.append(", userCredentials=");
-        builder.append(this.getUserCredentials().toString());
+        builder.append(this.getUserCredentials());
         builder.append("]");
         return builder.toString();
     }

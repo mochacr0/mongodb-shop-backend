@@ -29,7 +29,6 @@ import java.util.List;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 
-
 @Configuration
 @EnableWebSecurity
 public class ApplicationSecurityConfiguration {
@@ -87,6 +86,13 @@ public class ApplicationSecurityConfiguration {
             //TEST
 //            USERS_DELETE_USER_BY_ID_ROUTE,
             USERS_ACTIVATE_USER_CREDENTIALS_ROUTE,
+//            "/products/**",
+            PRODUCT_GET_PRODUCT_BY_ID_ROUTE,
+            PRODUCT_GET_PRODUCTS_ROUTE,
+            "/oauth2/**",
+            "/favicon.ico",
+            "/error/**",
+            "/test/**",
             "/categories/**",
             "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"));
 

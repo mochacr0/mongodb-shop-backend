@@ -4,22 +4,21 @@ import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.PageParameter;
 import com.example.springbootmongodb.common.data.RegisterUserRequest;
 import com.example.springbootmongodb.common.data.User;
+import com.example.springbootmongodb.model.UserEntity;
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.util.UUID;
 
 public interface UserService {
     PageData<User> findUsers(PageParameter pageParameter);
-    User save(User user);
-    User findByName(String name);
-    User findById(String userId);
-    User findByEmail(String email);
-    User register(RegisterUserRequest user, HttpServletRequest request, boolean isMailRequired);
+    UserEntity save(UserEntity user);
+    UserEntity findByName(String name);
+    UserEntity findById(String userId);
+    UserEntity findByEmail(String email);
+    UserEntity register(RegisterUserRequest user, HttpServletRequest request, boolean isMailRequired);
     void deleteById(String userId);
     void deleteUnverifiedUsers();
     void activateById(String userId);
-    User findByActivationToken(String activationToken);
-    User findByPasswordResetToken(String passwordResetToken);
-    User findCurrentUser();
-    User saveCurrentUser(User user);
+    UserEntity findByActivationToken(String activationToken);
+    UserEntity findByPasswordResetToken(String passwordResetToken);
+    UserEntity findCurrentUser();
+    UserEntity saveCurrentUser(User user);
 }

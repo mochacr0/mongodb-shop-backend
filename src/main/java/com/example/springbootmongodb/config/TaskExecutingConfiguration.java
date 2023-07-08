@@ -11,6 +11,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
+import java.util.concurrent.CompletableFuture;
+
 @Slf4j
 @Configuration
 @NoArgsConstructor
@@ -20,7 +22,7 @@ public class TaskExecutingConfiguration {
     private final long unverifiedUsersDeletionRateInMilliseconds = 1800000L; //30 minutes
     private UserService userService;
 
-    @Bean
+    @Bean(name = "taskExecutor")
     public ThreadPoolTaskExecutor buildThreadPoolTaskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         taskExecutor.setCorePoolSize(20);
@@ -30,7 +32,7 @@ public class TaskExecutingConfiguration {
         return taskExecutor;
     }
 
-    @Bean
+    @Bean(name = "taskScheduler")
     public ThreadPoolTaskScheduler buildThreadPoolTaskScheduler() {
         ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
         taskScheduler.setPoolSize(20);
