@@ -26,6 +26,7 @@ public class ProductItemEntity extends AbstractEntity {
     private boolean isDisabled;
     @Field(name = "productId")
     @DocumentReference(lazy = true)
+    @JsonBackReference
     private ProductEntity product;
     @Field(name = "optionIds")
     @DocumentReference(lazy = true)

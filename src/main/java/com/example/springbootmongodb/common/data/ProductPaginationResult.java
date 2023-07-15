@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class ProductPaginationResult extends AbstractData {
     private String name;
+    private String imageUrl;
     private long totalSales;
     private float rating;
     private float minPrice;

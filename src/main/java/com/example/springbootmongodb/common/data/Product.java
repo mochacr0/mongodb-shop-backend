@@ -16,6 +16,7 @@ import java.util.Map;
 public class Product extends AbstractData {
     private String name;
     private String description;
+    private String imageUrl;
     private long totalSales;
     private float minPrice;
     private float maxPrice;

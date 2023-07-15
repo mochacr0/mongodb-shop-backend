@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,9 +19,11 @@ import static com.example.springbootmongodb.model.ModelConstants.PRODUCT_VARIATI
 @SuperBuilder
 public class VariationOptionEntity extends AbstractEntity {
     private String name;
+    private String imageUrl;
     private int index;
     private boolean isDisabled;
     @Field(name = "variationId", targetType = FieldType.OBJECT_ID)
     @DocumentReference(lazy = true)
+    @JsonBackReference
     private ProductVariationEntity variation;
 }

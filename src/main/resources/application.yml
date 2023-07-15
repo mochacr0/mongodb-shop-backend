@@ -5,6 +5,13 @@ spring:
     mongodb:
       uri: mongodb+srv://nthai2001cr:H1q54razaxG0HE1T@cluster0.41zzcbg.mongodb.net/spring-boot-mongodb?retryWrites=true&w=majority
       auto-index-creation: true
+  cloud:
+    aws:
+      credentials:
+        access-key: "AKIA33GEEB7PNSI6J6AA"
+        secret-key: "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"
+      region:
+        static: "ap-southeast-1"
 jwt:
   settings:
     accessTokenExpiryTime: 300
@@ -45,5 +52,6 @@ mailing:
   username: "mochacr0@gmail.com"
   password: "nhxyxrnqckoijmcs"
   timeout: 10000
+
 
 
