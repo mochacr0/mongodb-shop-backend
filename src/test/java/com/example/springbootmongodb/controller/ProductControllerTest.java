@@ -1,14 +1,10 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.*;
-import com.example.springbootmongodb.model.ProductItemEntity;
-import com.example.springbootmongodb.model.ProductVariationEntity;
-import com.example.springbootmongodb.model.VariationOptionEntity;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
-import org.springframework.security.core.parameters.P;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,14 +16,13 @@ import static com.example.springbootmongodb.service.ProductVariationServiceImpl.
 import static com.example.springbootmongodb.service.ProductVariationServiceImpl.REQUIRED_MINIMUM_VARIATIONS_ERROR_MESSAGE;
 import static com.example.springbootmongodb.service.VariationOptionServiceImpl.DUPLICATED_OPTION_NAME_ERROR_MESSAGE;
 import static com.example.springbootmongodb.service.VariationOptionServiceImpl.REQUIRED_MINIMUM_OPTIONS_ERROR_MESSAGE;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ProductControllerTest extends AbstractControllerTest {
+class ProductControllerTest extends AbstractControllerTest {
     private User user;
     @BeforeAll
     void setUp() throws Exception {
@@ -395,7 +390,6 @@ public class ProductControllerTest extends AbstractControllerTest {
     //update
         //invalid
             //non-existent category
-        //valid
 
     private ProductRequest createProductRequest() {
         ProductRequest product = ProductRequest

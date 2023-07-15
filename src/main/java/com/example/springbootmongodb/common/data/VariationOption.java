@@ -12,6 +12,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class VariationOption extends AbstractData {
     private String name;
+    private String imageUrl;
     private int index;
     private ProductVariationSimplification variation;
 }

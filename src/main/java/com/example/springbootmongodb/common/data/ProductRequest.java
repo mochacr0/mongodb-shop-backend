@@ -14,8 +14,10 @@ import java.util.List;
 @SuperBuilder
 public class ProductRequest implements ToEntity<ProductEntity> {
     private String id;
+    private String processId;
     private String name;
     private String description;
+    private String imageUrl;
     private List<ProductVariationRequest> variations = new ArrayList<>();
     private List<ProductItemRequest> items = new ArrayList<>();
 

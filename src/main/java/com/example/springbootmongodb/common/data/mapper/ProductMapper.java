@@ -20,6 +20,7 @@ public class ProductMapper {
         return ProductEntity
                 .builder()
                 .name(request.getName())
+                .imageUrl(request.getImageUrl())
                 .description(request.getDescription())
                 .build();
     }
@@ -35,6 +36,7 @@ public class ProductMapper {
                 .id(entity.getId())
                 .name(entity.getName())
                 .description(entity.getDescription())
+                .imageUrl(entity.getImageUrl())
                 .rating(entity.getRating())
                 .totalSales(entity.getTotalSales())
                 .minPrice(entity.getMinPrice())
@@ -59,6 +61,7 @@ public class ProductMapper {
                 .builder()
                 .id(entity.getId())
                 .name(entity.getName())
+                .imageUrl(entity.getImageUrl())
                 .totalSales(entity.getTotalSales())
                 .rating(entity.getRating())
                 .minPrice(entity.getMinPrice())
@@ -79,5 +82,6 @@ public class ProductMapper {
     public void updateFields(ProductEntity entity, ProductRequest request) {
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
+        entity.setImageUrl(request.getImageUrl());
     }
 }
