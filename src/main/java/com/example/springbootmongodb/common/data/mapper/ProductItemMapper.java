@@ -2,13 +2,19 @@ package com.example.springbootmongodb.common.data.mapper;
 
 import com.example.springbootmongodb.common.data.ProductItem;
 import com.example.springbootmongodb.common.data.ProductItemRequest;
+import com.example.springbootmongodb.common.data.ProductVariation;
+import com.example.springbootmongodb.common.data.VariationOption;
 import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.model.ProductItemEntity;
+import com.example.springbootmongodb.model.ProductVariationEntity;
+import com.example.springbootmongodb.model.VariationOptionEntity;
+import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class ProductItemMapper {
@@ -28,17 +34,20 @@ public class ProductItemMapper {
     }
 
     public ProductItem fromEntity(ProductItemEntity entity) {
-        String variationDescription = String
-                .join(",",entity
-                        .getOptions()
-                        .stream()
-                        .map(option -> String.format("%s:%s",
-                                option.getVariation().getName(), option.getName()))
-                        .toList());
+        String imageUrl = entity.getProduct().getImageUrl();
+        List<String> variations = new ArrayList<>();
+        for (VariationOptionEntity option : entity.getOptions()) {
+            if (StringUtils.isNotEmpty(option.getImageUrl())) {
+                imageUrl = option.getImageUrl();
+            }
+            variations.add(String.format("%s:%s", option.getVariation().getName(), option.getName()));
+        }
+        String variationDescription = String.join(",", variations);
         return ProductItem
                 .builder()
                 .id(entity.getId())
                 .variationDescription(variationDescription)
+                .imageUrl(imageUrl)
                 .sku(entity.getSku())
                 .price(entity.getPrice())
                 .product(productMapper.fromEntityToSimplification(entity.getProduct()))

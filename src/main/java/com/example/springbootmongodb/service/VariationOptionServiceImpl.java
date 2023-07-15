@@ -9,19 +9,23 @@ import com.example.springbootmongodb.model.ProductVariationEntity;
 import com.example.springbootmongodb.model.VariationOptionEntity;
 import com.example.springbootmongodb.repository.ProductVariationRepository;
 import com.example.springbootmongodb.repository.VariationOptionRepository;
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -30,6 +34,7 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
     private final VariationOptionRepository optionRepository;
     private final ProductVariationRepository variationRepository;
     private final VariationOptionMapper mapper;
+    private final ThreadPoolTaskExecutor taskExecutor;
 
     public static final String DUPLICATED_OPTION_NAME_ERROR_MESSAGE = "Cannot save options with same name";
     public static final String NON_EXISTENT_VARIATION_ERROR_MESSAGE = "Cannot refer to a non-existent variation";
@@ -48,7 +53,9 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
         for (int i = 0; i < requests.size(); i++) {
             newOptions.add(createNewOptionData(requests.get(i), variation, i));
         }
-        return optionRepository.bulkCreate(newOptions);
+        List<VariationOptionEntity> createdOptions = optionRepository.bulkCreate(newOptions);
+        createdOptions.sort(new VariationOptionComparator());
+        return createdOptions;
     }
 
     @Override
@@ -60,21 +67,41 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
         if (requests.size() != variation.getOptions().size()) {
             isModified.set(true);
         }
-        List<VariationOptionEntity> savedOptions = new ArrayList<>();
+        List<VariationOptionEntity> updateOptions = new ArrayList<>();
         List<VariationOptionEntity> newOptions = new ArrayList<>();
+        List<VariationOptionEntity> savedOptions = new ArrayList<>();
         for (int i = 0; i < requests.size(); i++) {
             VariationOptionRequest request = requests.get(i);
             //TODO: Check to see if a product with this option is currently in the purchase flow. Return error
-            VariationOptionEntity option = findActiveVariation(request, i);
+            VariationOptionEntity option = findActiveVariation(request);
             if (option != null && option.getName().equals(request.getName()) && option.getIndex() == i) {
-                savedOptions.add(option);
+                if (updateRequired(option, request)) {
+                    option.setImageUrl(request.getImageUrl());
+                    updateOptions.add(option);
+                }
+                else {
+                    savedOptions.add(option);
+                }
             }
             else {
                 isModified.set(true);
                 newOptions.add(createNewOptionData(request, variation, i));
             }
         }
-        savedOptions.addAll(optionRepository.bulkCreate(newOptions));
+        //bulk update saved options
+        List<CompletableFuture<List<VariationOptionEntity>>> saveOptionsFutures = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(updateOptions)) {
+            saveOptionsFutures.add(CompletableFuture.supplyAsync(() -> optionRepository.bulkUpdate(updateOptions), taskExecutor));
+        }
+        if (CollectionUtils.isNotEmpty(newOptions)) {
+            saveOptionsFutures.add(CompletableFuture.supplyAsync(() -> optionRepository.bulkCreate(newOptions), taskExecutor));
+        }
+        CompletableFuture<Void> combinedFutures = CompletableFuture.allOf(saveOptionsFutures.toArray(new CompletableFuture[saveOptionsFutures.size()]));
+        combinedFutures.join();
+        for (CompletableFuture<List<VariationOptionEntity>> saveOptionsFuture : saveOptionsFutures) {
+            savedOptions.addAll(saveOptionsFuture.join());
+        }
+        savedOptions.sort(new VariationOptionComparator());
         return new BulkUpdateResult<>(savedOptions, isModified);
     }
 
@@ -113,7 +140,7 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
         return newOption;
     }
 
-    private VariationOptionEntity findActiveVariation(VariationOptionRequest request, int index) {
+    private VariationOptionEntity findActiveVariation(VariationOptionRequest request) {
         if (StringUtils.isNotEmpty(request.getId())) {
             Optional<VariationOptionEntity> optionOpt = optionRepository.findById(request.getId());
             if (optionOpt.isEmpty() || optionOpt.get().isDisabled()) {
@@ -122,6 +149,20 @@ public class VariationOptionServiceImpl extends DataBaseService<VariationOptionE
             return optionOpt.get();
         }
         return null;
+    }
+
+    private boolean updateRequired(VariationOptionEntity entity, VariationOptionRequest request) {
+        if (StringUtils.isEmpty(entity.getImageUrl()) && StringUtils.isEmpty(request.getImageUrl())) {
+            return false;
+        }
+        return true;
+    }
+
+    public static class VariationOptionComparator implements Comparator<VariationOptionEntity> {
+        @Override
+        public int compare(VariationOptionEntity o1, VariationOptionEntity o2) {
+            return o1.getIndex() - o2.getIndex();
+        }
     }
 
 }

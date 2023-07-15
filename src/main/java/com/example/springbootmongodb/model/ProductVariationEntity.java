@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -24,8 +25,10 @@ public class ProductVariationEntity extends AbstractEntity {
     private boolean isDisabled;
     @Field(name = "productId")
     @DocumentReference(lazy = true)
+    @JsonBackReference
     private ProductEntity product;
     @ReadOnlyProperty
     @DocumentReference(lookup = "{'variationId' : ?#{#self._id}, 'isDisabled': false}", lazy = true)
+    @JsonManagedReference
     List<VariationOptionEntity> options = new ArrayList<>();
 }

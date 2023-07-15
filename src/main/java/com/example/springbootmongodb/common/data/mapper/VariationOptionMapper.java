@@ -18,6 +18,7 @@ public class VariationOptionMapper {
         return VariationOptionEntity
                 .builder()
                 .name(request.getName())
+                .imageUrl(request.getImageUrl())
 //                .items(new ArrayList<>())
                 .build();
     }
@@ -30,10 +31,12 @@ public class VariationOptionMapper {
                 .builder()
                 .id(entity.getId())
                 .name(entity.getName())
+                .imageUrl(entity.getImageUrl())
                 .index(entity.getIndex())
                 .variation(variationMapper.fromEntityToSimplification(entity.getVariation()))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
     }
+
 }

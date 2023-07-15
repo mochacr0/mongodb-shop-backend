@@ -27,4 +27,15 @@ public class CustomVariationOptionRepositoryImpl implements CustomVariationOptio
         bulkDisableOperation.updateMulti(Query.query(where("_id").in(requestIds)), Update.update("isDisabled", true));
         bulkDisableOperation.execute();
     }
+
+    @Override
+    public List<VariationOptionEntity> bulkUpdate(List<VariationOptionEntity> requests) {
+        BulkOperations bulkUpdateOperation = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, VariationOptionEntity.class);
+        for (VariationOptionEntity request : requests) {
+            bulkUpdateOperation.updateOne(Query.query(where("_id").is(request.getId())), Update.update("imageUrl", request.getImageUrl()));
+        }
+        bulkUpdateOperation.execute();
+        List<String> requestIds = requests.stream().map(VariationOptionEntity::getId).toList();
+        return mongoTemplate.find(Query.query(where("_id").in(requestIds)), VariationOptionEntity.class);
+    }
 }

@@ -3,25 +3,23 @@ package com.example.springbootmongodb.service;
 import com.example.springbootmongodb.common.data.*;
 import com.example.springbootmongodb.common.data.mapper.ProductMapper;
 import com.example.springbootmongodb.common.validator.CommonValidator;
+import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductItemEntity;
 import com.example.springbootmongodb.model.ProductVariationEntity;
 import com.example.springbootmongodb.repository.ProductRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
-import io.jsonwebtoken.lang.Collections;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +36,8 @@ import java.util.stream.Collectors;
     private final ProductItemService itemService;
     private final CommonValidator commonValidator;
     private final ThreadPoolTaskExecutor taskExecutor;
+    private final MediaService mediaService;
+    private final ObjectMapper objectMapper;
     public static final String DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE = "There is already a product with that name";
     @Override
     public MongoRepository<ProductEntity, String> getRepository() {
@@ -74,6 +74,7 @@ import java.util.stream.Collectors;
         createdProduct.setVariations(createdVariations);
         createdProduct.setItems(createdItems);
         updatePriceRange(createdProduct);
+        mediaService.persistCreatingProductImagesAsync(request);
         return super.save(createdProduct);
     }
 
@@ -87,6 +88,12 @@ import java.util.stream.Collectors;
             if (nameDuplicatedProductOpt.isPresent() && !existingProduct.getId().equals(nameDuplicatedProductOpt.get().getId())) {
                 throw new InvalidDataException(DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE);
             }
+        }
+        ProductEntity oldProduct = null;
+        try {
+            oldProduct = objectMapper.readValue(objectMapper.writeValueAsString(existingProduct), ProductEntity.class);
+        } catch (JsonProcessingException e) {
+            throw new InternalErrorException("Internal Server Error, please try again");
         }
         mapper.updateFields(existingProduct, request);
         List<ProductVariationEntity> oldVariations = existingProduct.getVariations();
@@ -106,6 +113,7 @@ import java.util.stream.Collectors;
         existingProduct.setVariations(updatedVariations);
         existingProduct.setItems(savedItems);
         updatePriceRange(existingProduct);
+        mediaService.persistUpdatingProductImagesAsync(request, oldProduct);
         return super.save(existingProduct);
     }
 
