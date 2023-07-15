@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,7 +79,6 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
             CompletableFuture<Void> bulkCreateFuture = CompletableFuture.supplyAsync(() -> {
                 log.info("Future running");
                 List<VariationOptionEntity> options = optionService.bulkCreate(requests.get(finalI).getOptions(), createdVariations.get(finalI));
-                options.sort(new VariationOptionComparator());
                 createdVariations.get(finalI).getOptions().addAll(options);
                 return null;
             }, taskExecutor);
@@ -97,7 +95,6 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
     public List<ProductVariationEntity> bulkCreateAsync(List<ProductVariationRequest> requests, ProductEntity product) {
         log.info("Performing ProductVariationService bulkCreateAsync");
         validateRequest(requests, product);
-        List<ProductVariationEntity> createdVariations = new ArrayList<>();
         List<CompletableFuture<ProductVariationEntity>> bulkCreateFutures = new ArrayList<>();
         for (int i = 0; i < requests.size(); i++) {
             ProductVariationEntity newVariation = createNewVariationData(requests.get(i), product, i);
@@ -106,7 +103,7 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
         }
         CompletableFuture<Void> combinedFutures = CompletableFuture.allOf(bulkCreateFutures.toArray(new CompletableFuture[bulkCreateFutures.size()]));
         combinedFutures.join();
-        createdVariations.addAll(bulkCreateFutures.stream().map(CompletableFuture::join).collect(Collectors.toList()));
+        List<ProductVariationEntity> createdVariations = new ArrayList<>(bulkCreateFutures.stream().map(CompletableFuture::join).collect(Collectors.toList()));
         createdVariations.sort(new ProductVariationComparator());
         return createdVariations;
     }
@@ -114,10 +111,8 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
     @Transactional
     public CompletableFuture<ProductVariationEntity> createVariationAsync(ProductVariationRequest request, ProductVariationEntity variation, ProductEntity product) {
         return CompletableFuture.supplyAsync(() -> {
-            //TODO: upload images
             ProductVariationEntity createdVariation = super.insert(variation);
             List<VariationOptionEntity> createdOptions = optionService.bulkCreate(request.getOptions(), createdVariation);
-            createdOptions.sort(new VariationOptionComparator());
             createdVariation.getOptions().addAll(createdOptions);
             return createdVariation;
         }, taskExecutor);
@@ -126,7 +121,7 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
     @Override
     @Transactional
     public BulkUpdateResult<ProductVariationEntity> bulkUpdateAsync(List<ProductVariationRequest> requests, ProductEntity product) {
-        log.info("Performing ProductVariationService bulkUpdate");
+        log.info("Performing ProductVariationService bulkUpdateAsync");
         validateRequest(requests, product);
         List<ProductVariationEntity> savedVariations = new ArrayList<>();
         List<ProductVariationEntity> newVariations = new ArrayList<>();
@@ -156,7 +151,7 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
         }
         List<ProductVariationEntity> createdVariations = variationRepository.bulkCreate(newVariations);
         for (ProductVariationEntity createdVariation : createdVariations) {
-            CompletableFuture<ProductVariationEntity> bulkCreateFuture  = performBulkCreateOptions(requests.get(createdVariation.getIndex()).getOptions(), createdVariation);
+            CompletableFuture<ProductVariationEntity> bulkCreateFuture = performBulkCreateOptions(requests.get(createdVariation.getIndex()).getOptions(), createdVariation);
             bulkOperationFutures.add(bulkCreateFuture);
         }
         CompletableFuture<Void> combinedFutures = CompletableFuture.allOf(bulkOperationFutures.toArray(new CompletableFuture[bulkOperationFutures.size()]));
@@ -212,9 +207,9 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
         if (containsDuplicates(requests, ProductVariationRequest::getName)) {
             throw new InvalidDataException(DUPLICATED_VARIANT_NAME_ERROR_MESSAGE);
         }
-        if (!productRepository.existsById(product.getId())) {
-            throw new UnprocessableContentException(NON_EXISTENT_PRODUCT_ERROR_MESSAGE);
-        }
+//        if (!productRepository.existsById(product.getId())) {
+//            throw new UnprocessableContentException(NON_EXISTENT_PRODUCT_ERROR_MESSAGE);
+//        }
     }
 
     private ProductVariationEntity createNewVariationData(ProductVariationRequest request, ProductEntity product, int index) {
@@ -249,7 +244,6 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
             BulkUpdateResult<VariationOptionEntity> optionsUpdateResult = optionService.bulkUpdate(requests, variation);
             List<VariationOptionEntity> savedOptions = optionsUpdateResult.getData();
             disabledOldOptions(variation.getOptions(), savedOptions);
-            savedOptions.sort(new VariationOptionComparator());
             variation.setOptions(savedOptions);
             isModified.set(isModified.get() || optionsUpdateResult.getIsModified().get());
             return variation;
@@ -259,23 +253,15 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
     private CompletableFuture<ProductVariationEntity> performBulkCreateOptions(List<VariationOptionRequest> requests, ProductVariationEntity createdVariation) {
         return CompletableFuture.supplyAsync(() -> {
             List<VariationOptionEntity> options = optionService.bulkCreate(requests, createdVariation);
-            options.sort(new VariationOptionComparator());
             createdVariation.getOptions().addAll(options);
             return createdVariation;
         }, taskExecutor);
 
     }
 
-    static class ProductVariationComparator implements Comparator<ProductVariationEntity> {
+    public static class ProductVariationComparator implements Comparator<ProductVariationEntity> {
         @Override
         public int compare(ProductVariationEntity o1, ProductVariationEntity o2) {
-            return o1.getIndex() - o2.getIndex();
-        }
-    }
-
-    static class VariationOptionComparator implements Comparator<VariationOptionEntity> {
-        @Override
-        public int compare(VariationOptionEntity o1, VariationOptionEntity o2) {
             return o1.getIndex() - o2.getIndex();
         }
     }

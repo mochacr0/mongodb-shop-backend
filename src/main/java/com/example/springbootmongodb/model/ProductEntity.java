@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -24,14 +25,17 @@ public class ProductEntity extends AbstractEntity {
     @TextIndexed
     private String name;
     private String description;
+    private String imageUrl;
     private long totalSales;
     private float rating;
     private float minPrice;
     private float maxPrice;
     @ReadOnlyProperty
     @DocumentReference(lookup = "{'productId' : ?#{#self._id}, 'isDisabled': false}", lazy = true)
+    @JsonManagedReference
     List<ProductItemEntity> items = new ArrayList<>();
     @ReadOnlyProperty
     @DocumentReference(lookup = "{'productId' : ?#{#self._id}, 'isDisabled': false}", lazy = true)
+    @JsonManagedReference
     List<ProductVariationEntity> variations = new ArrayList<>();
 }

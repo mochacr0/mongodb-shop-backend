@@ -14,6 +14,7 @@ import java.util.List;
 public class ProductItem extends AbstractData {
     private int sku;
     private String variationDescription;
+    private String imageUrl;
     private float price;
     private ProductSimplification product;
     private List<VariationOption> options;

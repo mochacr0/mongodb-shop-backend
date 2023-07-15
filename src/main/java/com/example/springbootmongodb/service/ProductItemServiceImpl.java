@@ -1,7 +1,5 @@
 package com.example.springbootmongodb.service;
 
-import com.example.springbootmongodb.common.data.Product;
-import com.example.springbootmongodb.common.data.ProductItem;
 import com.example.springbootmongodb.common.data.ProductItemRequest;
 import com.example.springbootmongodb.common.data.mapper.ProductItemMapper;
 import com.example.springbootmongodb.exception.InvalidDataException;
@@ -12,7 +10,6 @@ import com.example.springbootmongodb.model.VariationOptionEntity;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import io.jsonwebtoken.lang.Collections;
 import io.micrometer.common.util.StringUtils;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +57,7 @@ public class ProductItemServiceImpl implements ProductItemService {
 
     @Override
     public List<ProductItemEntity> bulkUpdate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations) {
-        log.info("Performing ProductItemService bulkCreate");
+        log.info("Performing ProductItemService bulkUpdate");
         validateRequest(requests, variations);
         ProductEntity product = variations.get(0).getProduct();
         if (requests.size() != product.getItems().size()) {
