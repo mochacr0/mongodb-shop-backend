@@ -278,10 +278,6 @@ class CategoryControllerTest extends AbstractControllerTest {
         Assertions.assertTrue(areListsTheSame, "The expected list and the actual list are not equal");
     }
 
-    private Category getDefaultCategory() throws Exception {
-        return performGet(CATEGORY_GET_DEFAULT_CATEGORY_ROUTE, Category.class);
-    }
-
     private Category createCategoryData() {
         return Category
                 .builder()
