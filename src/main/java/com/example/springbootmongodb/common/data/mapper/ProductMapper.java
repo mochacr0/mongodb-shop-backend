@@ -62,6 +62,7 @@ public class ProductMapper {
         return ProductPaginationResult
                 .builder()
                 .id(entity.getId())
+                .categoryId(entity.getCategoryId())
                 .name(entity.getName())
                 .imageUrl(entity.getImageUrl())
                 .totalSales(entity.getTotalSales())
