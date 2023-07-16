@@ -14,5 +14,6 @@ public class ProductPaginationResult extends AbstractData {
     private float rating;
     private float minPrice;
     private float maxPrice;
+    private String categoryId;
 
 }

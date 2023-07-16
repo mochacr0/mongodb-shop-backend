@@ -131,16 +131,6 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
             ProductVariationRequest request = requests.get(i);
             ProductVariationEntity variation = findActiveVariation(request);
             if (variation != null && variation.getName().equals(request.getName()) && variation.getIndex() == i) {
-//                CompletableFuture<Void> bulkUpdateFuture = CompletableFuture.supplyAsync(() -> {
-//                    BulkUpdateResult<VariationOptionEntity> optionsUpdateResult = optionService.bulkUpdate(request.getOptions(), variation);
-//                    List<VariationOptionEntity> savedOptions = optionsUpdateResult.getData();
-//                    disabledOldOptions(variation.getOptions(), savedOptions);
-//                    savedOptions.sort(new VariationOptionComparator());
-//                    variation.setOptions(savedOptions);
-//                    savedVariations.add(variation);
-//                    isModified.set(isModified.get() || optionsUpdateResult.getIsModified().get());
-//                    return null;
-//                }, taskExecutor);
                 CompletableFuture<ProductVariationEntity> bulkUpdateFuture = performBulkUpdateOptions(request.getOptions(), variation, isModified);
                 bulkOperationFutures.add(bulkUpdateFuture);
             }
@@ -194,7 +184,7 @@ public class ProductVariationServiceImpl extends DataBaseService<ProductVariatio
     @Override
     @Transactional
     public void deleteById(String id) {
-        log.info("Performing ProductVariationService deleteByiD");
+        log.info("Performing ProductVariationService deleteById");
         ProductVariationEntity variation = findById(id);
         optionService.deleteByVariationId(variation.getId());
         variationRepository.deleteById(id);
