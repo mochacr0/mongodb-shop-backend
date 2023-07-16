@@ -13,4 +13,5 @@ public class ProductPageParameter extends PageParameter {
     private Float minPrice;
     private Float maxPrice;
     private Float rating;
+    private String categoryId;
 }

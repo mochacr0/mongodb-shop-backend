@@ -57,7 +57,8 @@ public class ProductController {
 ////                                                  @Parameter(description = MAX_PRICE_FILTER_DESCRIPTION)
                                                   @RequestParam(required = false) Float maxPrice,
 //                                                  @Parameter(description = RATING_FILTER_DESCRIPTION)
-                                                  @RequestParam(required = false) Float rating) {
+                                                  @RequestParam(required = false) Float rating,
+                                                  @RequestParam(required = false) String categoryId) {
         ProductPageParameter pageParameter = ProductPageParameter
                 .builder()
                 .page(page)
@@ -67,6 +68,7 @@ public class ProductController {
                 .rating(rating)
                 .minPrice(minPrice)
                 .maxPrice(maxPrice)
+                .categoryId(categoryId)
                 .build();
         return productService.findProducts(pageParameter);
     }
