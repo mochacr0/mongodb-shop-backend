@@ -15,6 +15,7 @@ import java.util.List;
 public class ProductRequest implements ToEntity<ProductEntity> {
     private String id;
     private String processId;
+    private String categoryId;
     private String name;
     private String description;
     private String imageUrl;

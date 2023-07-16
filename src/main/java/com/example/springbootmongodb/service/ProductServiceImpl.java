@@ -6,6 +6,8 @@ import com.example.springbootmongodb.common.validator.CommonValidator;
 import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
+import com.example.springbootmongodb.exception.UnprocessableContentException;
+import com.example.springbootmongodb.model.CategoryEntity;
 import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductItemEntity;
 import com.example.springbootmongodb.model.ProductVariationEntity;
@@ -15,8 +17,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,50 +42,72 @@ import java.util.stream.Collectors;
     private final ThreadPoolTaskExecutor taskExecutor;
     private final MediaService mediaService;
     private final ObjectMapper objectMapper;
+    private final CategoryService categoryService;
     public static final String DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE = "There is already a product with that name";
     @Override
     public MongoRepository<ProductEntity, String> getRepository() {
         return productRepository;
     }
-    @Override
-    @Transactional
-    public ProductEntity create(ProductRequest request) {
-      log.info("Performing ProductService create");
-      //TODO: validate non-existent category id
-      if (existsByName(request.getName())) {
-          throw new InvalidDataException(DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE);
-      }
-      ProductEntity createdProduct = super.insert(mapper.toEntity(request));
-      List<ProductVariationEntity> createdVariations = variationService.bulkCreate(request.getVariations(), createdProduct);
-      List<ProductItemEntity> createdItems = itemService.bulkCreate(request.getItems(), createdVariations);
-      createdProduct.setVariations(createdVariations);
-      createdProduct.setItems(createdItems);
-      updatePriceRange(createdProduct);
-      return super.save(createdProduct);
-    }
+//    @Override
+//    @Transactional
+//    public ProductEntity create(ProductRequest request) {
+//      log.info("Performing ProductService create");
+//      CategoryEntity category;
+//      try {
+//          category = categoryService.findById(request.getCategoryId());
+//      } catch (ItemNotFoundException exception) {
+//          throw new UnprocessableContentException(exception.getMessage());
+//      }
+//      if (existsByName(request.getName())) {
+//          throw new InvalidDataException(DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE);
+//      }
+//      ProductEntity newProduct = mapper.toEntity(request);
+//      ProductEntity createdProduct = super.insert(newProduct);
+//      List<ProductVariationEntity> createdVariations = variationService.bulkCreate(request.getVariations(), createdProduct);
+//      List<ProductItemEntity> createdItems = itemService.bulkCreate(request.getItems(), createdVariations);
+//      createdProduct.setVariations(createdVariations);
+//      createdProduct.setItems(createdItems);
+//      updatePriceRange(createdProduct);
+//      return super.save(createdProduct);
+//    }
 
     @Override
     @Transactional
     public ProductEntity createAsync(ProductRequest request) {
         log.info("Performing ProductService create");
-        //TODO: validate non-existent category id
         if (existsByName(request.getName())) {
             throw new InvalidDataException(DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE);
         }
-        ProductEntity createdProduct = super.insert(mapper.toEntity(request));
+        if (StringUtils.isEmpty(request.getCategoryId())) {
+            CategoryEntity defaultCategory = categoryService.findDefaultCategory();
+            if (defaultCategory != null) {
+                request.setCategoryId(defaultCategory.getId());
+            }
+        }
+        else {
+            try {
+                categoryService.findById(request.getCategoryId());
+            } catch (ItemNotFoundException exception) {
+                throw new UnprocessableContentException(exception.getMessage());
+            }
+        }
+        ProductEntity newProduct = mapper.toEntity(request);
+        ProductEntity createdProduct = super.insert(newProduct);
         List<ProductVariationEntity> createdVariations = variationService.bulkCreateAsync(request.getVariations(), createdProduct);
         List<ProductItemEntity> createdItems = itemService.bulkCreate(request.getItems(), createdVariations);
         createdProduct.setVariations(createdVariations);
         createdProduct.setItems(createdItems);
         updatePriceRange(createdProduct);
+        super.save(createdProduct);
         mediaService.persistCreatingProductImagesAsync(request);
-        return super.save(createdProduct);
+        return createdProduct;
     }
 
     @Override
     @Transactional
     public ProductEntity updateAsync(String id, ProductRequest request) {
         log.info("Performing ProductService updateAsync");
+//        long currentTime = System.currentTimeMillis();
         ProductEntity existingProduct = findById(id);
         if (!existingProduct.getName().equals(request.getName())) {
             Optional<ProductEntity> nameDuplicatedProductOpt = productRepository.findByName(request.getName());
@@ -89,18 +115,36 @@ import java.util.stream.Collectors;
                 throw new InvalidDataException(DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE);
             }
         }
-        ProductEntity oldProduct = null;
+        CategoryEntity category = null;
+        try {
+            if (StringUtils.isEmpty(request.getCategoryId())) {
+                category = categoryService.findDefaultCategory();
+            }
+            else if (!request.getCategoryId().equals(existingProduct.getCategoryId())) {
+                category = categoryService.findById(request.getCategoryId());
+            }
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        if (category != null) {
+            request.setCategoryId(category.getId());
+        }
+//        log.info("After validation: " + (System.currentTimeMillis() - currentTime));
+        ProductEntity oldProduct;
         try {
             oldProduct = objectMapper.readValue(objectMapper.writeValueAsString(existingProduct), ProductEntity.class);
         } catch (JsonProcessingException e) {
             throw new InternalErrorException("Internal Server Error, please try again");
         }
+//        log.info("After copy: " + (System.currentTimeMillis() - currentTime));
         mapper.updateFields(existingProduct, request);
         List<ProductVariationEntity> oldVariations = existingProduct.getVariations();
         BulkUpdateResult<ProductVariationEntity> updateVariationsResult = variationService.bulkUpdateAsync(request.getVariations(), existingProduct);
+//        log.info("After variations bulk update: " + (System.currentTimeMillis() - currentTime));
         List<ProductVariationEntity> updatedVariations = updateVariationsResult.getData();
         //disable old variations
         disabledOldVariations(oldVariations, updatedVariations);
+//        log.info("After variations bulk disable: " + (System.currentTimeMillis() - currentTime));
         List<ProductItemEntity> savedItems;
         if (updateVariationsResult.getIsModified().get()) {
             itemService.bulkDisableByProductId(existingProduct.getId());
@@ -110,11 +154,14 @@ import java.util.stream.Collectors;
             //create new items
             savedItems = itemService.bulkUpdate(request.getItems(), updatedVariations);
         }
+//        log.info("After item update: " + (System.currentTimeMillis() - currentTime));
         existingProduct.setVariations(updatedVariations);
         existingProduct.setItems(savedItems);
         updatePriceRange(existingProduct);
         mediaService.persistUpdatingProductImagesAsync(request, oldProduct);
-        return super.save(existingProduct);
+        super.save(existingProduct);
+//        log.info("After product save: " + (System.currentTimeMillis() - currentTime));
+        return existingProduct;
     }
 
     @Override

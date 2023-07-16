@@ -19,6 +19,7 @@ import java.util.List;
 public class CustomProductRepositoryImpl implements CustomProductRepository {
     private final MongoTemplate mongoTemplate;
     private final ProductMapper mapper;
+
     @Override
     public PageData<ProductPaginationResult> findProducts(ProductPageParameter pageParameter) {
         long documentsToSkip = (long) (pageParameter.getPage()) * pageParameter.getPageSize();
@@ -61,8 +62,10 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
 
     private Criteria buildCriteria(ProductPageParameter pageParameter) {
         return buildMinPriceCriteria(pageParameter.getMinPrice())
-                .andOperator(buildMaxPriceCriteria(pageParameter.getMaxPrice()),
-                        buildRatingCriteria(pageParameter.getRating()));
+                .andOperator(
+                        buildMaxPriceCriteria(pageParameter.getMaxPrice()),
+                        buildRatingCriteria(pageParameter.getRating()),
+                        buildCategoryCriteria(pageParameter.getCategoryId()));
     }
 
     private Criteria buildMinPriceCriteria(Float minPrice) {
@@ -83,5 +86,12 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
             return new Criteria();
         }
         return new Criteria("rating").gte(rating);
+    }
+
+    private Criteria buildCategoryCriteria(String categoryId) {
+        if (StringUtils.isEmpty(categoryId)) {
+            return new Criteria();
+        }
+        return new Criteria("categoryId").is(categoryId);
     }
 }

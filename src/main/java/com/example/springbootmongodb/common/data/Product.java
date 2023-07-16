@@ -10,11 +10,13 @@ import java.util.List;
 import java.util.Map;
 
 @NoArgsConstructor
+
 @Getter
 @Setter
 @SuperBuilder
 public class Product extends AbstractData {
     private String name;
+    private String categoryId;
     private String description;
     private String imageUrl;
     private long totalSales;

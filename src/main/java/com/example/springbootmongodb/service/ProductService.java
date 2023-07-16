@@ -6,7 +6,7 @@ import com.example.springbootmongodb.model.ProductEntity;
 import java.util.List;
 
 public interface ProductService {
-    ProductEntity create(ProductRequest request);
+//    ProductEntity create(ProductRequest request);
     ProductEntity createAsync(ProductRequest request);
     ProductEntity updateAsync(String id, ProductRequest request);
     ProductEntity findById(String id);
