@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.controller;
 
+import com.example.springbootmongodb.common.data.Category;
 import com.example.springbootmongodb.common.data.RegisterUserRequest;
 import com.example.springbootmongodb.common.data.TimestampBased;
 import com.example.springbootmongodb.common.data.User;
@@ -219,6 +220,10 @@ public abstract class AbstractControllerTest {
     public String generatePassword() {
         UserPasswordPolicy passwordPolicy = securitySettings.getPasswordPolicy();
         return passwordGenerator.generatePassword(passwordPolicy.getMinimumLength(), passwordPolicy.getPasswordCharacterRules());
+    }
+
+    public Category getDefaultCategory() throws Exception {
+        return performGet(CATEGORY_GET_DEFAULT_CATEGORY_ROUTE, Category.class);
     }
 
     public static class TimestampBasedComparator<T extends TimestampBased> implements Comparator<T> {

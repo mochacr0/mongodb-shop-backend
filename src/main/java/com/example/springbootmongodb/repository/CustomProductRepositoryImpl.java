@@ -19,6 +19,7 @@ import java.util.List;
 public class CustomProductRepositoryImpl implements CustomProductRepository {
     private final MongoTemplate mongoTemplate;
     private final ProductMapper mapper;
+
     @Override
     public PageData<ProductPaginationResult> findProducts(ProductPageParameter pageParameter) {
         long documentsToSkip = (long) (pageParameter.getPage()) * pageParameter.getPageSize();

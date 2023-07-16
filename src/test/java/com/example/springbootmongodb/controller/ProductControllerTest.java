@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.*;
+import com.example.springbootmongodb.model.ProductEntity;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ProductControllerTest extends AbstractControllerTest {
+    private final String NON_EXISTENT_CATEGORY_ID = "649d3c2be7528903110d4360";
+    private final String DEFAULT_IMAGE_URL = "https://mochaimages.s3.ap-southeast-1.amazonaws.com/Screenshot+2023-07-12+200714.png";
+
     private User user;
     @BeforeAll
     void setUp() throws Exception {
@@ -161,6 +165,20 @@ class ProductControllerTest extends AbstractControllerTest {
             performPost(PRODUCT_CREATE_PRODUCT_ROUTE, productRequest)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", is(MINIMUM_PRICE_VIOLATION_ERROR_MESSAGE)));
+        }
+
+        @Test
+        void testCreateUncategorizedProduct() throws Exception {
+            Category defaultCategory = getDefaultCategory();
+            Product product = performPost(PRODUCT_CREATE_PRODUCT_ROUTE, Product.class, createProductRequestSample());
+            Assertions.assertEquals(defaultCategory.getId(), product.getCategoryId());
+        }
+
+        @Test
+        void testCreateProductWithNonExistentCategoryId() throws Exception {
+            ProductRequest productRequest = createProductRequestSample();
+            productRequest.setCategoryId(NON_EXISTENT_CATEGORY_ID);
+            performPost(PRODUCT_CREATE_PRODUCT_ROUTE, productRequest).andExpect(status().isUnprocessableEntity());
         }
     }
 
@@ -341,6 +359,22 @@ class ProductControllerTest extends AbstractControllerTest {
             ProductItem newItem = updatedProduct.getItemMap().get("0");
             Assertions.assertNotEquals(oldItem.getId(), newItem.getId());
         }
+
+        @Test
+        void testUnsetProductCategory() throws Exception {
+            Category defaultCategory = getDefaultCategory();
+            ProductRequest productRequest = fromProductToRequest(product);
+            product.setCategoryId(null);
+            product = performPut(PRODUCT_UPDATE_PRODUCT_ROUTE, Product.class, productRequest, productRequest.getId());
+            Assertions.assertEquals(defaultCategory.getId(), product.getCategoryId());
+        }
+
+        @Test
+        void testChangeProductCategoryWithNonExistentId() throws Exception {
+            ProductRequest productRequest = fromProductToRequest(product);
+            productRequest.setCategoryId(NON_EXISTENT_CATEGORY_ID);
+            performPut(PRODUCT_UPDATE_PRODUCT_ROUTE, productRequest, productRequest.getId()).andExpect(status().isUnprocessableEntity());
+        }
     }
 
     @Test
@@ -383,9 +417,6 @@ class ProductControllerTest extends AbstractControllerTest {
         Assertions.assertTrue(areListsTheSame, "The expected list and the actual list are not equal");
     }
 
-    //create
-        //invalid body
-            //non-existent category
 
     //update
         //invalid
@@ -395,6 +426,7 @@ class ProductControllerTest extends AbstractControllerTest {
         ProductRequest product = ProductRequest
                 .builder()
                 .name(generateRandomString())
+                .imageUrl(DEFAULT_IMAGE_URL)
                 .variations(new ArrayList<>())
                 .items(new ArrayList<>())
                 .build();

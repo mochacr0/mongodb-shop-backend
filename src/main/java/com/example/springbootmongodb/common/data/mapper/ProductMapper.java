@@ -22,6 +22,7 @@ public class ProductMapper {
                 .name(request.getName())
                 .imageUrl(request.getImageUrl())
                 .description(request.getDescription())
+                .categoryId(request.getCategoryId())
                 .build();
     }
 
@@ -34,6 +35,7 @@ public class ProductMapper {
         return Product
                 .builder()
                 .id(entity.getId())
+                .categoryId(entity.getCategoryId())
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .imageUrl(entity.getImageUrl())
@@ -83,5 +85,6 @@ public class ProductMapper {
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
         entity.setImageUrl(request.getImageUrl());
+        entity.setCategoryId(request.getCategoryId());
     }
 }
