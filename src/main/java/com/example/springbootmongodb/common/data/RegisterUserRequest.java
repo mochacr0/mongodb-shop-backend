@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class RegisterUserRequest {
-    @Schema(title = "name", description = "User name", example = "user00", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Username", example = "user00", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
-    @Schema(title = "email", description = "User email", example = "nthai2001cr@gmail.com", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Email", example = "nthai2001cr@gmail.com", requiredMode = Schema.RequiredMode.REQUIRED)
     private String email;
-    @Schema(title = "password", description = "User password", example = "String", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema( description = "Mật khẩu", example = "String", requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
-    @Schema(title = "confirmPassword", description = "Confirm password, which must be the same as password", example = "String", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Nhập lại mật khẩu", example = "String", requiredMode = Schema.RequiredMode.REQUIRED)
     private String confirmPassword;
     @Schema(hidden = true)
     public void setMatchedPasswords(String password) {

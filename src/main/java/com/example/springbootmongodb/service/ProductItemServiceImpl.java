@@ -29,7 +29,7 @@ public class ProductItemServiceImpl implements ProductItemService {
     private final ProductItemRepository itemRepository;
     private final ProductItemMapper mapper;
     public static final String PRODUCT_MISSING_ITEMS_ERROR_MESSAGE = "Product is missing some items";
-    public static final String NON_POSITIVE_SKU_ERROR_MESSAGE = "Product sku must be equal or greater than 0";
+    public static final String NON_POSITIVE_QUANTITY_ERROR_MESSAGE = "Product sku must be equal or greater than 0";
     public static final String MINIMUM_PRICE_VIOLATION_ERROR_MESSAGE = "Product price must be equal or greater than 0";
     @Autowired
     @Lazy
@@ -110,8 +110,8 @@ public class ProductItemServiceImpl implements ProductItemService {
     }
 
     private void validateItemRequest(ProductItemRequest request) {
-        if (request.getSku() < 0) {
-            throw new InvalidDataException(NON_POSITIVE_SKU_ERROR_MESSAGE);
+        if (request.getQuantity() < 0) {
+            throw new InvalidDataException(NON_POSITIVE_QUANTITY_ERROR_MESSAGE);
         }
         if (request.getPrice() <= 0) {
             throw new InvalidDataException(MINIMUM_PRICE_VIOLATION_ERROR_MESSAGE);

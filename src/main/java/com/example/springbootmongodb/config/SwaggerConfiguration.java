@@ -107,12 +107,11 @@ public class SwaggerConfiguration {
             return;
         }
         loginEndpoint = new PathItem();
-        openApi.addTagsItem(new Tag().name("Login Endpoint").description("Login Endpoint"));
+        openApi.addTagsItem(new Tag().name("Login"));
         loginEndpoint.post(new Operation()
-                .addTagsItem("Login Endpoint")
-                .summary("Login method to get user JWT token data")
-                .description("Login method used to authenticate user and get JWT token data." +
-                        "\n\n Value of the response **token** field can be used as **Authorization** header value: `Authorization: Bearer $JWT_TOKEN_VALUE`.")
+                .addTagsItem("Đăng nhập")
+                .summary("Đăng nhập")
+                .description("Token trả về là một JWT token. Đính kèm token này vào phần header của request khi muốn sử dụng các API khác: `Authorization: Bearer JWT_TOKEN_VALUE`.")
                 .requestBody(new RequestBody()
                         .content(new Content()
                                 .addMediaType(MediaType.APPLICATION_JSON_VALUE,

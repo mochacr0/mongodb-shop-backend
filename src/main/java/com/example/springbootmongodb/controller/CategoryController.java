@@ -19,12 +19,12 @@ import org.springframework.web.bind.annotation.*;
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 
 @RestController
-@Tag(name = "Category")
 @RequiredArgsConstructor
+@Tag(name = "Category")
 public class CategoryController {
     private final CategoryService categoryService;
     private final CategoryMapper mapper;
-    @Operation(summary = "Return a page of available users")
+    @Operation(summary = "Phân trang danh mục")
     @GetMapping(value = CATEGORY_GET_CATEGORIES_ROUTE)
     PageData<Category> getCategories(@Parameter(description = PAGE_NUMBER_DESCRIPTION)
                                      @RequestParam(defaultValue = PAGE_NUMBER_DEFAULT_STRING_VALUE) int page,
@@ -36,39 +36,45 @@ public class CategoryController {
                                      @RequestParam(defaultValue = SORT_DIRECTION_DEFAULT_VALUE) String sortDirection,
                                      @Parameter(description = SORT_PROPERTY_DESCRIPTION)
                                      @RequestParam(defaultValue = SORT_PROPERTY_DEFAULT_VALUE) String sortProperty) {
-        return categoryService.findCategories(new PageParameter(page, pageSize, sortDirection, sortProperty, ""));
+        return categoryService.findCategories(PageParameter
+                .builder()
+                .page(page)
+                .pageSize(pageSize)
+                .sortDirection(sortDirection)
+                .sortProperty(sortProperty)
+                .textSearch("")
+                .build());
     }
 
-    @Operation(summary = "Retrieve a specific category by the provided categoryId")
+    @Operation(summary = "Tìm danh mục theo Id")
     @GetMapping(value = CATEGORY_GET_CATEGORY_BY_ID_ROUTE)
-    Category getCategoryById(@Parameter(description = "ID of the category to retrieve", required = true)
+    Category getCategoryById(@Parameter(description = "Id của danh mục muốn tìm", required = true)
                              @PathVariable(name = "categoryId") String categoryId) {
         return DaoUtils.toData(categoryService.findById(categoryId), mapper::fromEntity);
     }
 
-    @Operation(summary = "Retrieve the default category")
+    @Operation(summary = "Tìm danh mục mặc định")
     @GetMapping(value = CATEGORY_GET_DEFAULT_CATEGORY_ROUTE)
     Category getDefaultCategory() {
         return DaoUtils.toData(categoryService.findDefaultCategory(), mapper::fromEntity);
     }
 
-    @Operation(summary = "Create a new category")
+    @Operation(summary = "Tạo danh mục mới")
     @PostMapping(value = CATEGORY_CREATE_CATEGORY_ROUTE)
-    Category create(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
-                                                                          description = "Category object containing the category details")
+    Category create(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                     @RequestBody Category category) {
         return DaoUtils.toData(categoryService.create(category), mapper::fromEntity);
     }
-    @Operation(summary = "Update an existing category by the provided categoryId")
+    @Operation(summary = "Update danh mục")
     @PutMapping(value = CATEGORY_UPDATE_CATEGORY_ROUTE)
-    Category update(@Parameter(description = "ID of the category to update", required = true)
+    Category update(@Parameter(description = "Id của danh mục cần update", required = true)
                     @PathVariable(name = "categoryId") String categoryId,
                     @RequestBody Category category) {
         return DaoUtils.toData(categoryService.save(categoryId, category), mapper::fromEntity);
     }
-    @Operation(summary = "Delete an existing category by the provided categoryId")
+    @Operation(summary = "Xóa danh mục")
     @DeleteMapping(value = CATEGORY_DELETE_CATEGORY_BY_ID_ROUTE)
-    void deleteCategoryById(@Parameter(description = "ID of the category to delete", required = true)
+    void deleteCategoryById(@Parameter(description = "Id của danh mục cần xóa", required = true)
                             @PathVariable(name = "categoryId") String categoryId) {
         categoryService.deleteById(categoryId);
     }

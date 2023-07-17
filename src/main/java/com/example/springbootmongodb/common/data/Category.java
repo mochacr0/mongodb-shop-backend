@@ -14,30 +14,34 @@ import java.util.List;
 @Setter
 @SuperBuilder
 public class Category extends AbstractData {
-    @Schema(title = "name", description = "Category name", example = "Shirt")
+    @Schema(description = "Tên danh mục", example = "Shirt")
     private String name;
-    @Schema(title = "parentCategoryId", description = "Parent category id", example = "64805c5bdb4a3449c81a9bed")
+    @Schema(description = "Id của danh mục chính", example = "64805c5bdb4a3449c81a9bed")
     private String parentCategoryId;
-    @Schema(title = "isDefault", description = "If this category is the default category, this boolean value will be true", example = "false")
     private boolean isDefault;
     @Schema(hidden = true)
     @ReadOnlyProperty
     List<Category> subCategories;
 
+    @Schema(name = "isDefault", description = "Có phải danh mục mặc định hay không", example = "false")
+    public boolean isDefault() {
+        return this.isDefault;
+    }
+
     @Override
-    @Schema(title = "id", description = "Category ID", example = "647d222a59a4582894a95c10")
+    @Schema(description = "Id danh muục", example = "647d222a59a4582894a95c10")
     public String getId() {
         return this.id;
     }
 
     @Override
-    @Schema(title = "createdAt", description = "Timestamp of the category creation", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(description = "Thời điểm danh mục được tạo", accessMode = Schema.AccessMode.READ_ONLY)
     public LocalDateTime getCreatedAt() {
         return this.createdAt;
     }
 
     @Override
-    @Schema(title = "updatedAt", description = "Timestamp of the category update", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(description = "Lần cập nhật danh mục gần nhất", accessMode = Schema.AccessMode.READ_ONLY)
     public LocalDateTime getUpdatedAt() {
         return this.updatedAt;
     }

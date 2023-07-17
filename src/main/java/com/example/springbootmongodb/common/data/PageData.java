@@ -14,17 +14,17 @@ import java.util.stream.Collectors;
 @Schema
 public class PageData<T> {
 
-    @Schema(description = "boolean indicates more pages", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(description = "Có trang tiếp theo hay không", accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty("hasNext")
     private boolean hasNext;
 
-    @Schema(description = "Total number of elements in all available pages", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(description = "Tổng sổ phần tử trong tất cả các trang", accessMode = Schema.AccessMode.READ_ONLY)
     private long totalElements;
 
-    @Schema(description = "Total pages of available", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(description = "Tổng số trang", accessMode = Schema.AccessMode.READ_ONLY)
     private long totalPages;
 
-    @Schema(description = "Array of the entities", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(description = "Danh sách phần tử", accessMode = Schema.AccessMode.READ_ONLY)
     private List<T> data;
 
     public <D> PageData(Page<? extends ToData<T>> page) {

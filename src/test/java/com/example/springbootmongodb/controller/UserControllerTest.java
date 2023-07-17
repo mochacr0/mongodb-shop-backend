@@ -68,8 +68,8 @@ class UserControllerTest extends AbstractControllerTest {
             int totalUsers = 10;
             for (int i = 0; i < totalUsers; i++) {
                 RegisterUserRequest request = new RegisterUserRequest();
-                request.setName("usertest" + i);
-                request.setEmail("usertest" + i + "@gmail.com");
+                request.setName(generateUsername());
+                request.setEmail(generateEmail());
                 request.setPassword(DEFAULT_PASSWORD);
                 request.setConfirmPassword(DEFAULT_PASSWORD);
                 registerRequests.add(request);
@@ -133,7 +133,7 @@ class UserControllerTest extends AbstractControllerTest {
                 request.setEmail("duplicatednameuser@gmail.com");
                 request.setPassword(DEFAULT_PASSWORD);
                 request.setConfirmPassword(DEFAULT_PASSWORD);
-                performPost(USERS_REGISTER_USER_ROUTE, request)
+                performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false)
                         .andExpect(status().isBadRequest());
             }
             @Test
@@ -143,7 +143,7 @@ class UserControllerTest extends AbstractControllerTest {
                 request.setEmail(defaultUser.getEmail());
                 request.setPassword(DEFAULT_PASSWORD);
                 request.setConfirmPassword(DEFAULT_PASSWORD);
-                performPost(USERS_REGISTER_USER_ROUTE, request)
+                performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false)
                         .andExpect(status().isBadRequest());
             }
         }
@@ -161,22 +161,22 @@ class UserControllerTest extends AbstractControllerTest {
             @Test
             void testRegisterUserWithMissingNameField () throws Exception {
                 request.setName(null);
-                performPost(USERS_REGISTER_USER_ROUTE, request).andExpect(status().isBadRequest());
+                performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false).andExpect(status().isBadRequest());
             }
             @Test
             void testRegisterUserWithMissingEmailField () throws Exception {
                 request.setEmail(null);
-                performPost(USERS_REGISTER_USER_ROUTE, request).andExpect(status().isBadRequest());
+                performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false).andExpect(status().isBadRequest());
             }
             @Test
             void testRegisterUserWithMissingPasswordField () throws Exception {
                 request.setPassword(null);
-                performPost(USERS_REGISTER_USER_ROUTE, request).andExpect(status().isBadRequest());
+                performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false).andExpect(status().isBadRequest());
             }
             @Test
             void testRegisterUserWithMissingConfirmPasswordField () throws Exception {
                 request.setConfirmPassword(null);
-                performPost(USERS_REGISTER_USER_ROUTE, request).andExpect(status().isBadRequest());
+                performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false).andExpect(status().isBadRequest());
             }
         }
 
@@ -187,7 +187,7 @@ class UserControllerTest extends AbstractControllerTest {
             request.setName(generateUsername());
             request.setEmail(invalidFormatEmail);
             request.setMatchedPasswords(generatePassword());
-            performPost(USERS_REGISTER_USER_ROUTE, request)
+            performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false)
                     .andExpect(status().isBadRequest());
         }
 
@@ -205,18 +205,18 @@ class UserControllerTest extends AbstractControllerTest {
                 String unmatchedConfirmPassword = "Not" + DEFAULT_PASSWORD;
                 request.setPassword(DEFAULT_PASSWORD);
                 request.setConfirmPassword(unmatchedConfirmPassword);
-                performPost(USERS_REGISTER_USER_ROUTE, request)
+                performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false)
                         .andExpect(status().isBadRequest());
             }
             @Test
             void testRegisterUserWithPasswordViolations() throws Exception {
                 String noUpperCaseLetterPassword = "string";
                 request.setMatchedPasswords(noUpperCaseLetterPassword);
-                performPost(USERS_REGISTER_USER_ROUTE, request)
+                performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false)
                         .andExpect(status().isBadRequest());
                 String underMinimumLengthPassword = "1";
                 request.setMatchedPasswords(underMinimumLengthPassword);
-                performPost(USERS_REGISTER_USER_ROUTE, request)
+                performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false)
                         .andExpect(status().isBadRequest());
             }
         }
@@ -228,7 +228,7 @@ class UserControllerTest extends AbstractControllerTest {
             request.setEmail(generateEmail());
             request.setPassword(DEFAULT_PASSWORD);
             request.setConfirmPassword(DEFAULT_PASSWORD);
-            User user = readResponse(performPost(USERS_REGISTER_USER_ROUTE, request).andExpect(status().isOk()), User.class);
+            User user = readResponse(performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false).andExpect(status().isOk()), User.class);
             activateUser(user.getId());
             login(user.getName(), DEFAULT_PASSWORD);
             deleteUser(user.getId());
