@@ -7,6 +7,7 @@ import com.example.springbootmongodb.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,32 +17,32 @@ import static com.example.springbootmongodb.controller.ControllerConstants.*;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "Product")
 public class ProductController {
     private final ProductService productService;
     private final ProductMapper mapper;
+
     @PostMapping(value = PRODUCT_CREATE_PRODUCT_ROUTE)
+    @Operation(summary = "Tạo sản phẩm mới")
     Product createAsync(@RequestBody ProductRequest request) {
         return mapper.fromEntity(productService.createAsync(request));
     }
 
-//    @PostMapping(value = PRODUCT_CREATE_PRODUCT_ROUTE)
-//    Product create(@RequestBody ProductRequest request) {
-//        return mapper.fromEntity(productService.create(request));
-//    }
-
     @GetMapping(value = PRODUCT_GET_PRODUCT_BY_ID_ROUTE)
+    @Operation(summary = "Tìm sản phẩm theo Id")
     Product getProductById (@PathVariable(name = "productId") String productId) {
         return mapper.fromEntity(productService.findById(productId));
     }
 
     @PutMapping(value = PRODUCT_UPDATE_PRODUCT_ROUTE)
+    @Operation(summary = "Update sản phẩm")
     Product update (@PathVariable(name = "productId") String productId,
                     @RequestBody ProductRequest request) {
         return mapper.fromEntity(productService.updateAsync(productId, request));
     }
 
-    @Operation(summary = "Return a page of available products")
     @GetMapping(value = PRODUCT_GET_PRODUCTS_ROUTE)
+    @Operation(summary = "Phân trang sản phẩm")
     PageData<ProductPaginationResult> getProducts(@Parameter(description = PAGE_NUMBER_DESCRIPTION)
                                                   @RequestParam(defaultValue = PAGE_NUMBER_DEFAULT_STRING_VALUE) int page,
                                                   @Parameter(description = PAGE_SIZE_DESCRIPTION)
@@ -59,7 +60,7 @@ public class ProductController {
 //                                                  @Parameter(description = RATING_FILTER_DESCRIPTION)
                                                   @RequestParam(required = false) Float rating,
                                                   @RequestParam(required = false) String categoryId) {
-        ProductPageParameter pageParameter = ProductPageParameter
+        return productService.findProducts(ProductPageParameter
                 .builder()
                 .page(page)
                 .pageSize(pageSize)
@@ -69,18 +70,19 @@ public class ProductController {
                 .minPrice(minPrice)
                 .maxPrice(maxPrice)
                 .categoryId(categoryId)
-                .build();
-        return productService.findProducts(pageParameter);
+                .build()
+        );
     }
 
-    @Operation(summary = "Search product with given text search string and search limit")
     @GetMapping(value = PRODUCT_SEARCH_PRODUCTS_ROUTE)
+    @Operation(summary = "Tìm kiếm sản phẩm")
     List<ProductSearchResult> searchProducts(@RequestParam(required = false) String textSearch,
                                  @RequestParam(required = false) Integer limit) {
         return DaoUtils.toListData(productService.searchProducts(textSearch, limit), mapper::fromEntityToSearchResult);
     }
 
     @DeleteMapping(value = PRODUCT_DELETE_PRODUCT_BY_ID_ROUTE)
+    @Operation(summary = "Xóa sản phẩm theo Id")
     void deleteProductById(@PathVariable(name = "productId") String productId) {
         productService.deleteById(productId);
     }

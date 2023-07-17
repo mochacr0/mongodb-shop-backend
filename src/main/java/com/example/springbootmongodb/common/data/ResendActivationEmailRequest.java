@@ -7,6 +7,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Getter
 public class ResendActivationEmailRequest {
-    @Schema(description = "Email addresses from the user that need to be verified", example = "user0@gmail.com")
+    @Schema(description = "Địa chỉ email đã đăng ký", example = "user0@gmail.com")
     private String email;
 }

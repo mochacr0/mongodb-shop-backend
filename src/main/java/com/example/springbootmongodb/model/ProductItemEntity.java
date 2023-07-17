@@ -8,7 +8,6 @@ import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +20,7 @@ import static com.example.springbootmongodb.model.ModelConstants.PRODUCT_ITEM_CO
 @Setter
 @SuperBuilder
 public class ProductItemEntity extends AbstractEntity {
-    private int sku;
+    private int quantity;
     private float price;
     private boolean isDisabled;
     @Field(name = "productId")

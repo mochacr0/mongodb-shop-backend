@@ -1,9 +1,6 @@
 package com.example.springbootmongodb.repository;
 
-import com.example.springbootmongodb.common.data.PageData;
-import com.example.springbootmongodb.common.data.ProductPageParameter;
 import com.example.springbootmongodb.exception.InvalidDataException;
-import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductItemEntity;
 import com.mongodb.bulk.BulkWriteResult;
 import io.jsonwebtoken.lang.Collections;
@@ -11,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -47,7 +43,7 @@ public class CustomProductItemRepositoryImpl implements CustomProductItemReposit
             bulkUpdateOperation.
                     updateOne(Query.query(where("_id").is(request.getId())),
                             new Update()
-                                    .set("sku", request.getSku())
+                                    .set("quantity", request.getQuantity())
                                     .set("price", request.getPrice()));
         }
         bulkUpdateOperation.execute();

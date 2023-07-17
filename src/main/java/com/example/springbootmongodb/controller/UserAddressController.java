@@ -26,15 +26,14 @@ public class UserAddressController {
     private final UserAddressService userAddressService;
     private final UserAddressMapper mapper;
 
-    @Operation(summary = "Create a new user address")
+    @Operation(summary = "Tạo địa chỉ mới cho user hiện đăng đăng nhập")
     @PostMapping(value = USERS_CREATE_ADDRESSES_ROUTE)
-    UserAddress createAddress(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
-                                                                                    description = "UserAddress object containing the address details")
+    UserAddress createAddress(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                               @RequestBody UserAddress address) {
         return mapper.toUserAddress(userAddressService.create(address));
     }
 
-    @Operation(summary = "Retrieve all addresses associated with the current user",
+    @Operation(summary = "Tìm tất cả địa chỉ của user hiện đang đăng nhập",
                security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @GetMapping(value = USERS_GET_CURRENT_USER_ADDRESSES_ROUTE)
     List<UserAddress> getAddressesByUserId() {
@@ -42,26 +41,25 @@ public class UserAddressController {
     }
 
 
-    @Operation(summary = "Retrieve a specific address by the provided addressId")
+    @Operation(summary = "Tìm một địa chỉ bất kỳ của user hiện đang đăng nhập")
     @GetMapping(value = USERS_GET_ADDRESS_BY_ID_ROUTE)
-    UserAddress getAddressById(@Parameter(description = "ID of the address to retrieve", required = true)
+    UserAddress getAddressById(@Parameter(description = "Id của địa chỉ muốn tìm", required = true)
                                @PathVariable(name = "addressId") String addressId) {
         return mapper.toUserAddress(userAddressService.findById(addressId));
     }
 
-    @Operation(summary = "Update an existing user address by the provided addressId")
+    @Operation(summary = "Cập nhật một địa chỉ bất kỳ của user hiện đang đăng nhập")
     @PutMapping(value = USERS_UPDATE_ADDRESS_ROUTE)
-    UserAddress updateAddress(@Parameter(description = "ID of the address to update")
+    UserAddress updateAddress(@Parameter(description = "Id của địa chỉ muốn update")
                               @PathVariable(name = "addressId") String addressId,
-                              @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
-                                                                                    description = "UserAddress object containing the updated address details.")
+                              @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                               @RequestBody UserAddress address) {
         return mapper.toUserAddress(userAddressService.save(addressId, address));
     }
 
-    @Operation(summary = "Delete an existing user address by the provided addressId")
+    @Operation(summary = "Xóa một địa chỉ bất kỳ của user hiện đang đăng nhập")
     @DeleteMapping(value = USERS_DELETE_ADDRESS_BY_ID_ROUTE)
-    void deleteAddressById(@Parameter(description = "ID of the address to delete")
+    void deleteAddressById(@Parameter(description = "Id của địa chỉ muốn xóa")
                            @PathVariable(name = "addressId") String addressId) {
         userAddressService.deleteById(addressId);
     }
