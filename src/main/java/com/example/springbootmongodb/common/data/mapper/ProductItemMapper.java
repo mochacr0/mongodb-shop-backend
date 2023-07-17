@@ -2,11 +2,8 @@ package com.example.springbootmongodb.common.data.mapper;
 
 import com.example.springbootmongodb.common.data.ProductItem;
 import com.example.springbootmongodb.common.data.ProductItemRequest;
-import com.example.springbootmongodb.common.data.ProductVariation;
-import com.example.springbootmongodb.common.data.VariationOption;
 import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.model.ProductItemEntity;
-import com.example.springbootmongodb.model.ProductVariationEntity;
 import com.example.springbootmongodb.model.VariationOptionEntity;
 import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +24,7 @@ public class ProductItemMapper {
     public ProductItemEntity toEntity(ProductItemRequest request) {
         return ProductItemEntity
                 .builder()
-                .sku(request.getSku())
+                .quantity(request.getQuantity())
                 .price(request.getPrice())
                 .options(new ArrayList<>())
                 .build();
@@ -42,13 +39,13 @@ public class ProductItemMapper {
             }
             variations.add(String.format("%s:%s", option.getVariation().getName(), option.getName()));
         }
-        String variationDescription = String.join(",", variations);
+        String variationDescription = String.join(", ", variations);
         return ProductItem
                 .builder()
                 .id(entity.getId())
                 .variationDescription(variationDescription)
                 .imageUrl(imageUrl)
-                .sku(entity.getSku())
+                .quantity(entity.getQuantity())
                 .price(entity.getPrice())
                 .product(productMapper.fromEntityToSimplification(entity.getProduct()))
                 .options(DaoUtils.toListData(entity.getOptions(), optionMapper::fromEntity))
@@ -58,7 +55,7 @@ public class ProductItemMapper {
     }
 
     public void updateFields(ProductItemEntity entity, ProductItemRequest request) {
-        entity.setSku(request.getSku());
+        entity.setQuantity(request.getQuantity());
         entity.setPrice(request.getPrice());
     }
 

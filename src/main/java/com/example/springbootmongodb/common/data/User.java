@@ -25,34 +25,34 @@ import static com.example.springbootmongodb.model.ModelConstants.NAME_FIELD;
 @EqualsAndHashCode(callSuper = true)
 @Schema
 public class User extends AbstractData implements ToEntity<UserEntity> {
-    @Schema(title = "name", description = "Username", example = "user00")
+    @Schema(description = "Username", example = "user00")
     @Length(fieldName = NAME_FIELD)
     private String name;
-    @Schema(title = "email", description = "User email", example = "nthai2001cr@gmail.com")
+    @Schema(description = "Địa chỉ email", example = "nthai2001cr@gmail.com")
     @Length(fieldName = USER_EMAIL_FIELD)
     @Email
     private String email;
-    @Schema(title = "role", description = "User role", example = "USER/ADMIN")
+    @Schema(title = "role", description = "Role của tài khoản. Mặc định là USER", example = "USER/ADMIN")
     private Authority authority = Authority.USER;
     @JsonIgnore
     private UserCredentials userCredentials;
-    @Schema(title = "defaultAddressId", description = "User default address ID", example = "647d222a59a4582894a95c10")
+    @Schema(description = "Id địa chỉ mặc định của user", example = "647d222a59a4582894a95c10")
     private String defaultAddressId;
 
     @Override
-    @Schema(title = "id", description = "User ID", example = "647d222a59a4582894a95c10")
+    @Schema(title = "id", description = "User Id", example = "647d222a59a4582894a95c10")
     public String getId() {
         return this.id;
     }
 
     @Override
-    @Schema(title = "createdAt", description = "Timestamp of the user creation", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(title = "createdAt", description = "Thời điểm tài khoản được tạo", accessMode = Schema.AccessMode.READ_ONLY)
     public LocalDateTime getCreatedAt() {
         return this.createdAt;
     }
 
     @Override
-    @Schema(title = "updatedAt", description = "Timestamp of the user update", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(title = "updatedAt", description = "Lần cập nhật gần nhất", accessMode = Schema.AccessMode.READ_ONLY)
     public LocalDateTime getUpdatedAt() {
         return this.updatedAt;
     }
