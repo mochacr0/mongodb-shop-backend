@@ -190,11 +190,11 @@ public abstract class AbstractControllerTest {
         request.setEmail(email);
         request.setPassword(password);
         request.setConfirmPassword(confirmPassword);
-        return readResponse(performPost(USERS_REGISTER_USER_ROUTE, request).andExpect(status().isOk()), User.class);
+        return readResponse(performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", request, false).andExpect(status().isOk()), User.class);
     }
 
     protected User createUser(RegisterUserRequest request) throws Exception {
-        return performPost(USERS_REGISTER_USER_ROUTE, User.class, request);
+        return performPost(USERS_REGISTER_USER_ROUTE + "?isMailRequired={isMailRequired}", User.class, request, false);
     }
 
     protected void activateUser(String userId) throws Exception {

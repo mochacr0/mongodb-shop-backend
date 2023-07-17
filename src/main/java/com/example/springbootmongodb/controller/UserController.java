@@ -1,6 +1,9 @@
 package com.example.springbootmongodb.controller;
 
-import com.example.springbootmongodb.common.data.*;
+import com.example.springbootmongodb.common.data.PageData;
+import com.example.springbootmongodb.common.data.PageParameter;
+import com.example.springbootmongodb.common.data.RegisterUserRequest;
+import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.mapper.UserMapper;
 import com.example.springbootmongodb.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,67 +27,69 @@ public class UserController {
     private final UserService userService;
     private final UserMapper mapper;
 
-    @Operation(summary = "Return a page of available users")
+    @Operation(summary = "Phân trang sản phẩm")
     @GetMapping(value = USERS_GET_USERS_ROUTE)
     PageData<User> getUsers(@Parameter(description = PAGE_NUMBER_DESCRIPTION)
                             @RequestParam(defaultValue = PAGE_NUMBER_DEFAULT_STRING_VALUE) int page,
                             @Parameter(description = PAGE_SIZE_DESCRIPTION)
                             @RequestParam(defaultValue = PAGE_SIZE_DEFAULT_STRING_VALUE) int pageSize,
                             @Parameter(description = SORT_ORDER_DESCRIPTION,
-                                    examples = {@ExampleObject(name = "asc (Ascending)", value = "asc"),
-                                            @ExampleObject(name = "desc (Descending)", value = "desc")})
+                                    examples = {@ExampleObject(name = "asc (Tăng dần)", value = "asc"),
+                                            @ExampleObject(name = "desc (Giảm dần)", value = "desc")})
                             @RequestParam(defaultValue = SORT_DIRECTION_DEFAULT_VALUE) String sortDirection,
                             @Parameter(description = SORT_PROPERTY_DESCRIPTION)
                             @RequestParam(defaultValue = SORT_PROPERTY_DEFAULT_VALUE) String sortProperty) {
         //no validate sortOrder
-        return userService.findUsers(new PageParameter(page, pageSize, sortDirection, sortProperty, ""));
+        return userService.findUsers(PageParameter
+                .builder()
+                .page(page)
+                .pageSize(pageSize)
+                .sortDirection(sortDirection)
+                .sortProperty(sortProperty)
+                .textSearch("")
+                .build());
     }
 
-    @Operation(summary = "Fetch the User object based on the provided userId")
+    @Operation(summary = "Tìm user theo Id")
     @GetMapping(value = USERS_GET_USER_BY_ID_ROUTE)
     User getUserById (@Parameter(description = "A string value representing the user id", required = true)
                       @PathVariable(name = "userId") String userId) {
         return mapper.toUser(userService.findById(userId));
     }
 
-    @Operation(summary = "Fetch the Current User object")
+    @Operation(summary = "Tìm user hiện đang đăng nhập")
     @GetMapping(value = USERS_GET_CURRENT_USER_ROUTE)
     User getCurrentUser () {
         return mapper.toUser(userService.findCurrentUser());
     }
 
-    @Operation(summary = "Update current user", description = "Update the Current User. " +
-            "Referencing non-existing User will cause 'Not Found' error.")
+    @Operation(summary = "Update user hiện đăng đăng nhâp")
     @PutMapping(value = USERS_UPDATE_USER_ROUTE)
-    User saveUser(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
-                                                                        description = "User payload to update")
+    User saveUser(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                   @RequestBody User user) {
         return mapper.toUser(userService.saveCurrentUser(user));
     }
 
-    @Operation(summary = "Register new user", description = "Register new user. " +
-            "When creating user, platform generates User Id. " +
-            "The newly created User Id will be present in the response. ")
+    @Operation(summary = "Đăng ký user")
     @PostMapping(value = USERS_REGISTER_USER_ROUTE)
-    User regsiterUser(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
-                                                                            description = "User registration payload")
+    User regsiterUser(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                       @RequestBody RegisterUserRequest registerUserRequest,
-                      @Parameter(description = "A boolean indicates whether or not mail verification is required.")
-                      @RequestParam(defaultValue = "false") boolean isMailRequired,
+                      @Parameter(description = "Có cần gửi email xác nhận hay không. (Mặc định là true. Chỉ set false khi test)")
+                      @RequestParam(defaultValue = "true") boolean isMailRequired,
                       HttpServletRequest request) {
         return mapper.toUser(userService.register(registerUserRequest, request, isMailRequired));
     }
 
-    @Operation(summary = "Delete the User specified by userId and its credentials. A non-existent User Id will result in an error.")
+    @Operation(summary = "Xóa user theo Id")
     @DeleteMapping(value = USERS_DELETE_USER_BY_ID_ROUTE)
     void deleteUser(@Parameter(description = "A string value representing the user id", required = true)
                     @PathVariable(name = "userId") String userId) {
         userService.deleteById(userId);
     }
 
-    @Operation(summary = "Activate user by userId")
+    @Operation(summary = "Kích hoat tài khoản. (API này chỉ dùng để test)")
     @PostMapping(value = USERS_ACTIVATE_USER_CREDENTIALS_ROUTE)
-    void activateUserByUserId(@Parameter(description = "A string value representing the user id", required = true)
+    void activateUserByUserId(@Parameter(description = "Id của tài khoản muốn kích hoạt", required = true)
                               @PathVariable(name = "userId") String userId) {
         userService.activateById(userId);
     }

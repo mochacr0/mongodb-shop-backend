@@ -18,11 +18,11 @@ public class ControllerConstants {
     public static final String SORT_DIRECTION_DEFAULT_VALUE = "desc";
     public static final String SORT_PROPERTY_DEFAULT_VALUE = "createdAt";
     public static final String USER_ID_PARAM = "userId";
-    public static final String PAGE_NUMBER_DESCRIPTION = "Sequence number of pages starting from 0";
-    public static final String PAGE_SIZE_DESCRIPTION = "Maximum amount of entities in one page";
-    public static final String SORT_ORDER_DESCRIPTION = "Sorting direction";
+    public static final String PAGE_NUMBER_DESCRIPTION = "Số trang hiện tại (mặc định là trang đầu tiên)";
+    public static final String PAGE_SIZE_DESCRIPTION = "Số lượng phần tử tối đa trong mỗi trang";
+    public static final String SORT_ORDER_DESCRIPTION = "Chiều sắp xếp";
     public static final String SORT_ORDER_EXAMPLE = "asc (ascending) or desc (descending)";
-    public static final String SORT_PROPERTY_DESCRIPTION = "Entity property to sort by";
+    public static final String SORT_PROPERTY_DESCRIPTION = "Thuộc tính sắp xếp phần tử được áp dụng";
 
     //Auth controller constants
     public static final String AUTH_ROUTE = "/auth";

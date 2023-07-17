@@ -27,49 +27,45 @@ public class AuthController {
     private final AuthService authService;
     private final SecuritySettingsConfiguration securitySettings;
 
-    @Operation(summary = "Activate a user account using the activation token retrieved from the email")
+    @Operation(summary = "Kích hoạt tài khoản user")
     @PostMapping(value = AUTH_ACTIVATE_EMAIL_ROUTE)
     void activateEmail(
-            @Parameter(description = "Activate user using activation token retrieved from email")
+            @Parameter(description = "Token kích hoạt được gửi đến email đã đăng ký")
             @RequestParam String activationToken) {
         authService.activateEmail(activationToken);
     }
 
-    @Operation(summary = "Resend the activation token to the user's email address")
+    @Operation(summary = "Yêu cầu gửi lại token kích hoạt đến email đã đăng ký")
     @PostMapping(value = AUTH_RESEND_ACTIVATION_TOKEN_ROUTE)
-    void resendActivationToken(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
-                                                                                     description = "Object containing the email")
+    void resendActivationToken(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                                @RequestBody ResendActivationEmailRequest resendRequest, HttpServletRequest request) {
         authService.resendActivationTokenByEmail(resendRequest.getEmail(), request);
     }
 
-    @Operation(summary = "Retrieve the password policy for users")
+    @Operation(summary = "Truy xuất yêu cầu đối với mật khẩu (Số lượng ký tự thường, ký tự viết hoa,...)")
     @GetMapping(value = AUTH_GET_USER_PASSWORD_POLICY_ROUTE)
     UserPasswordPolicy getUserPasswordPolicy() {
         return securitySettings.getPasswordPolicy();
     }
 
-    @Operation(summary = "Change user's password")
+    @Operation(summary = "Đổi mật khẩu")
     @PostMapping(value = AUTH_CHANGE_PASSWORD_ROUTE)
-    JwtToken changePassword(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
-                                                                                  description = "Object containing the change password request details")
+    JwtToken changePassword(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
             @RequestBody ChangePasswordRequest request) {
         return authService.changePassword(request);
     }
 
-    @Operation(summary = "Request a password reset token to be sent to the user's email address")
+        @Operation(summary = "Yêu cầu gửi token reset mật khẩu đến địa chỉ email của người dùng")
     @PostMapping(value = AUTH_REQUEST_PASSWORD_RESET_EMAIL_ROUTE)
-    void requestPasswordResetEmail (@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
-                                                                                          description = "Object containing the email")
+    void requestPasswordResetEmail (@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                                     @RequestBody PasswordResetEmailRequest passwordResetEmailRequest,
                                     HttpServletRequest request) {
         authService.requestPasswordResetEmail(passwordResetEmailRequest.getEmail(), request);
     }
 
-    @Operation(summary = "Reset user's password using the password reset token")
+    @Operation(summary = "Reset mật khẩu bằng token reset đã gửi đến email")
     @PostMapping(value = AUTH_RESET_PASSWORD_ROUTE)
-    void resetPassword (@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE),
-                                                                              description = "Object containing the password reset request details")
+    void resetPassword (@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
             @RequestBody PasswordResetRequest passwordResetRequest) {
         authService.resetPassword(passwordResetRequest);
     }

@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.*;
-import com.example.springbootmongodb.model.ProductEntity;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -146,11 +145,11 @@ class ProductControllerTest extends AbstractControllerTest {
         void testCreateProductWithInvalidItems() throws Exception {
             ProductRequest productRequest = createProductRequestSample();
             for (ProductItemRequest itemRequest : productRequest.getItems()) {
-                itemRequest.setSku(-1);
+                itemRequest.setQuantity(-1);
             }
             performPost(PRODUCT_CREATE_PRODUCT_ROUTE, productRequest)
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message", is(NON_POSITIVE_SKU_ERROR_MESSAGE)));
+                    .andExpect(jsonPath("$.message", is(NON_POSITIVE_QUANTITY_ERROR_MESSAGE)));
             productRequest = createProductRequestSample();
             for (ProductItemRequest itemRequest : productRequest.getItems()) {
                 itemRequest.setPrice(-1);
@@ -302,6 +301,7 @@ class ProductControllerTest extends AbstractControllerTest {
             ProductRequest productRequest = new ProductRequest();
             //create new valid product
             productRequest.setName(generateRandomString());
+            productRequest.setImageUrl(DEFAULT_IMAGE_URL);
             List<ProductVariationRequest> variationRequests = new ArrayList<>();
             variationRequests.add(createVariationRequest(2));
             variationRequests.add(createVariationRequest(1));
@@ -313,7 +313,7 @@ class ProductControllerTest extends AbstractControllerTest {
             Product createdProduct = performPost(PRODUCT_CREATE_PRODUCT_ROUTE, Product.class, productRequest);
             productRequest = fromProductToRequest(createdProduct);
             //update sku of the first item
-            productRequest.getItems().get(0).setSku(2000);
+            productRequest.getItems().get(0).setQuantity(2000);
             Product updatedProduct = performPut(PRODUCT_UPDATE_PRODUCT_ROUTE, Product.class, productRequest, productRequest.getId());
             assertProduct(productRequest, updatedProduct);
             deleteProduct(updatedProduct.getId());
@@ -336,13 +336,13 @@ class ProductControllerTest extends AbstractControllerTest {
             variationRequests.add(createVariationRequest(2));
             List<ProductItemRequest> itemRequests = productRequest.getItems();
             itemRequests.get(0).setVariationIndex(Arrays.asList(0,0,0));
-            itemRequests.get(0).setSku(99999);
+            itemRequests.get(0).setQuantity(99999);
             itemRequests.add(createItemRequest(0,0,1));
             updatedProduct = performPut(PRODUCT_UPDATE_PRODUCT_ROUTE, Product.class, productRequest, productRequest.getId());
             assertProduct(productRequest, updatedProduct);
             newItem = updatedProduct.getItemMap().get("0,0,0");
             Assertions.assertEquals(oldItem.getPrice(), newItem.getPrice());
-            Assertions.assertEquals(99999, newItem.getSku());
+            Assertions.assertEquals(99999, newItem.getQuantity());
             Assertions.assertNotEquals(oldItem.getId(), newItem.getId());
         }
 
@@ -475,7 +475,7 @@ class ProductControllerTest extends AbstractControllerTest {
         indexes.addAll(List.of(additionalIndexes));
         return ProductItemRequest
                 .builder()
-                .sku(100)
+                .quantity(100)
                 .price(100f)
                 .variationIndex(indexes)
                 .build();
@@ -495,6 +495,7 @@ class ProductControllerTest extends AbstractControllerTest {
                 .builder()
                 .id(product.getId())
                 .name(product.getName())
+                .imageUrl(product.getImageUrl())
                 .variations(product.getVariations().stream().map(this::fromVariationToRequest).collect(Collectors.toList()))
                 .items(fromItemMapToItemRequests(product.getItemMap()))
                 .build();
@@ -514,7 +515,7 @@ class ProductControllerTest extends AbstractControllerTest {
         return ProductItemRequest
                 .builder()
                 .id(item.getId())
-                .sku(item.getSku())
+                .quantity(item.getQuantity())
                 .price(item.getPrice())
                 .build();
     }
@@ -564,7 +565,7 @@ class ProductControllerTest extends AbstractControllerTest {
     }
 
     private void assertItem(ProductItemRequest itemRequest, ProductItem createdItem) {
-        Assertions.assertEquals(itemRequest.getSku(), createdItem.getSku());
+        Assertions.assertEquals(itemRequest.getQuantity(), createdItem.getQuantity());
         Assertions.assertEquals(itemRequest.getPrice(), createdItem.getPrice());
     }
 

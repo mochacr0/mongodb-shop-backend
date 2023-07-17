@@ -9,10 +9,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ChangePasswordRequest {
-    @Schema(description = "Current password")
+    @Schema(description = "Mật khẩu hiện tại")
     private String currentPassword;
-    @Schema(description = "New password")
+    @Schema(description = "Mật khẩu mới")
     private String newPassword;
-    @Schema(description = "Confirm password")
+    @Schema(description = "Nhập lại mật khẩu mới")
     private String confirmPassword;
 }
