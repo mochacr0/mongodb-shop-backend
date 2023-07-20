@@ -89,6 +89,7 @@ public class ApplicationSecurityConfiguration {
 //            "/products/**",
             PRODUCT_GET_PRODUCT_BY_ID_ROUTE,
             PRODUCT_GET_PRODUCTS_ROUTE,
+            "/media/**",
             "/oauth2/**",
             "/favicon.ico",
             "/error/**",

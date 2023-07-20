@@ -11,4 +11,5 @@ public interface ProductItemService {
     List<ProductItemEntity> bulkUpdate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations);
     void bulkDisableByProductId(String productId);
     void deleteByProductId(String productId);
+    ProductItemEntity findById(String id);
 }

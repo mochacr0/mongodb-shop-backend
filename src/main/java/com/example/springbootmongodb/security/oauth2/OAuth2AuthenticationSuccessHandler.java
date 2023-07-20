@@ -10,6 +10,7 @@ import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.security.JwtToken;
 import com.example.springbootmongodb.security.JwtTokenFactory;
+import com.example.springbootmongodb.service.CartService;
 import com.example.springbootmongodb.service.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -78,6 +79,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             registerUserRequest.setEmail(oauth2UserInfo.getEmail());
             registerUserRequest.setMatchedPasswords(rawPassword);
             user = userService.register(registerUserRequest, request, false);
+
         }
         return new SecurityUser(mapper.toUser(user));
     }

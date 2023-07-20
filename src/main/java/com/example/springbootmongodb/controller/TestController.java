@@ -6,12 +6,11 @@ import com.example.springbootmongodb.common.data.VariationOption;
 import com.example.springbootmongodb.common.data.mapper.ProductMapper;
 import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
 import com.example.springbootmongodb.exception.InternalErrorException;
-import com.example.springbootmongodb.model.ProductEntity;
-import com.example.springbootmongodb.model.ProductItemEntity;
-import com.example.springbootmongodb.model.VariationOptionEntity;
+import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import com.example.springbootmongodb.repository.ProductRepository;
 import com.example.springbootmongodb.repository.VariationOptionRepository;
+import com.example.springbootmongodb.service.CartService;
 import com.example.springbootmongodb.service.MediaService;
 import com.example.springbootmongodb.service.ProductService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -59,6 +58,7 @@ public class TestController {
     private final ProductService productService;
     private final ProductMapper productMapper;
     private final ObjectMapper objectMapper;
+    private final CartService cartService;
 //    @GetMapping(value = "/test")
 //    ProductEntity test() {
 //        ProductEntity product = ProductEntity.builder().name("product").build();
@@ -155,5 +155,10 @@ public class TestController {
         ProductEntity product = productService.findById("64afb1600a1ca72790e3be99");
         ProductEntity productCopy = objectMapper.readValue(objectMapper.writeValueAsString(product), ProductEntity.class);
         return productCopy;
+    }
+
+    @GetMapping(value = "/10")
+    CartEntity test10() {
+        return cartService.create("");
     }
 }

@@ -22,5 +22,5 @@ public class ProductItem extends AbstractData {
     @Schema(description = "Đơn giá của item", example = "1000.0")
     private float price;
     private ProductSimplification product;
-    private List<VariationOption> options;
+//    private List<VariationOption> options;
 }

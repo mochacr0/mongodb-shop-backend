@@ -14,8 +14,8 @@ spring:
         static: "ap-southeast-1"
 jwt:
   settings:
-    accessTokenExpiryTime: 300
-    refreshTokenExpiryTime: 600
+    accessTokenExpiryTimeSeconds: 1800
+    refreshTokenExpiryTimeSeconds: 3600
     tokenSigningKeyString: "vietcaikeyquanquegichodu256bitsbaygioroidmvietnhieuvanchuadulasao"
     tokenIssuer: "localhost"
 logging:
