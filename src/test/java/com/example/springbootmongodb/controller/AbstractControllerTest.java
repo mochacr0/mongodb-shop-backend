@@ -1,9 +1,6 @@
 package com.example.springbootmongodb.controller;
 
-import com.example.springbootmongodb.common.data.Category;
-import com.example.springbootmongodb.common.data.RegisterUserRequest;
-import com.example.springbootmongodb.common.data.TimestampBased;
-import com.example.springbootmongodb.common.data.User;
+import com.example.springbootmongodb.common.data.*;
 import com.example.springbootmongodb.config.SecuritySettingsConfiguration;
 import com.example.springbootmongodb.config.UserPasswordPolicy;
 import com.example.springbootmongodb.security.JwtTokenPair;
@@ -11,6 +8,7 @@ import com.example.springbootmongodb.security.LoginRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.common.util.StringUtils;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.passay.PasswordGenerator;
@@ -27,7 +25,10 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 import static com.example.springbootmongodb.controller.ControllerTestConstants.*;
@@ -51,6 +52,9 @@ public abstract class AbstractControllerTest {
     protected String DEFAULT_PASSWORD;
 
     protected final String NON_EXISTENT_ID = "64805c5bdb4a3449c81a9bed";
+
+    protected final String DEFAULT_IMAGE_URL = "https://mochaimages.s3.ap-southeast-1.amazonaws.com/Screenshot+2023-07-12+200714.png";
+
 
     @PostConstruct
     private void setUp() {
@@ -224,6 +228,74 @@ public abstract class AbstractControllerTest {
 
     public Category getDefaultCategory() throws Exception {
         return performGet(CATEGORY_GET_DEFAULT_CATEGORY_ROUTE, Category.class);
+    }
+
+    protected ProductRequest createProductRequest() {
+        ProductRequest product = ProductRequest
+                .builder()
+                .name(generateRandomString())
+                .imageUrl(DEFAULT_IMAGE_URL)
+                .variations(new ArrayList<>())
+                .items(new ArrayList<>())
+                .build();
+
+        return product;
+    }
+
+    protected ProductRequest createProductRequestSample() {
+        ProductRequest productRequest = createProductRequest();
+        productRequest.setVariations(Collections.singletonList(createVariationRequest(1)));
+        productRequest.setItems(Collections.singletonList(createItemRequest(0)));
+        return productRequest;
+    }
+
+    protected ProductVariationRequest createVariationRequest() {
+        return ProductVariationRequest
+                .builder()
+                .name(generateRandomString())
+                .options(new ArrayList<>())
+                .build();
+    }
+
+    protected ProductVariationRequest createVariationRequest(int totalOptions) {
+        List<VariationOptionRequest> options = new ArrayList<>();
+        for (int i = 0; i < totalOptions; i++) {
+            options.add(createOptionRequest());
+        }
+        return ProductVariationRequest
+                .builder()
+                .name(generateRandomString())
+                .options(options)
+                .build();
+    }
+
+    protected VariationOptionRequest createOptionRequest() {
+        VariationOptionRequest option = VariationOptionRequest
+                .builder()
+                .name(generateRandomString())
+                .build();
+        return option;
+    }
+
+    protected ProductItemRequest createItemRequest(Integer requiredIndex, Integer...additionalIndexes) {
+        List<Integer> indexes = new ArrayList<>();
+        indexes.add(requiredIndex);
+        indexes.addAll(List.of(additionalIndexes));
+        return ProductItemRequest
+                .builder()
+                .quantity(100)
+                .price(100f)
+                .variationIndex(indexes)
+                .build();
+    }
+
+    protected void deleteProduct(String id) throws Exception {
+        if (StringUtils.isNotEmpty(id)) {
+            Product product = performGet(PRODUCT_GET_PRODUCT_BY_ID_ROUTE, Product.class, id);
+            if (product != null) {
+                performDelete(PRODUCT_DELETE_PRODUCT_BY_ID_ROUTE, id);
+            }
+        }
     }
 
     public static class TimestampBasedComparator<T extends TimestampBased> implements Comparator<T> {

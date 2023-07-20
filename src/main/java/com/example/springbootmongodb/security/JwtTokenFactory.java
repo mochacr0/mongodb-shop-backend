@@ -7,7 +7,6 @@ import io.jsonwebtoken.security.SignatureException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -34,14 +33,14 @@ public class JwtTokenFactory {
 
     public JwtToken createAccessToken(SecurityUser securityUser) {
         List<String> scopes = securityUser.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-        JwtBuilder jwtBuilder = setUpToken(securityUser, jwtSettings.getRefreshTokenExpiryTime(), scopes);
+        JwtBuilder jwtBuilder = setUpToken(securityUser, jwtSettings.getAccessTokenExpiryTimeSeconds(), scopes);
         String jwtToken = jwtBuilder.compact();
         return new JwtAccessToken(jwtToken);
     }
 
     public JwtToken createRefreshToken(SecurityUser securityUser) {
         List<String> scopes = Collections.singletonList(Authority.REFRESH_TOKEN.name());
-        JwtBuilder jwtBuilder = setUpToken(securityUser, jwtSettings.getAccessTokenExpiryTime(), scopes);
+        JwtBuilder jwtBuilder = setUpToken(securityUser, jwtSettings.getRefreshTokenExpiryTimeSeconds(), scopes);
         String jwtToken = jwtBuilder.compact();
         return new JwtAccessToken(jwtToken);
     }

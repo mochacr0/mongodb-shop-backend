@@ -72,11 +72,26 @@ public class ControllerConstants {
     /**
      * Product constants
      */
-    public static final String PRODUCT_GET_PRODUCTS_ROUTE = "/products";
+    public static final String PRODUCT_ROUTE = "/products";
+    public static final String PRODUCT_GET_PRODUCTS_ROUTE = PRODUCT_ROUTE;
     public static final String PRODUCT_CREATE_PRODUCT_ROUTE = PRODUCT_GET_PRODUCTS_ROUTE;
     public static final String PRODUCT_GET_PRODUCT_BY_ID_ROUTE = PRODUCT_GET_PRODUCTS_ROUTE + "/{productId}";
     public static final String PRODUCT_UPDATE_PRODUCT_ROUTE = PRODUCT_GET_PRODUCT_BY_ID_ROUTE;
     public static final String PRODUCT_SEARCH_PRODUCTS_ROUTE = PRODUCT_GET_PRODUCTS_ROUTE + "/search";
     public static final String PRODUCT_DELETE_PRODUCT_BY_ID_ROUTE = PRODUCT_GET_PRODUCT_BY_ID_ROUTE;
 
+    /**
+     * Cart constants
+     */
+    public static final String CART_ROUTE  = "/cart";
+    public static final String CART_GET_CURRENT_CART_ROUTE = CART_ROUTE;
+    public static final String CART_ADD_ITEM_ROUTE = CART_ROUTE + "/add";
+    public static final String CART_UPDATE_ITEM_ROUTE = CART_ROUTE + "/update";
+    public static final String CART_REMOVE_ITEMS_ROUTE = CART_ROUTE + "/remove";
+
+    /**
+     * Media constants
+     */
+    public static final String MEDIA_ROUTE = "/media";
+    public static final String MEDIA_UPLOAD_IMAGE_ROUTE = MEDIA_ROUTE + "/image";
 }

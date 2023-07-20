@@ -46,6 +46,7 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
     private final DataValidator<UserEntity> userDataValidator;
     private final ThreadPoolTaskExecutor taskExecutor;
     private final UserMapper mapper;
+    private final CartService cartService;
     @Autowired
     @Lazy
     private UserService userDeletionService;
@@ -98,12 +99,12 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
     @Override
     public UserEntity findById(String userId) {
         log.info("Performing UserService findById");
-        if (StringUtils.isBlank(userId)) {
-            throw new InvalidDataException("User ID should be specified");
+        if (StringUtils.isEmpty(userId)) {
+            throw new InvalidDataException("User Id should be specified");
         }
         Optional<UserEntity> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
-            throw new ItemNotFoundException(String.format("User with id [%s] is not found", userId));
+            throw new ItemNotFoundException(String.format("User with Id [%s] is not found", userId));
         }
         return userOpt.get();
     }
@@ -137,13 +138,14 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
         }
         user.setUserCredentials(userCredentials);
         UserEntity savedUserEntity = super.insert(user);
-        if (StringUtils.isNotBlank(savedUserEntity.getId())) {
+        if (StringUtils.isNotEmpty(savedUserEntity.getId())) {
             UserCredentials savedUserCredentials = savedUserEntity.getUserCredentials();
-            if (StringUtils.isNotBlank(savedUserEntity.getUserCredentials().getActivationToken())) {
+            if (StringUtils.isNotEmpty(savedUserEntity.getUserCredentials().getActivationToken())) {
                 String activateLink = String.format(this.ACTIVATION_URL_PATTERN, UrlUtils.getBaseUrl(request), savedUserCredentials.getActivationToken());
                 mailService.sendActivationMail(user.getEmail(), activateLink);
             }
         }
+        cartService.create(savedUserEntity.getId());
         return savedUserEntity;
     }
 
@@ -153,6 +155,7 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
         log.info("Performing UserService deleteById");
         findById(userId);
         userAddressService.deleteUserAddressesByUserId(userId);
+        cartService.deleteByUserId(userId);
         userRepository.deleteById(userId);
     }
 
