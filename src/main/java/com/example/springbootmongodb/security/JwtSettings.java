@@ -13,8 +13,8 @@ import java.security.Key;
 @ConfigurationProperties(prefix = "jwt.settings")
 @Data
 public class JwtSettings {
-    private Integer accessTokenExpiryTime;
-    private Integer refreshTokenExpiryTime;
+    private Integer accessTokenExpiryTimeSeconds;
+    private Integer refreshTokenExpiryTimeSeconds;
     private String tokenIssuer;
     private String tokenSigningKeyString;
     private Key signingKey;

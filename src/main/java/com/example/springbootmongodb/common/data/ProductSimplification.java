@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class ProductSimplification {
-    @Schema(description = "Id sản phẩm")
+    @Schema(description = "Id sản phẩm", example = "647d222a59a4582894a95c10")
     private String id;
     @Schema(description = "Tên sản phẩm", example = "Sản phẩm 1")
     private String name;

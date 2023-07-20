@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public abstract class AbstractData implements TimestampBased {
-    @Schema(description = "Id")
+    @Schema(description = "Id", example = "647d222a59a4582894a95c10")
     protected String id;
     @Schema(description = "Thời điểm được tạo")
     protected LocalDateTime createdAt;

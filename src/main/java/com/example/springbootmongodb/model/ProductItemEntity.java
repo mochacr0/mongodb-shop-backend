@@ -23,6 +23,8 @@ public class ProductItemEntity extends AbstractEntity {
     private int quantity;
     private float price;
     private boolean isDisabled;
+    private String variationDescription;
+    private String variationIndex;
     @Field(name = "productId")
     @DocumentReference(lazy = true)
     @JsonBackReference

@@ -16,7 +16,7 @@ import java.util.Map;
 public class Product extends AbstractData {
     @Schema(description = "Tên sản phẩm", example = "Sản phẩm 1")
     private String name;
-    @Schema(description = "ID của danh mục")
+    @Schema(description = "ID của danh mục", example = "647d222a59a4582894a95c10")
     private String categoryId;
     @Schema(description = "Mô tả sản phẩm", example = "Mô tả 1")
     private String description;
@@ -34,5 +34,4 @@ public class Product extends AbstractData {
     private Map<String, ProductItem> itemMap;
     @Schema(description = "Danh sách biến thể sản phẩm")
     private List<ProductVariation> variations;
-
 }

@@ -3,6 +3,7 @@ package com.example.springbootmongodb.service;
 import com.example.springbootmongodb.common.data.ProductItemRequest;
 import com.example.springbootmongodb.common.data.mapper.ProductItemMapper;
 import com.example.springbootmongodb.exception.InvalidDataException;
+import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductItemEntity;
 import com.example.springbootmongodb.model.ProductVariationEntity;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -31,6 +33,8 @@ public class ProductItemServiceImpl implements ProductItemService {
     public static final String PRODUCT_MISSING_ITEMS_ERROR_MESSAGE = "Product is missing some items";
     public static final String NON_POSITIVE_QUANTITY_ERROR_MESSAGE = "Product sku must be equal or greater than 0";
     public static final String MINIMUM_PRICE_VIOLATION_ERROR_MESSAGE = "Product price must be equal or greater than 0";
+    public static final String REQUIRED_ITEM_ID_ERROR_MESSAGE = "Product item Id should be specified";
+
     @Autowired
     @Lazy
     private ProductService productService;
@@ -45,11 +49,21 @@ public class ProductItemServiceImpl implements ProductItemService {
             validateItemRequest(request);
             ProductItemEntity newItem = mapper.toEntity(request);
             List<VariationOptionEntity> newItemOptions = new ArrayList<>();
+            String variationIndex = request.getVariationIndex().stream().map(String::valueOf).collect(Collectors.joining(","));
+            String variationDescription = "";
             for (int i = 0; i < request.getVariationIndex().size(); i++) {
-                newItemOptions.add(variations.get(i).getOptions().get(request.getVariationIndex().get(i)));
+                ProductVariationEntity newItemVariation = variations.get(i);
+                VariationOptionEntity newItemOption = newItemVariation.getOptions().get(request.getVariationIndex().get(i));
+                newItemOptions.add(newItemOption);
+                //format variation description
+                variationDescription = variationDescription.concat(String.format("%s:%s, ", newItemVariation.getName(), newItemOption.getName()));
             }
+            //remove the last comma
+            variationDescription = variationDescription.substring(0, variationDescription.length() - 2);
             newItem.getOptions().addAll(newItemOptions);
             newItem.setProduct(product);
+            newItem.setVariationDescription(variationDescription);
+            newItem.setVariationIndex(variationIndex);
             newItems.add(newItem);
         }
         return itemRepository.bulkCreate(newItems);
@@ -117,4 +131,15 @@ public class ProductItemServiceImpl implements ProductItemService {
             throw new InvalidDataException(MINIMUM_PRICE_VIOLATION_ERROR_MESSAGE);
         }
     }
+
+    @Override
+    public ProductItemEntity findById(String id) {
+        log.info("Performing ProductItemService findById");
+        if (StringUtils.isEmpty(id)) {
+            throw new InvalidDataException(REQUIRED_ITEM_ID_ERROR_MESSAGE);
+        }
+        return itemRepository.findById(id).orElseThrow(() ->
+                new ItemNotFoundException(String.format("Product item with Id [%s] is not found", id)));
+    }
+
 }
