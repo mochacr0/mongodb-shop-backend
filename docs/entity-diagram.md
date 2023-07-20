@@ -2,6 +2,6 @@
 # Database diagram
 [﻿View on Eraser](https://app.eraser.io/workspace/1XdFDIVMDXh45uGLCkEb?elements=Od9cy3YmSE7S2ed3zW1DTg) 
 
-![image](https://github.com/mochacr0/mongodb-shop-backend/assets/64319905/6cd7dc82-26f8-45eb-88b9-3b0dc52829b5)
+![image](https://github.com/mochacr0/mongodb-shop-backend/assets/64319905/5a08971d-39b7-472e-b26b-4b2f1ed6de2e)
 
 <!--- Eraser file: https://app.eraser.io/workspace/1XdFDIVMDXh45uGLCkEb --->
