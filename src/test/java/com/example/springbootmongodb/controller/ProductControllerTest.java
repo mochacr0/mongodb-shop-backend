@@ -24,9 +24,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ProductControllerTest extends AbstractControllerTest {
     private final String NON_EXISTENT_CATEGORY_ID = "649d3c2be7528903110d4360";
-    private final String DEFAULT_IMAGE_URL = "https://mochaimages.s3.ap-southeast-1.amazonaws.com/Screenshot+2023-07-12+200714.png";
-
     private User user;
+
     @BeforeAll
     void setUp() throws Exception {
         user = createUser(generateUsername(), generateEmail(), DEFAULT_PASSWORD, DEFAULT_PASSWORD);
@@ -415,79 +414,6 @@ class ProductControllerTest extends AbstractControllerTest {
             }
         }
         Assertions.assertTrue(areListsTheSame, "The expected list and the actual list are not equal");
-    }
-
-
-    //update
-        //invalid
-            //non-existent category
-
-    private ProductRequest createProductRequest() {
-        ProductRequest product = ProductRequest
-                .builder()
-                .name(generateRandomString())
-                .imageUrl(DEFAULT_IMAGE_URL)
-                .variations(new ArrayList<>())
-                .items(new ArrayList<>())
-                .build();
-
-        return product;
-    }
-
-    private ProductRequest createProductRequestSample() {
-        ProductRequest productRequest = createProductRequest();
-        productRequest.setVariations(Collections.singletonList(createVariationRequest(1)));
-        productRequest.setItems(Collections.singletonList(createItemRequest(0)));
-        return productRequest;
-    }
-
-    private ProductVariationRequest createVariationRequest() {
-        return ProductVariationRequest
-                .builder()
-                .name(generateRandomString())
-                .options(new ArrayList<>())
-                .build();
-    }
-
-    private ProductVariationRequest createVariationRequest(int totalOptions) {
-        List<VariationOptionRequest> options = new ArrayList<>();
-        for (int i = 0; i < totalOptions; i++) {
-            options.add(createOptionRequest());
-        }
-        return ProductVariationRequest
-                .builder()
-                .name(generateRandomString())
-                .options(options)
-                .build();
-    }
-
-    private VariationOptionRequest createOptionRequest() {
-        VariationOptionRequest option = VariationOptionRequest
-                .builder()
-                .name(generateRandomString())
-                .build();
-        return option;
-    }
-
-    private ProductItemRequest createItemRequest(Integer requiredIndex, Integer...additionalIndexes) {
-        List<Integer> indexes = new ArrayList<>();
-        indexes.add(requiredIndex);
-        indexes.addAll(List.of(additionalIndexes));
-        return ProductItemRequest
-                .builder()
-                .quantity(100)
-                .price(100f)
-                .variationIndex(indexes)
-                .build();
-    }
-
-    private void deleteProduct(String id) throws Exception {
-        if (StringUtils.isNotEmpty(id)) {
-            Product product = performGet(PRODUCT_GET_PRODUCT_BY_ID_ROUTE, Product.class, id);
-            if (product != null) {
-                performDelete(PRODUCT_DELETE_PRODUCT_BY_ID_ROUTE, id);
-            }
-        }
     }
 
     private ProductRequest fromProductToRequest(Product product) {

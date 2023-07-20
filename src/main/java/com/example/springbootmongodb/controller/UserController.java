@@ -27,7 +27,7 @@ public class UserController {
     private final UserService userService;
     private final UserMapper mapper;
 
-    @Operation(summary = "Phân trang sản phẩm")
+    @Operation(summary = "Phân trang danh sách user")
     @GetMapping(value = USERS_GET_USERS_ROUTE)
     PageData<User> getUsers(@Parameter(description = PAGE_NUMBER_DESCRIPTION)
                             @RequestParam(defaultValue = PAGE_NUMBER_DEFAULT_STRING_VALUE) int page,
@@ -87,7 +87,7 @@ public class UserController {
         userService.deleteById(userId);
     }
 
-    @Operation(summary = "Kích hoat tài khoản. (API này chỉ dùng để test)")
+    @Operation(summary = "Kích hoạt tài khoản. (API này chỉ dùng để test)")
     @PostMapping(value = USERS_ACTIVATE_USER_CREDENTIALS_ROUTE)
     void activateUserByUserId(@Parameter(description = "Id của tài khoản muốn kích hoạt", required = true)
                               @PathVariable(name = "userId") String userId) {

@@ -12,7 +12,7 @@ import java.util.List;
 @Setter
 @SuperBuilder
 public class ProductVariation extends AbstractData {
-    @Schema(description = "Id sản phẩm")
+    @Schema(description = "Id sản phẩm", example = "647d222a59a4582894a95c10")
     private String productId;
     @Schema(description = "Tên biến thể", example = "Kích cỡ")
     private String name;

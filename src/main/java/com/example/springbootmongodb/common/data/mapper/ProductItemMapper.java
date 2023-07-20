@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class ProductItemMapper {
@@ -32,31 +33,39 @@ public class ProductItemMapper {
 
     public ProductItem fromEntity(ProductItemEntity entity) {
         String imageUrl = entity.getProduct().getImageUrl();
-        List<String> variations = new ArrayList<>();
-        for (VariationOptionEntity option : entity.getOptions()) {
-            if (StringUtils.isNotEmpty(option.getImageUrl())) {
-                imageUrl = option.getImageUrl();
-            }
-            variations.add(String.format("%s:%s", option.getVariation().getName(), option.getName()));
-        }
-        String variationDescription = String.join(", ", variations);
+//        List<String> variations = new ArrayList<>();
+//        for (VariationOptionEntity option : entity.getOptions()) {
+//            if (StringUtils.isNotEmpty(option.getImageUrl())) {
+//                imageUrl = option.getImageUrl();
+//            }
+//            variations.add(String.format("%s:%s", option.getVariation().getName(), option.getName()));
+//        }
+//        String variationDescription = String.join(", ", variations);
         return ProductItem
                 .builder()
                 .id(entity.getId())
-                .variationDescription(variationDescription)
+                .variationDescription(entity.getVariationDescription())
                 .imageUrl(imageUrl)
                 .quantity(entity.getQuantity())
                 .price(entity.getPrice())
                 .product(productMapper.fromEntityToSimplification(entity.getProduct()))
-                .options(DaoUtils.toListData(entity.getOptions(), optionMapper::fromEntity))
+//                .options(DaoUtils.toListData(entity.getOptions(), optionMapper::fromEntity))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 
     public void updateFields(ProductItemEntity entity, ProductItemRequest request) {
+        List<String> variations = new ArrayList<>();
+        for (VariationOptionEntity option : entity.getOptions()) {
+            variations.add(String.format("%s:%s", option.getVariation().getName(), option.getName()));
+        }
+        String variationDescription = String.join(", ", variations);
+        String variationIndex = request.getVariationIndex().stream().map(String::valueOf).collect(Collectors.joining(","));
         entity.setQuantity(request.getQuantity());
         entity.setPrice(request.getPrice());
+        entity.setVariationDescription(variationDescription);
+        entity.setVariationIndex(variationIndex);
+        entity.setVariationIndex(variationIndex);
     }
-
 }

@@ -44,7 +44,9 @@ public class CustomProductItemRepositoryImpl implements CustomProductItemReposit
                     updateOne(Query.query(where("_id").is(request.getId())),
                             new Update()
                                     .set("quantity", request.getQuantity())
-                                    .set("price", request.getPrice()));
+                                    .set("price", request.getPrice())
+                                    .set("variationDescription", request.getVariationDescription())
+                                    .set("variationIndex", request.getVariationIndex()));
         }
         bulkUpdateOperation.execute();
         return mongoTemplate.find(Query

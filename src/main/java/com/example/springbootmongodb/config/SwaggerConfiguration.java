@@ -109,7 +109,7 @@ public class SwaggerConfiguration {
         loginEndpoint = new PathItem();
         openApi.addTagsItem(new Tag().name("Login"));
         loginEndpoint.post(new Operation()
-                .addTagsItem("Đăng nhập")
+                .addTagsItem("Login")
                 .summary("Đăng nhập")
                 .description("Token trả về là một JWT token. Đính kèm token này vào phần header của request khi muốn sử dụng các API khác: `Authorization: Bearer JWT_TOKEN_VALUE`.")
                 .requestBody(new RequestBody()

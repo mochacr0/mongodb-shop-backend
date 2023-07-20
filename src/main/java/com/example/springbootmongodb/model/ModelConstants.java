@@ -58,4 +58,9 @@ public class ModelConstants {
     public static final String PRODUCT_ITEM_COLLECTION_NAME = "items";
     public static final String PRODUCT_VARIATION_COLLECTION_NAME = "variations";
     public static final String PRODUCT_VARIATION_OPTION_COLLECTION_NAME = "options";
+
+    /**
+     * Cart constants
+     */
+    public static final String CART_COLLECTION_NAME = "carts";
 }

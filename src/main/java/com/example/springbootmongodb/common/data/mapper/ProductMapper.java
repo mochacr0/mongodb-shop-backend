@@ -5,6 +5,7 @@ import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductItemEntity;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ProductMapper {
     private final ProductItemMapper itemMapper;
     private final ProductVariationMapper variationMapper;
@@ -27,12 +29,13 @@ public class ProductMapper {
     }
 
     public Product fromEntity(ProductEntity entity) {
+        long currentTime = System.currentTimeMillis();
         Map<String, ProductItem> itemMap = new HashMap<>();
         for (ProductItemEntity item : entity.getItems()) {
-            String index = String.join(",", item.getOptions().stream().map(option -> String.valueOf(option.getIndex())).toList());
-            itemMap.put(index, itemMapper.fromEntity(item));
+            itemMap.put(item.getVariationIndex(), itemMapper.fromEntity(item));
         }
-        return Product
+        log.info("Before fetching: " + (System.currentTimeMillis() - currentTime));
+        Product product = Product
                 .builder()
                 .id(entity.getId())
                 .categoryId(entity.getCategoryId())
@@ -48,6 +51,8 @@ public class ProductMapper {
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
+        log.info("Done fetching: " + (System.currentTimeMillis() - currentTime));
+        return product;
     }
 
     public ProductSimplification fromEntityToSimplification(ProductEntity entity) {
