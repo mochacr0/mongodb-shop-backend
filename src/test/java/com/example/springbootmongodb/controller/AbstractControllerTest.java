@@ -284,7 +284,7 @@ public abstract class AbstractControllerTest {
         return ProductItemRequest
                 .builder()
                 .quantity(100)
-                .price(100f)
+                .price(100)
                 .variationIndex(indexes)
                 .build();
     }
