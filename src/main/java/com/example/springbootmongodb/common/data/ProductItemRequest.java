@@ -20,7 +20,7 @@ public class ProductItemRequest {
     private int quantity;
     @Schema(description = "Giá của item", example = "1000.0")
     @Positive
-    private float price;
+    private long price;
     @Schema(description = "Tổ hợp index của biến thể sản phẩm", example = "[0,1]")
     private List<Integer> variationIndex = new ArrayList<>();
 }

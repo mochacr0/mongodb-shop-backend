@@ -21,7 +21,7 @@ import static com.example.springbootmongodb.model.ModelConstants.PRODUCT_ITEM_CO
 @SuperBuilder
 public class ProductItemEntity extends AbstractEntity {
     private int quantity;
-    private float price;
+    private long price;
     private boolean isDisabled;
     private String variationDescription;
     private String variationIndex;
