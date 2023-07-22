@@ -242,10 +242,10 @@ import java.util.stream.Collectors;
     private void updatePriceRange(ProductEntity product) {
         List<ProductItemEntity> items = product.getItems();
         if (items != null && !items.isEmpty()) {
-            float minPrice = Float.MAX_VALUE;
-            float maxPrice = Float.MIN_VALUE;
+            long minPrice = Long.MAX_VALUE;
+            long maxPrice = Long.MIN_VALUE;
             for (ProductItemEntity item : items) {
-                float price = item.getPrice();
+                long price = item.getPrice();
                 if (price < minPrice) {
                     minPrice = price;
                 }
