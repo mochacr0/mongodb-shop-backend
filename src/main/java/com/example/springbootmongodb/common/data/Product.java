@@ -25,9 +25,9 @@ public class Product extends AbstractData {
     @Schema(description = "Tổng số lượng đã bán", example = "100")
     private long totalSales;
     @Schema(description = "Đơn giá sản phẩm thấp nhất", example = "1000")
-    private float minPrice;
+    private long minPrice;
     @Schema(description = "Đơn giá sản phẩm cao nhất", example = "9000")
-    private float maxPrice;
+    private long maxPrice;
     @Schema(description = "Đánh giá sản phẩm", example = "5")
     private float rating;
     @Schema(description = "Danh sách các item sản phẩm theo dạng map key-value, với key là mảng index biến thể")

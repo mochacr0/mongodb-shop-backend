@@ -30,8 +30,8 @@ public class ProductEntity extends AbstractEntity {
     private String imageUrl;
     private long totalSales;
     private float rating;
-    private float minPrice;
-    private float maxPrice;
+    private long minPrice;
+    private long maxPrice;
     @ReadOnlyProperty
     @DocumentReference(lookup = "{'productId' : ?#{#self._id}, 'isDisabled': false}", lazy = true)
     @JsonManagedReference

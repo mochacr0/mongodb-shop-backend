@@ -20,7 +20,7 @@ public class ProductItem extends AbstractData {
     @Schema(description = "URL ảnh", example = "https://mochaimages.s3.ap-southeast-1.amazonaws.com/fc909db6-eade-4980-b8af-d328786fd882.jpeg")
     private String imageUrl;
     @Schema(description = "Đơn giá của item", example = "1000.0")
-    private float price;
+    private long price;
     private ProductSimplification product;
 //    private List<VariationOption> options;
 }
