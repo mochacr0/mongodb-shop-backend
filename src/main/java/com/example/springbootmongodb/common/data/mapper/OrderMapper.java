@@ -18,6 +18,7 @@ public class OrderMapper {
                 .shippingAddress(addressMapper.fromEntity(entity.getShippingAddress()))
                 .subTotal(entity.getSubTotal())
                 .totalAmount(entity.getSubTotal())
+                .payment(entity.getPayment())
                 .orderItems(entity.getOrderItems())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
