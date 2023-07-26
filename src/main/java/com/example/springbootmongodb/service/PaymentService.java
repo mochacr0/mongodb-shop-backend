@@ -8,7 +8,7 @@ import com.example.springbootmongodb.model.PaymentEntity;
 
 public interface PaymentService {
     Payment create(String paymentMethod, long amount);
-    MomoCaptureWalletResponse createRequest(String orderId, String paymentMethod, long amount);
+    MomoCaptureWalletResponse initiatePayment(String orderId, String paymentMethod, long amount);
     void processIpnRequest(MomoIpnCallbackResponse request);
     MomoRefundResponse refund(PaymentEntity payment);
 }

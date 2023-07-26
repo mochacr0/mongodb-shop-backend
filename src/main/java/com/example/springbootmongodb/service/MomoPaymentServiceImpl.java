@@ -54,7 +54,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public MomoCaptureWalletResponse createRequest(String orderId, String paymentMethod, long amount) {
+    public MomoCaptureWalletResponse initiatePayment(String orderId, String paymentMethod, long amount) {
         String requestBody = buildCaptureWalletRequestBody();
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
