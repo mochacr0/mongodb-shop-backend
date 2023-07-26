@@ -2,7 +2,6 @@ package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.UserAddress;
 import com.example.springbootmongodb.common.data.mapper.UserAddressMapper;
-import com.example.springbootmongodb.common.utils.DaoUtils;
 import com.example.springbootmongodb.service.UserAddressService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,7 +29,7 @@ public class UserAddressController {
     @PostMapping(value = USERS_CREATE_ADDRESSES_ROUTE)
     UserAddress createAddress(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                               @RequestBody UserAddress address) {
-        return mapper.toUserAddress(userAddressService.create(address));
+        return mapper.fromEntity(userAddressService.create(address));
     }
 
     @Operation(summary = "Tìm tất cả địa chỉ của user hiện đang đăng nhập",
@@ -45,7 +44,7 @@ public class UserAddressController {
     @GetMapping(value = USERS_GET_ADDRESS_BY_ID_ROUTE)
     UserAddress getAddressById(@Parameter(description = "Id của địa chỉ muốn tìm", required = true)
                                @PathVariable(name = "addressId") String addressId) {
-        return mapper.toUserAddress(userAddressService.findById(addressId));
+        return mapper.fromEntity(userAddressService.findById(addressId));
     }
 
     @Operation(summary = "Cập nhật một địa chỉ bất kỳ của user hiện đang đăng nhập")
@@ -54,7 +53,7 @@ public class UserAddressController {
                               @PathVariable(name = "addressId") String addressId,
                               @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                               @RequestBody UserAddress address) {
-        return mapper.toUserAddress(userAddressService.save(addressId, address));
+        return mapper.fromEntity(userAddressService.save(addressId, address));
     }
 
     @Operation(summary = "Xóa một địa chỉ bất kỳ của user hiện đang đăng nhập")

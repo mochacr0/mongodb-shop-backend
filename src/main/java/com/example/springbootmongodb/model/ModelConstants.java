@@ -68,4 +68,9 @@ public class ModelConstants {
      * Payment constants
      */
     public static final String PAYMENT_COLLECTION_NAME = "payments";
+
+    /**
+     * Order constants
+     */
+    public static final String ORDER_COLLECTION_NAME = "orders";
 }

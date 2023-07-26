@@ -115,6 +115,9 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddressEntity> i
     public UserAddressEntity findById(String addressId) {
         log.info("Performing UserAddressService findById");
         SecurityUser securityUser = getCurrentUser();
+        if (StringUtils.isEmpty(addressId)) {
+            throw new InvalidDataException("Address Id should be specified");
+        }
         Optional<UserAddressEntity> addressEntityOptional = userAddressRepository.findById(addressId);
         if (addressEntityOptional.isEmpty()) {
             throw new ItemNotFoundException(String.format("User address with id [%s] is not found", addressId));
