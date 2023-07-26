@@ -6,6 +6,7 @@ import com.example.springbootmongodb.common.data.mapper.ProductMapper;
 import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
 import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
+import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
 import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import com.example.springbootmongodb.repository.ProductRepository;
@@ -159,7 +160,7 @@ public class TestController {
 
     @GetMapping(value = "/11")
     MomoCaptureWalletResponse test11() {
-        return paymentService.createRequest();
+        return null;
     }
 
     @GetMapping(value = "/momo/callback")
@@ -191,5 +192,11 @@ public class TestController {
                 .signature(signature)
                 .build();
         paymentService.processIpnRequest(request);
+    }
+
+    @GetMapping(value = "/12")
+    MomoRefundResponse test12(@RequestParam String orderId) {
+        return null;
+//        return paymentService.refund(orderId);
     }
 }

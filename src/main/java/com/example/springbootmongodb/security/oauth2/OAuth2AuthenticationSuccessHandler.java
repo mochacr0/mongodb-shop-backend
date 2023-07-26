@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.security.oauth2;
 
 import com.example.springbootmongodb.common.data.RegisterUserRequest;
-import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.mapper.UserMapper;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.config.SecuritySettingsConfiguration;
@@ -10,7 +9,6 @@ import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.security.JwtToken;
 import com.example.springbootmongodb.security.JwtTokenFactory;
-import com.example.springbootmongodb.service.CartService;
 import com.example.springbootmongodb.service.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +18,6 @@ import org.passay.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -81,7 +78,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             user = userService.register(registerUserRequest, request, false);
 
         }
-        return new SecurityUser(mapper.toUser(user));
+        return new SecurityUser(mapper.fromEntity(user));
     }
     protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
         super.clearAuthenticationAttributes(request);

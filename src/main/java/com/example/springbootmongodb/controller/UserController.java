@@ -54,20 +54,20 @@ public class UserController {
     @GetMapping(value = USERS_GET_USER_BY_ID_ROUTE)
     User getUserById (@Parameter(description = "A string value representing the user id", required = true)
                       @PathVariable(name = "userId") String userId) {
-        return mapper.toUser(userService.findById(userId));
+        return mapper.fromEntity(userService.findById(userId));
     }
 
     @Operation(summary = "Tìm user hiện đang đăng nhập")
     @GetMapping(value = USERS_GET_CURRENT_USER_ROUTE)
     User getCurrentUser () {
-        return mapper.toUser(userService.findCurrentUser());
+        return mapper.fromEntity(userService.findCurrentUser());
     }
 
     @Operation(summary = "Update user hiện đăng đăng nhâp")
     @PutMapping(value = USERS_UPDATE_USER_ROUTE)
     User saveUser(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                   @RequestBody User user) {
-        return mapper.toUser(userService.saveCurrentUser(user));
+        return mapper.fromEntity(userService.saveCurrentUser(user));
     }
 
     @Operation(summary = "Đăng ký user")
@@ -77,7 +77,7 @@ public class UserController {
                       @Parameter(description = "Có cần gửi email xác nhận hay không. (Mặc định là true. Chỉ set false khi test)")
                       @RequestParam(defaultValue = "true") boolean isMailRequired,
                       HttpServletRequest request) {
-        return mapper.toUser(userService.register(registerUserRequest, request, isMailRequired));
+        return mapper.fromEntity(userService.register(registerUserRequest, request, isMailRequired));
     }
 
     @Operation(summary = "Xóa user theo Id")

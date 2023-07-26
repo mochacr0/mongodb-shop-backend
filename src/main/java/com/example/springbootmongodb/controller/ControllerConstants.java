@@ -94,4 +94,11 @@ public class ControllerConstants {
      */
     public static final String MEDIA_ROUTE = "/media";
     public static final String MEDIA_UPLOAD_IMAGE_ROUTE = MEDIA_ROUTE + "/image";
+
+    /**
+     * Order constants
+     */
+    public static final String ORDER_ROUTE = "/orders";
+    public static final String ORDER_CREATE_ORDER_ROUTE = ORDER_ROUTE;
+    public static final String ORDER_GET_ORDER_BY_ID_ROUTE = ORDER_ROUTE + "/{orderId}";
 }
