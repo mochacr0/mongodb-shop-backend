@@ -6,4 +6,5 @@ import com.example.springbootmongodb.model.OrderEntity;
 public interface OrderService {
     OrderEntity create(OrderRequest request);
     OrderEntity findById(String id);
+    OrderEntity save(OrderEntity order);
 }

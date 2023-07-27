@@ -2,24 +2,27 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.momo.*;
+import com.example.springbootmongodb.common.utils.UrlUtils;
 import com.example.springbootmongodb.config.MomoCredentials;
 import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
+import com.example.springbootmongodb.exception.UnprocessableContentException;
+import com.example.springbootmongodb.model.OrderEntity;
 import com.example.springbootmongodb.model.Payment;
-import com.example.springbootmongodb.model.PaymentEntity;
-import com.example.springbootmongodb.model.TestPaymentEntity;
-import com.example.springbootmongodb.repository.PaymentRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.URI;
@@ -28,6 +31,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.UUID;
 
+import static com.example.springbootmongodb.controller.ControllerConstants.ORDER_IPN_REQUEST_CALLBACK_ROUTE;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -35,15 +40,18 @@ public class MomoPaymentServiceImpl implements PaymentService {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final MomoCredentials momoCredentials;
-
-    public static final String UNSUPPORTED_PAYMENT_METHOD = "Payment method is not supported";
+    @Autowired
+    @Lazy
+    private OrderService orderService;
+    public static final String UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE = "Payment method is not supported";
+    private static final String DEFAULT_EXTRA_DATA = "Thanh toán qua ví Momo";
 
     @Override
     public Payment create(String paymentMethod, long amount) {
         log.info("Performing PaymentService create");
         PaymentMethod method = PaymentMethod.parseFromString(paymentMethod);
         if (method == null) {
-            throw new InvalidDataException(UNSUPPORTED_PAYMENT_METHOD);
+            throw new InvalidDataException(UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE);
         }
         return Payment
                 .builder()
@@ -54,61 +62,61 @@ public class MomoPaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public MomoCaptureWalletResponse initiatePayment(String orderId, String paymentMethod, long amount) {
-        String requestBody = buildCaptureWalletRequestBody();
-        HttpRequest httpRequest = HttpRequest
+    @Transactional
+    public MomoCaptureWalletResponse initiatePayment(String orderId, HttpServletRequest httpServletRequest) {
+        OrderEntity order;
+        try {
+            order = orderService.findById(orderId);
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        if (order.getPayment().getMethod() != PaymentMethod.MOMO) {
+            throw new InvalidDataException(UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE);
+        }
+        String requestId = UUID.randomUUID().toString();
+        String requestBody = buildCaptureWalletRequestBody(order, requestId, httpServletRequest);
+        HttpRequest initiateRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(MomoEndpoints.create))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .build();
+        HttpResponse<String> httpResponse;
         try {
-            HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            log.info(httpResponse.toString());
-            MomoCaptureWalletResponse response;
-            response = objectMapper.readValue(httpResponse.body(), MomoCaptureWalletResponse.class);
-            if (httpResponse.statusCode() >= 500) {
-                throw new InternalErrorException(response.getMessage());
-            }
-            return response;
+            httpResponse = httpClient.send(initiateRequest, HttpResponse.BodyHandlers.ofString());
         } catch (IOException | InterruptedException exception) {
             throw new InternalErrorException(exception.getMessage());
         }
-    }
-
-    @Override
-    public void processIpnRequest(MomoIpnCallbackResponse request) {
-        log.info("Performing MomoPaymentService processIpnRequest");
-        log.info(request.toString());
-        if (request.getResultCode() != 0) {
-            return;
+        MomoCaptureWalletResponse response;
+        try {
+            response = objectMapper.readValue(httpResponse.body(), MomoCaptureWalletResponse.class);
+        } catch (JsonProcessingException exception) {
+            throw new InternalErrorException(exception.getMessage());
         }
-        TestPaymentEntity newPayment = TestPaymentEntity
-                .builder()
-                .orderId(request.getOrderId())
-                .transId(request.getTransId())
-                .amount(request.getAmount())
-                .build();
+        if (httpResponse.statusCode() >= 500) {
+            throw new InternalErrorException(response.getMessage());
+        }
+        order.getPayment().setRequestId(requestId);
+        orderService.save(order);
+        return response;
     }
 
-    private String buildCaptureWalletRequestBody() {
-        long amount = 10000;
-        String ipnUrl = "http://localhost:5000/test/momo/callback";
-        String orderId = UUID.randomUUID().toString();
-        String requestId = UUID.randomUUID().toString();
-        String redirectUrl = "http://localhost:5000/test/momo/callback";
-        String extraData = "Thanh toán qua ví Momo";
-        String orderInfo = "Thanh toán qua ví Momo";
-        String valueToDigest = "accessKey=" + momoCredentials.getAccessKey() +
-                "&amount=" + amount +
-                "&extraData=" + extraData +
-                "&ipnUrl=" + ipnUrl +
-                "&orderId=" + orderId +
-                "&orderInfo=" + orderInfo +
-                "&partnerCode=" + momoCredentials.getPartnerCode() +
-                "&redirectUrl=" + redirectUrl +
-                "&requestId=" + requestId +
-                "&requestType=" + MomoRequestType.CAPTURE_WALLET.getValue();
+    private String buildCaptureWalletRequestBody(OrderEntity order, String requestId, HttpServletRequest httpRequest) {
+        Payment payment = order.getPayment();
+        String baseUrl = UrlUtils.getBaseUrl(httpRequest);
+        String ipnUrl = baseUrl + ORDER_IPN_REQUEST_CALLBACK_ROUTE;
+        String redirectUrl = ipnUrl;
+//        String valueToDigest = "accessKey=" + momoCredentials.getAccessKey() +
+//                "&amount=" + payment.getAmount() +
+//                "&extraData=" + DEFAULT_EXTRA_DATA +
+//                "&ipnUrl=" + ipnUrl +
+//                "&orderId=" + order.getId() +
+//                "&orderInfo=" + DEFAULT_EXTRA_DATA +
+//                "&partnerCode=" + momoCredentials.getPartnerCode() +
+//                "&redirectUrl=" + redirectUrl +
+//                "&requestId=" + requestId +
+//                "&requestType=" + MomoRequestType.CAPTURE_WALLET.getValue();
+        String valueToDigest = buildCaptureWalletRawSignature(payment.getAmount(), ipnUrl, order.getId(), DEFAULT_EXTRA_DATA, DEFAULT_EXTRA_DATA, redirectUrl, requestId);
         HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
         String signedSignature = hmacUtils.hmacHex(valueToDigest);
         MomoCaptureWalletRequest captureWalletRequest = MomoCaptureWalletRequest
@@ -116,13 +124,13 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 .partnerCode(momoCredentials.getPartnerCode())
                 .requestType(MomoRequestType.CAPTURE_WALLET.getValue())
                 .ipnUrl(ipnUrl)
-                .redirectUrl(redirectUrl)
+                .redirectUrl(ipnUrl)
                 .requestId(requestId)
-                .orderId(orderId)
-                .orderInfo(orderInfo)
-                .amount(amount)
+                .orderId(order.getId())
+                .orderInfo(DEFAULT_EXTRA_DATA)
+                .amount(payment.getAmount())
                 .autoCapture(true)
-                .extraData(extraData)
+                .extraData(DEFAULT_EXTRA_DATA)
                 .lang(MomoResponseLanguage.VI.getValue())
                 .signature(signedSignature)
                 .build();
@@ -136,8 +144,66 @@ public class MomoPaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public MomoRefundResponse refund(PaymentEntity payment) {
+    public void processIpnRequest(MomoIpnCallbackResponse response, HttpServletRequest httpServletRequest) {
+        log.info("Performing MomoPaymentService processIpnRequest");
+        log.info(response.toString());
+        if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
+            return;
+        }
+        OrderEntity order;
+        try {
+            order = orderService.findById(response.getOrderId());
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        Payment payment = order.getPayment();
+        String ipnUrl = UrlUtils.getBaseUrl(httpServletRequest) + ORDER_IPN_REQUEST_CALLBACK_ROUTE;
+        String redirectUrl = ipnUrl;
+        String rawSignature = buildCaptureWalletRawSignature(payment.getAmount(), ipnUrl, order.getId(), DEFAULT_EXTRA_DATA, DEFAULT_EXTRA_DATA, redirectUrl, payment.getRequestId());
+        HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
+        if (!hmacUtils.hmacHex(rawSignature).equals(response.getSignature())) {
+            throw new InvalidDataException("Invalid signature");
+        }
+        payment.setPaid(true);
+        payment.setTransId(response.getTransId());
+        order.setPayment(payment);
+        orderService.save(order);
+    }
+
+    @Override
+    public MomoRefundResponse refund(String orderId) {
         log.info("Performing PaymentService refund");
+        //TODO: validate signature
+        OrderEntity order;
+        try {
+            order = orderService.findById(orderId);
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        Payment payment = order.getPayment();
+        String requestBody = buildRefundRequest(payment);
+        HttpRequest httpRequest = HttpRequest
+                .newBuilder()
+                .uri(URI.create(MomoEndpoints.refund))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .build();
+        HttpResponse<String> httpResponse;
+        try {
+            httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException exception) {
+            throw new InternalErrorException(exception.getMessage());
+        }
+        MomoRefundResponse response;
+        try {
+             response = objectMapper.readValue(httpResponse.body(), MomoRefundResponse.class);
+        } catch (JsonProcessingException exception) {
+            throw new InternalErrorException(exception.getMessage());
+        }
+        return response;
+    }
+
+    private String buildRefundRequest(Payment payment) {
         String requestId = UUID.randomUUID().toString();
         String testOrderId = UUID.randomUUID().toString();
         String valueToDigest = "accessKey=" + momoCredentials.getAccessKey() +
@@ -166,26 +232,19 @@ public class MomoPaymentServiceImpl implements PaymentService {
         } catch (JsonProcessingException e) {
             throw new InternalErrorException("Serializing failed");
         }
-        HttpRequest httpRequest = HttpRequest
-                .newBuilder()
-                .uri(URI.create(MomoEndpoints.refund))
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .build();
-        HttpResponse<String> httpResponse;
-        try {
-            httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        MomoRefundResponse response;
-        try {
-             response = objectMapper.readValue(httpResponse.body(), MomoRefundResponse.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        return response;
+        return requestBody;
+    }
+
+    private String buildCaptureWalletRawSignature(long amount, String ipnUrl, String orderId, String extraData, String orderInfo, String redirectUrl, String requestId) {
+        return "accessKey=" + momoCredentials.getAccessKey() +
+                "&amount=" + amount +
+                "&extraData=" + extraData +
+                "&ipnUrl=" + ipnUrl +
+                "&orderId=" + orderId +
+                "&orderInfo=" + orderInfo +
+                "&partnerCode=" + momoCredentials.getPartnerCode() +
+                "&redirectUrl=" + redirectUrl +
+                "&requestId=" + requestId +
+                "&requestType=" + MomoRequestType.CAPTURE_WALLET.getValue();
     }
 }

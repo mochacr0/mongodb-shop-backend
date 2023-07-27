@@ -14,7 +14,6 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class PaymentEntity {
     private String transId;
-//    private String orderId;
     private PaymentMethod method;
     private boolean isPaid;
     private long amount;

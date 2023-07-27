@@ -4,11 +4,11 @@ import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletR
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
 import com.example.springbootmongodb.model.Payment;
-import com.example.springbootmongodb.model.PaymentEntity;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface PaymentService {
     Payment create(String paymentMethod, long amount);
-    MomoCaptureWalletResponse initiatePayment(String orderId, String paymentMethod, long amount);
-    void processIpnRequest(MomoIpnCallbackResponse request);
-    MomoRefundResponse refund(PaymentEntity payment);
+    MomoCaptureWalletResponse initiatePayment(String orderId, HttpServletRequest httpServletRequest);
+    void processIpnRequest(MomoIpnCallbackResponse request, HttpServletRequest httpServletRequest);
+    MomoRefundResponse refund(String orderId);
 }

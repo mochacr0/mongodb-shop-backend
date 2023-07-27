@@ -23,6 +23,7 @@ public class UserAddressMapper {
                 .builder()
                 .userId(userAddress.getUserId())
                 .name(userAddress.getName())
+                .phoneNumber(userAddress.getPhoneNumber())
                 .province(userAddress.getProvince())
                 .district(userAddress.getDistrict())
                 .ward(userAddress.getWard())
@@ -40,6 +41,8 @@ public class UserAddressMapper {
                 .district(entity.getDistrict())
                 .ward(entity.getWard())
                 .streetAddress(entity.getStreetAddress())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 
