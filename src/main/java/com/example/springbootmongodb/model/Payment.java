@@ -9,6 +9,7 @@ import lombok.*;
 @Setter
 @Builder
 public class Payment {
+    private String requestId;
     private String transId;
     private boolean isPaid;
     private long amount;

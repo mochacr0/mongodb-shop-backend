@@ -97,4 +97,10 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .findById(id)
                 .orElseThrow(() -> new ItemNotFoundException(String.format("Order with id [%s] is not found", id)));
     }
+
+    @Override
+    public OrderEntity save(OrderEntity order) {
+        log.info("Performing OrderService save");
+        return super.save(order);
+    }
 }

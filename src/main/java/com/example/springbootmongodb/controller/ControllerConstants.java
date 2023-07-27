@@ -101,4 +101,8 @@ public class ControllerConstants {
     public static final String ORDER_ROUTE = "/orders";
     public static final String ORDER_CREATE_ORDER_ROUTE = ORDER_ROUTE;
     public static final String ORDER_GET_ORDER_BY_ID_ROUTE = ORDER_ROUTE + "/{orderId}";
+    public static final String ORDER_PAYMENT_ROUTE = ORDER_GET_ORDER_BY_ID_ROUTE + "/payment";
+    public static final String ORDER_INITIATE_PAYMENT_ROUTE = ORDER_PAYMENT_ROUTE + "/initiate";
+    public static final String ORDER_IPN_REQUEST_CALLBACK_ROUTE = ORDER_ROUTE + "/momo/callback";
+    public static final String ORDER_REQUEST_ORDER_REFUND_ROUTE = ORDER_PAYMENT_ROUTE + "/refund";
 }

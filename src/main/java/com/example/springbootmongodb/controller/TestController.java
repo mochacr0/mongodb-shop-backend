@@ -17,6 +17,7 @@ import com.example.springbootmongodb.service.PaymentService;
 import com.example.springbootmongodb.service.ProductService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -176,7 +177,8 @@ public class TestController {
                       @RequestParam("message") String message,
                       @RequestParam("payType") String payType,
                       @RequestParam("extraData") String extraData,
-                      @RequestParam("signature") String signature) {
+                      @RequestParam("signature") String signature,
+                      HttpServletRequest httpServletRequest) {
         MomoIpnCallbackResponse request = MomoIpnCallbackResponse.builder()
                 .partnerCode(partnerCode)
                 .orderId(orderId)
@@ -191,7 +193,7 @@ public class TestController {
                 .extraData(extraData)
                 .signature(signature)
                 .build();
-        paymentService.processIpnRequest(request);
+        paymentService.processIpnRequest(request, httpServletRequest);
     }
 
     @GetMapping(value = "/12")

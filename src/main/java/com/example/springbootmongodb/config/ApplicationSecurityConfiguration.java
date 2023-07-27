@@ -83,19 +83,21 @@ public class ApplicationSecurityConfiguration {
             AUTH_RESET_PASSWORD_ROUTE,
             AUTH_REFRESH_TOKEN_ROUTE,
             USERS_REGISTER_USER_ROUTE,
-            //TEST
-//            USERS_DELETE_USER_BY_ID_ROUTE,
-            USERS_ACTIVATE_USER_CREDENTIALS_ROUTE,
 //            "/products/**",
             PRODUCT_GET_PRODUCT_BY_ID_ROUTE,
             PRODUCT_GET_PRODUCTS_ROUTE,
+            //momo callback
+            ORDER_IPN_REQUEST_CALLBACK_ROUTE,
             "/media/**",
             "/oauth2/**",
             "/favicon.ico",
             "/error/**",
             "/test/**",
             "/categories/**",
-            "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"));
+            "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
+            //TEST
+//            USERS_DELETE_USER_BY_ID_ROUTE,
+            USERS_ACTIVATE_USER_CREDENTIALS_ROUTE));
 
     @Bean
     public AuthenticationManager authenticationManager(ObjectPostProcessor<Object> objectPostProcessor) throws Exception {
