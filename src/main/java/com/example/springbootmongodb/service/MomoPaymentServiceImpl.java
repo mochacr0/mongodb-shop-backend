@@ -4,10 +4,7 @@ import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.momo.*;
 import com.example.springbootmongodb.common.utils.UrlUtils;
 import com.example.springbootmongodb.config.MomoCredentials;
-import com.example.springbootmongodb.exception.InternalErrorException;
-import com.example.springbootmongodb.exception.InvalidDataException;
-import com.example.springbootmongodb.exception.ItemNotFoundException;
-import com.example.springbootmongodb.exception.UnprocessableContentException;
+import com.example.springbootmongodb.exception.*;
 import com.example.springbootmongodb.model.OrderEntity;
 import com.example.springbootmongodb.model.Payment;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -87,6 +84,9 @@ public class MomoPaymentServiceImpl implements PaymentService {
         } catch (IOException | InterruptedException exception) {
             throw new InternalErrorException(exception.getMessage());
         }
+        if (httpResponse.statusCode() >= 500) {
+            throw new UnavailableServiceException("Momo Service Unavailable");
+        }
         MomoCaptureWalletResponse response;
         try {
             response = objectMapper.readValue(httpResponse.body(), MomoCaptureWalletResponse.class);
@@ -94,7 +94,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
             throw new InternalErrorException(exception.getMessage());
         }
         if (httpResponse.statusCode() >= 500) {
-            throw new InternalErrorException(response.getMessage());
+            throw new UnavailableServiceException(response.getMessage());
         }
         order.getPayment().setRequestId(requestId);
         orderService.save(order);
@@ -193,6 +193,9 @@ public class MomoPaymentServiceImpl implements PaymentService {
             httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         } catch (IOException | InterruptedException exception) {
             throw new InternalErrorException(exception.getMessage());
+        }
+        if (httpResponse.statusCode() >= 500) {
+            throw new UnavailableServiceException("Momo Service Unavailable");
         }
         MomoRefundResponse response;
         try {
