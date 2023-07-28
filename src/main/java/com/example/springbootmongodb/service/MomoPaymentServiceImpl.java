@@ -8,7 +8,6 @@ import com.example.springbootmongodb.exception.*;
 import com.example.springbootmongodb.model.OrderEntity;
 import com.example.springbootmongodb.model.Payment;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -70,11 +69,14 @@ public class MomoPaymentServiceImpl implements PaymentService {
         if (order.getPayment().getMethod() != PaymentMethod.MOMO) {
             throw new InvalidDataException(UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE);
         }
+        if (order.getPayment().isPaid()) {
+            throw new InvalidDataException("Order has been paid");
+        }
         String requestId = UUID.randomUUID().toString();
         String requestBody = buildCaptureWalletRequestBody(order, requestId, httpServletRequest);
         HttpRequest initiateRequest = HttpRequest
                 .newBuilder()
-                .uri(URI.create(MomoEndpoints.create))
+                .uri(URI.create(MomoEndpoints.MOMO_CAPTURE_WALLET_ROUTE))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .build();
@@ -156,14 +158,8 @@ public class MomoPaymentServiceImpl implements PaymentService {
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
+        //validate signature
         Payment payment = order.getPayment();
-        String ipnUrl = UrlUtils.getBaseUrl(httpServletRequest) + ORDER_IPN_REQUEST_CALLBACK_ROUTE;
-        String redirectUrl = ipnUrl;
-        String rawSignature = buildCaptureWalletRawSignature(payment.getAmount(), ipnUrl, order.getId(), DEFAULT_EXTRA_DATA, DEFAULT_EXTRA_DATA, redirectUrl, payment.getRequestId());
-        HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
-        if (!hmacUtils.hmacHex(rawSignature).equals(response.getSignature())) {
-            throw new InvalidDataException("Invalid signature");
-        }
         payment.setPaid(true);
         payment.setTransId(response.getTransId());
         order.setPayment(payment);
@@ -184,7 +180,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
         String requestBody = buildRefundRequest(payment);
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
-                .uri(URI.create(MomoEndpoints.refund))
+                .uri(URI.create(MomoEndpoints.MOMO_REFUND_ROUTE))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .build();
@@ -239,7 +235,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
     }
 
     private String buildCaptureWalletRawSignature(long amount, String ipnUrl, String orderId, String extraData, String orderInfo, String redirectUrl, String requestId) {
-        return "accessKey=" + momoCredentials.getAccessKey() +
+        String rawSignature =  "accessKey=" + momoCredentials.getAccessKey() +
                 "&amount=" + amount +
                 "&extraData=" + extraData +
                 "&ipnUrl=" + ipnUrl +
@@ -249,5 +245,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 "&redirectUrl=" + redirectUrl +
                 "&requestId=" + requestId +
                 "&requestType=" + MomoRequestType.CAPTURE_WALLET.getValue();
+        log.info("-----------------------------: " + rawSignature);
+        return rawSignature;
     }
 }

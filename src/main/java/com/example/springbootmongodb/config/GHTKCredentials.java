@@ -6,11 +6,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "payment.momo")
+@ConfigurationProperties(prefix = "shipping.ghtk")
 @Getter
 @Setter
-public class MomoCredentials {
-    private String partnerCode;
-    private String accessKey;
-    private String secretKey;
+public class GHTKCredentials {
+    private String apiToken;
 }

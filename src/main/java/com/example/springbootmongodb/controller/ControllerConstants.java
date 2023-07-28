@@ -105,4 +105,11 @@ public class ControllerConstants {
     public static final String ORDER_INITIATE_PAYMENT_ROUTE = ORDER_PAYMENT_ROUTE + "/initiate";
     public static final String ORDER_IPN_REQUEST_CALLBACK_ROUTE = ORDER_ROUTE + "/momo/callback";
     public static final String ORDER_REQUEST_ORDER_REFUND_ROUTE = ORDER_PAYMENT_ROUTE + "/refund";
+
+    /**
+     * Shipping constants
+     */
+    public static final String SHIPMENT_ROUTE = "/shipments";
+    public static final String SHIPMENT_GET_LV4_ADDRESSES_ROUTE = SHIPMENT_ROUTE + "/lv4Addresses";
+    public static final String SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE = SHIPMENT_ROUTE + "/calculateFee";
 }

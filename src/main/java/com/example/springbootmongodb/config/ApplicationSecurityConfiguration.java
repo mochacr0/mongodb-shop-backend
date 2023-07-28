@@ -97,7 +97,9 @@ public class ApplicationSecurityConfiguration {
             "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
             //TEST
 //            USERS_DELETE_USER_BY_ID_ROUTE,
-            USERS_ACTIVATE_USER_CREDENTIALS_ROUTE));
+            USERS_ACTIVATE_USER_CREDENTIALS_ROUTE,
+            SHIPMENT_GET_LV4_ADDRESSES_ROUTE,
+            SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE));
 
     @Bean
     public AuthenticationManager authenticationManager(ObjectPostProcessor<Object> objectPostProcessor) throws Exception {
