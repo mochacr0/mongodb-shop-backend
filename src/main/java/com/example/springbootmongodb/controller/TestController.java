@@ -7,6 +7,7 @@ import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
 import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
+import com.example.springbootmongodb.config.MomoCredentials;
 import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import com.example.springbootmongodb.repository.ProductRepository;
@@ -20,6 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.HmacAlgorithms;
+import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
@@ -56,6 +59,9 @@ public class TestController {
     private final ObjectMapper objectMapper;
     private final CartService cartService;
     private final PaymentService paymentService;
+    private final MomoCredentials momoCredentials;
+
+    private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
 //    ProductEntity test() {
 //        ProductEntity product = ProductEntity.builder().name("product").build();
@@ -198,7 +204,18 @@ public class TestController {
 
     @GetMapping(value = "/12")
     MomoRefundResponse test12(@RequestParam String orderId) {
+        HmacUtils hmacUtils1 = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
+        String value = "accessKey=F8BBA842ECF85&amount=1000&extraData=Thanh toán qua ví Momo&ipnUrl=http://localhost:5000/orders/momo/callback&orderId=64c25081f3ce0e2e30059bea&orderInfo=Thanh toán qua ví Momo&partnerCode=MOMO&redirectUrl=http://localhost:5000/orders/momo/callback&requestId=5bd266c2-73c1-490a-b8af-2713a66cde4a&requestType=captureWallet";
+        String hash1 = hmacUtils1.hmacHex(value);
+        HmacUtils hmacUtils2 = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
+        String hash2 = hmacUtils2.hmacHex(value);
+        log.info(hash1);
+        log.info(hash2);
         return null;
-//        return paymentService.refund(orderId);
+    }
+
+    @GetMapping(value = "/13")
+    void test13(@RequestParam(required = false) int value) {
+        log.info("-------------------------------------Value: " + value);
     }
 }

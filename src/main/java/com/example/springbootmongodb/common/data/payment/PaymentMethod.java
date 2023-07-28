@@ -2,7 +2,7 @@ package com.example.springbootmongodb.common.data.payment;
 
 public enum PaymentMethod {
     MOMO,
-    ON_CASH;
+    CASH;
 
     public static PaymentMethod parseFromString(String value) {
         PaymentMethod paymentMethod = null;
