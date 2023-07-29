@@ -99,7 +99,7 @@ import java.util.stream.Collectors;
         createdProduct.setItems(createdItems);
         updatePriceRange(createdProduct);
         super.save(createdProduct);
-//        mediaService.persistCreatingProductImagesAsync(request);
+        mediaService.persistCreatingProductImagesAsync(request);
         return createdProduct;
     }
 
