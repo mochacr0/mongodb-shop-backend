@@ -7,6 +7,9 @@ import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.config.GHTKCredentials;
 import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
+import com.example.springbootmongodb.exception.ItemNotFoundException;
+import com.example.springbootmongodb.exception.UnprocessableContentException;
+import com.example.springbootmongodb.model.ShopAddressEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
@@ -33,12 +36,12 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
     private final HttpClient httpClient;
     private final GHTKCredentials ghtkCredentials;
     private final ObjectMapper objectMapper;
+    private final ShopAddressService shopAddressService;
     private final String TOKEN_HEADER_NAME = "Token";
 
     @Override
     public GHTKLv4AddressesResponse getLv4Addresses(String address, String province, String district, String wardStreet) {
         log.info("Performing ShipmentService getLv4Addresses");
-//        validateGetLv4Addresses(province, district, wardStreet);
         String uri = UriComponentsBuilder.fromUriString(GHTK_GET_LV4_ADDRESSES_ROUTE)
                 .queryParam("province", province)
                 .queryParam("district", district)
@@ -70,21 +73,33 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
         return response;
     }
 
-    private void validateGetLv4Addresses(String province, String district, String wardStreet) {
-        if (StringUtils.isEmpty(province)) {
-            throw new InvalidDataException("Province is required");
-        }
-        if (StringUtils.isEmpty(district)) {
-            throw new InvalidDataException("District is required");
-        }
-        if (StringUtils.isEmpty(wardStreet)) {
-            throw new InvalidDataException("Ward street is required");
-        }
-    }
+//    private void validateGetLv4Addresses(String province, String district, String wardStreet) {
+//        if (StringUtils.isEmpty(province)) {
+//            throw new InvalidDataException("Province is required");
+//        }
+//        if (StringUtils.isEmpty(district)) {
+//            throw new InvalidDataException("District is required");
+//        }
+//        if (StringUtils.isEmpty(wardStreet)) {
+//            throw new InvalidDataException("Ward street is required");
+//        }
+//    }
 
     @Override
     public GHTKCalculateFeeResponse calculateFee(GHTKCalculateFeeRequest request) {
         log.info("Performing ShipmentService calculateFee");
+        if (StringUtils.isNotEmpty(request.getPickAddressId())) {
+            ShopAddressEntity shopAddress;
+            try {
+                shopAddress = shopAddressService.findById(request.getPickAddressId());
+            } catch (ItemNotFoundException exception) {
+                throw new UnprocessableContentException(exception.getMessage());
+            }
+            request.setPickProvince(shopAddress.getProvince());
+            request.setPickDistrict(shopAddress.getDistrict());
+            request.setPickWard(shopAddress.getWard());
+            request.setPickStreet(shopAddress.getStreetAddress());
+        }
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .GET()
@@ -100,8 +115,8 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
         GHTKCalculateFeeResponse response;
         try {
             response = objectMapper.readValue(httpResponse.body(), GHTKCalculateFeeResponse.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        } catch (JsonProcessingException exception) {
+            throw new InternalErrorException(exception.getMessage());
         }
         if (StringUtils.isNotEmpty(response.getMessage())) {
             throw new InvalidDataException(response.getMessage());
