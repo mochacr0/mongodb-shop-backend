@@ -11,6 +11,7 @@ import com.example.springbootmongodb.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,8 @@ public class AuthController {
         return securitySettings.getPasswordPolicy();
     }
 
-    @Operation(summary = "Đổi mật khẩu")
+    @Operation(summary = "Đổi mật khẩu",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @PostMapping(value = AUTH_CHANGE_PASSWORD_ROUTE)
     JwtToken changePassword(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
             @RequestBody ChangePasswordRequest request) {

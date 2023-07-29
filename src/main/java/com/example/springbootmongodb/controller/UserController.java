@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,8 @@ public class UserController {
     private final UserService userService;
     private final UserMapper mapper;
 
-    @Operation(summary = "Phân trang danh sách user")
+    @Operation(summary = "Phân trang danh sách user",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @GetMapping(value = USERS_GET_USERS_ROUTE)
     PageData<User> getUsers(@Parameter(description = PAGE_NUMBER_DESCRIPTION)
                             @RequestParam(defaultValue = PAGE_NUMBER_DEFAULT_STRING_VALUE) int page,
@@ -57,13 +59,15 @@ public class UserController {
         return mapper.fromEntity(userService.findById(userId));
     }
 
-    @Operation(summary = "Tìm user hiện đang đăng nhập")
+    @Operation(summary = "Tìm user hiện đang đăng nhập",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @GetMapping(value = USERS_GET_CURRENT_USER_ROUTE)
     User getCurrentUser () {
         return mapper.fromEntity(userService.findCurrentUser());
     }
 
-    @Operation(summary = "Update user hiện đăng đăng nhâp")
+    @Operation(summary = "Update user hiện đăng đăng nhâp",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @PutMapping(value = USERS_UPDATE_USER_ROUTE)
     User saveUser(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                   @RequestBody User user) {
@@ -80,7 +84,8 @@ public class UserController {
         return mapper.fromEntity(userService.register(registerUserRequest, request, isMailRequired));
     }
 
-    @Operation(summary = "Xóa user theo Id")
+    @Operation(summary = "Xóa user theo Id",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @DeleteMapping(value = USERS_DELETE_USER_BY_ID_ROUTE)
     void deleteUser(@Parameter(description = "A string value representing the user id", required = true)
                     @PathVariable(name = "userId") String userId) {
