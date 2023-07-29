@@ -73,4 +73,9 @@ public class ModelConstants {
      * Order constants
      */
     public static final String ORDER_COLLECTION_NAME = "orders";
+
+    /**
+     * Shop address constants
+     */
+    public static final String SHOP_ADDRESS_COLLECTION_NAME = "shopAddresses";
 }

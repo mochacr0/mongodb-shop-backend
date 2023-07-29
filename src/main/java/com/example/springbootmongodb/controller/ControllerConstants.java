@@ -112,4 +112,16 @@ public class ControllerConstants {
     public static final String SHIPMENT_ROUTE = "/shipments";
     public static final String SHIPMENT_GET_LV4_ADDRESSES_ROUTE = SHIPMENT_ROUTE + "/lv4Addresses";
     public static final String SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE = SHIPMENT_ROUTE + "/calculateFee";
+
+    /**
+     * Shop address constants
+     */
+    public static final String SHOP_ADDRESS_ROUTE = "/shopAddresses";
+    public static final String SHOP_ADDRESS_CREATE_ADDRESS_ROUTE = SHOP_ADDRESS_ROUTE;
+    public static final String SHOP_ADDRESS_GET_ADDRESSES_ROUTE = SHOP_ADDRESS_ROUTE;
+    public static final String SHOP_ADDRESS_GET_ADDRESS_BY_ID_ROUTE = SHOP_ADDRESS_ROUTE + "/{shopAddressId}";
+    public static final String SHOP_ADDRESS_UPDATE_ADDRESS_BY_ID_ROUTE = SHOP_ADDRESS_GET_ADDRESS_BY_ID_ROUTE;
+    public static final String SHOP_ADDRESS_DELETE_ADDRESS_BY_ID_ROUTE = SHOP_ADDRESS_GET_ADDRESS_BY_ID_ROUTE;
+
+
 }
