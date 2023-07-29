@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -53,26 +54,29 @@ public class CategoryController {
         return DaoUtils.toData(categoryService.findById(categoryId), mapper::fromEntity);
     }
 
-    @Operation(summary = "Tìm danh mục mặc định")
+    @Operation(summary = "Tìm danh mục mặc định (API này chỉ dùng để test)")
     @GetMapping(value = CATEGORY_GET_DEFAULT_CATEGORY_ROUTE)
     Category getDefaultCategory() {
         return DaoUtils.toData(categoryService.findDefaultCategory(), mapper::fromEntity);
     }
 
-    @Operation(summary = "Tạo danh mục mới")
+    @Operation(summary = "Tạo danh mục mới",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @PostMapping(value = CATEGORY_CREATE_CATEGORY_ROUTE)
     Category create(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                     @RequestBody Category category) {
         return DaoUtils.toData(categoryService.create(category), mapper::fromEntity);
     }
-    @Operation(summary = "Update danh mục")
+    @Operation(summary = "Update danh mục",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @PutMapping(value = CATEGORY_UPDATE_CATEGORY_ROUTE)
     Category update(@Parameter(description = "Id của danh mục cần update", required = true)
                     @PathVariable(name = "categoryId") String categoryId,
                     @RequestBody Category category) {
         return DaoUtils.toData(categoryService.save(categoryId, category), mapper::fromEntity);
     }
-    @Operation(summary = "Xóa danh mục")
+    @Operation(summary = "Xóa danh mục",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     @DeleteMapping(value = CATEGORY_DELETE_CATEGORY_BY_ID_ROUTE)
     void deleteCategoryById(@Parameter(description = "Id của danh mục cần xóa", required = true)
                             @PathVariable(name = "categoryId") String categoryId) {
