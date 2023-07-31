@@ -38,6 +38,7 @@ public class ApplicationErrorHandler extends ResponseEntityExceptionHandler {
         exceptionToStatusMap.put(AccessDeniedException.class, HttpStatus.FORBIDDEN);
         exceptionToStatusMap.put(ItemNotFoundException.class, HttpStatus.NOT_FOUND);
         exceptionToStatusMap.put(UnprocessableContentException.class, HttpStatus.UNPROCESSABLE_ENTITY);
+        exceptionToStatusMap.put(UnavailableServiceException.class, HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     public static HttpStatus exceptionToStatus(Exception exception) {

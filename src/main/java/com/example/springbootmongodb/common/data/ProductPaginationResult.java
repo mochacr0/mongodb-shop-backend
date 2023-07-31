@@ -16,7 +16,7 @@ public class ProductPaginationResult extends AbstractData {
     @Schema(name = "totalSales", description = "Tổng số lượng đã bán", example = "100")
     private long totalSales;
     @Schema(name = "rating", description = "Đánh giá sản phẩm", example = "5")
-    private float rating;
+    private double rating;
     @Schema(name = "minPrice", description = "Đơn giá sản phẩm thấp nhất", example = "1000")
     private float minPrice;
     @Schema(name = "maxPrice", description = "Đơn giá sản phẩm cao nhất", example = "9000")

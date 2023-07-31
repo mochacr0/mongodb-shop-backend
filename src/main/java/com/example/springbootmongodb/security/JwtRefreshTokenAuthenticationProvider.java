@@ -1,6 +1,5 @@
 package com.example.springbootmongodb.security;
 
-import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.mapper.UserMapper;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
@@ -47,7 +46,7 @@ public class JwtRefreshTokenAuthenticationProvider implements AuthenticationProv
         if (!(userCredentials.isVerified() && userCredentials.isEnabled(authenticationDetails.getClientIpAddress()))) {
             throw new DisabledException("User is not active");
         }
-        SecurityUser securityUser = new SecurityUser(mapper.toUser(user));
+        SecurityUser securityUser = new SecurityUser(mapper.fromEntity(user));
         return new JwtAccessAuthenticationToken(securityUser);
     }
 

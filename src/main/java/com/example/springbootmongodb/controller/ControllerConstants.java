@@ -94,4 +94,34 @@ public class ControllerConstants {
      */
     public static final String MEDIA_ROUTE = "/media";
     public static final String MEDIA_UPLOAD_IMAGE_ROUTE = MEDIA_ROUTE + "/image";
+
+    /**
+     * Order constants
+     */
+    public static final String ORDER_ROUTE = "/orders";
+    public static final String ORDER_CREATE_ORDER_ROUTE = ORDER_ROUTE;
+    public static final String ORDER_GET_ORDER_BY_ID_ROUTE = ORDER_ROUTE + "/{orderId}";
+    public static final String ORDER_PAYMENT_ROUTE = ORDER_GET_ORDER_BY_ID_ROUTE + "/payment";
+    public static final String ORDER_INITIATE_PAYMENT_ROUTE = ORDER_PAYMENT_ROUTE + "/initiate";
+    public static final String ORDER_IPN_REQUEST_CALLBACK_ROUTE = ORDER_ROUTE + "/momo/callback";
+    public static final String ORDER_REQUEST_ORDER_REFUND_ROUTE = ORDER_PAYMENT_ROUTE + "/refund";
+
+    /**
+     * Shipping constants
+     */
+    public static final String SHIPMENT_ROUTE = "/shipments";
+    public static final String SHIPMENT_GET_LV4_ADDRESSES_ROUTE = SHIPMENT_ROUTE + "/lv4Addresses";
+    public static final String SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE = SHIPMENT_ROUTE + "/calculateFee";
+
+    /**
+     * Shop address constants
+     */
+    public static final String SHOP_ADDRESS_ROUTE = "/shopAddresses";
+    public static final String SHOP_ADDRESS_CREATE_ADDRESS_ROUTE = SHOP_ADDRESS_ROUTE;
+    public static final String SHOP_ADDRESS_GET_ADDRESSES_ROUTE = SHOP_ADDRESS_ROUTE;
+    public static final String SHOP_ADDRESS_GET_ADDRESS_BY_ID_ROUTE = SHOP_ADDRESS_ROUTE + "/{shopAddressId}";
+    public static final String SHOP_ADDRESS_UPDATE_ADDRESS_BY_ID_ROUTE = SHOP_ADDRESS_GET_ADDRESS_BY_ID_ROUTE;
+    public static final String SHOP_ADDRESS_DELETE_ADDRESS_BY_ID_ROUTE = SHOP_ADDRESS_GET_ADDRESS_BY_ID_ROUTE;
+
+
 }

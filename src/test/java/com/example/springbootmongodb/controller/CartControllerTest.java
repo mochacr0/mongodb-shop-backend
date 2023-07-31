@@ -5,6 +5,7 @@ import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Order;
 
 import java.util.Arrays;
 import java.util.Collections;

@@ -5,7 +5,6 @@ import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.security.Authority;
 import com.example.springbootmongodb.security.oauth2.OAuth2UserInfo;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -38,7 +37,7 @@ public class UserMapper {
                 .build();
     }
 
-    public User toUser(UserEntity entity) {
+    public User fromEntity(UserEntity entity) {
         return User.builder()
                 .id(entity.getId())
                 .defaultAddressId(entity.getDefaultAddressId())

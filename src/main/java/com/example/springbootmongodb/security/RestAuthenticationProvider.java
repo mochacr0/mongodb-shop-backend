@@ -1,6 +1,5 @@
 package com.example.springbootmongodb.security;
 
-import com.example.springbootmongodb.common.data.User;
 import com.example.springbootmongodb.common.data.mapper.UserMapper;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
@@ -9,13 +8,11 @@ import com.example.springbootmongodb.service.UserCredentialsService;
 import com.example.springbootmongodb.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -46,7 +43,7 @@ public class RestAuthenticationProvider implements AuthenticationProvider {
         }
         userCredentialsService.validatePassword(existingUser, password, details.getClientIpAddress());
         //password matched
-        SecurityUser securityUser = new SecurityUser(mapper.toUser(existingUser));
+        SecurityUser securityUser = new SecurityUser(mapper.fromEntity(existingUser));
         return new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
     }
 

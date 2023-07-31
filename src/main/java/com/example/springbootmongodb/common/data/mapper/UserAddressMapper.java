@@ -7,8 +7,10 @@ import com.example.springbootmongodb.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -21,6 +23,7 @@ public class UserAddressMapper {
                 .builder()
                 .userId(userAddress.getUserId())
                 .name(userAddress.getName())
+                .phoneNumber(userAddress.getPhoneNumber())
                 .province(userAddress.getProvince())
                 .district(userAddress.getDistrict())
                 .ward(userAddress.getWard())
@@ -28,7 +31,7 @@ public class UserAddressMapper {
                 .build();
     }
 
-    public UserAddress toUserAddress(UserAddressEntity entity) {
+    public UserAddress fromEntity(UserAddressEntity entity) {
         return UserAddress.builder()
                 .id(entity.getId())
                 .userId(entity.getUserId())
@@ -38,14 +41,19 @@ public class UserAddressMapper {
                 .district(entity.getDistrict())
                 .ward(entity.getWard())
                 .streetAddress(entity.getStreetAddress())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 
     public List<UserAddress> toUserAddressList(List<UserAddressEntity> entities) {
-        UserEntity user = userService.findById( entities.get(0).getUserId());
+        if (CollectionUtils.isEmpty(entities)) {
+            return Collections.emptyList();
+        }
+        UserEntity user = userService.findById(entities.get(0).getUserId());
         List<UserAddress> userAddressList = new ArrayList<>();
         for (UserAddressEntity entity : entities) {
-            UserAddress userAddress = this.toUserAddress(entity);
+            UserAddress userAddress = this.fromEntity(entity);
             if (userAddress.getId().equals(user.getDefaultAddressId())) {
                 userAddress.setDefault(true);
             }

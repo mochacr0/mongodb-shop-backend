@@ -1,34 +1,35 @@
 package com.example.springbootmongodb.controller;
 
-import com.example.springbootmongodb.common.data.Product;
 import com.example.springbootmongodb.common.data.TemporaryImage;
 import com.example.springbootmongodb.common.data.VariationOption;
 import com.example.springbootmongodb.common.data.mapper.ProductMapper;
 import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
-import com.example.springbootmongodb.exception.InternalErrorException;
+import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
+import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
+import com.example.springbootmongodb.common.data.payment.momo.MomoQueryPaymentStatusResponse;
+import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
+import com.example.springbootmongodb.config.MomoCredentials;
 import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import com.example.springbootmongodb.repository.ProductRepository;
 import com.example.springbootmongodb.repository.VariationOptionRepository;
 import com.example.springbootmongodb.service.CartService;
 import com.example.springbootmongodb.service.MediaService;
+import com.example.springbootmongodb.service.PaymentService;
 import com.example.springbootmongodb.service.ProductService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.jdi.InternalException;
-import io.awspring.cloud.s3.ObjectMetadata;
-import io.awspring.cloud.s3.S3Resource;
-import io.awspring.cloud.s3.S3Template;
-import jakarta.xml.bind.annotation.XmlType;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
+import org.apache.commons.codec.digest.HmacAlgorithms;
+import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectTaggingRequest;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -36,7 +37,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.example.springbootmongodb.config.S3Configuration.DEFAULT_BUCKET;
@@ -59,6 +59,10 @@ public class TestController {
     private final ProductMapper productMapper;
     private final ObjectMapper objectMapper;
     private final CartService cartService;
+    private final PaymentService paymentService;
+    private final MomoCredentials momoCredentials;
+
+    private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
 //    ProductEntity test() {
 //        ProductEntity product = ProductEntity.builder().name("product").build();
@@ -160,5 +164,64 @@ public class TestController {
     @GetMapping(value = "/10")
     CartEntity test10() {
         return cartService.create("");
+    }
+
+    @GetMapping(value = "/11")
+    MomoCaptureWalletResponse test11() {
+        return null;
+    }
+
+    @GetMapping(value = "/momo/callback")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void momoCallback(@RequestParam("partnerCode") String partnerCode,
+                      @RequestParam("orderId") String orderId,
+                      @RequestParam("requestId") String requestId,
+                      @RequestParam("amount") long amount,
+                      @RequestParam("orderInfo") String orderInfo,
+                      @RequestParam("orderType") String orderType,
+                      @RequestParam("transId") String transId,
+                      @RequestParam("resultCode") int resultCode,
+                      @RequestParam("message") String message,
+                      @RequestParam("payType") String payType,
+                      @RequestParam("extraData") String extraData,
+                      @RequestParam("signature") String signature,
+                      HttpServletRequest httpServletRequest) {
+        MomoIpnCallbackResponse request = MomoIpnCallbackResponse.builder()
+                .partnerCode(partnerCode)
+                .orderId(orderId)
+                .requestId(requestId)
+                .amount(amount)
+                .orderInfo(orderInfo)
+                .orderType(orderType)
+                .transId(transId)
+                .resultCode(resultCode)
+                .message(message)
+                .payType(payType)
+                .extraData(extraData)
+                .signature(signature)
+                .build();
+        paymentService.processIpnRequest(request, httpServletRequest);
+    }
+
+    @GetMapping(value = "/12")
+    MomoRefundResponse test12(@RequestParam String orderId) {
+        HmacUtils hmacUtils1 = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
+        String value = "accessKey=F8BBA842ECF85&amount=1000&extraData=Thanh toán qua ví Momo&ipnUrl=http://localhost:5000/orders/momo/callback&orderId=64c25081f3ce0e2e30059bea&orderInfo=Thanh toán qua ví Momo&partnerCode=MOMO&redirectUrl=http://localhost:5000/orders/momo/callback&requestId=5bd266c2-73c1-490a-b8af-2713a66cde4a&requestType=captureWallet";
+        String hash1 = hmacUtils1.hmacHex(value);
+        HmacUtils hmacUtils2 = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
+        String hash2 = hmacUtils2.hmacHex(value);
+        log.info(hash1);
+        log.info(hash2);
+        return null;
+    }
+
+    @GetMapping(value = "/13")
+    void test13(@RequestParam(required = false) int value) {
+        log.info("-------------------------------------Value: " + value);
+    }
+
+    @GetMapping(value = "/14")
+    Payment test14(@RequestParam String orderId) {
+        return paymentService.queryPaymentStatus(orderId);
     }
 }

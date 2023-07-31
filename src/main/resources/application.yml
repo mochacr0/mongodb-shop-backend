@@ -26,7 +26,7 @@ logging:
         data:
           mongodb:
             core:
-              MongoTemplate: DEBUG
+              MongoTemplate: "DEBUG"
 server:
   port: 5000
 security:
@@ -52,6 +52,13 @@ mailing:
   username: "mochacr0@gmail.com"
   password: "nhxyxrnqckoijmcs"
   timeout: 10000
-
+payment:
+  momo:
+    partnerCode: "MOMO"
+    accessKey: "F8BBA842ECF85"
+    secretKey: "K951B6PE1waDMi640xX08PD3vg6EkVlz"
+shipping:
+  ghtk:
+    apiToken: "641cd4f20fecc058dc822b5163ceb3abb797431f"
 
 
