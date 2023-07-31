@@ -25,10 +25,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 import static com.example.springbootmongodb.controller.ControllerTestConstants.*;
@@ -235,6 +232,7 @@ public abstract class AbstractControllerTest {
                 .builder()
                 .name(generateRandomString())
                 .imageUrl(DEFAULT_IMAGE_URL)
+                .weight(0.1d)
                 .variations(new ArrayList<>())
                 .items(new ArrayList<>())
                 .build();

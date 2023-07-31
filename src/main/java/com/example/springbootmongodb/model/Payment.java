@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.model;
 
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
+import com.example.springbootmongodb.common.data.payment.PaymentStatus;
 import lombok.*;
 
 @NoArgsConstructor
@@ -9,9 +10,9 @@ import lombok.*;
 @Setter
 @Builder
 public class Payment {
-    private String requestId;
     private String transId;
-    private boolean isPaid;
     private long amount;
     private PaymentMethod method;
+    private PaymentStatus status;
+    private String description;
 }

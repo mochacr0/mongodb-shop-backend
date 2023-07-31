@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.model;
 
+import com.example.springbootmongodb.common.data.OrderState;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,9 +23,9 @@ import static com.example.springbootmongodb.model.ModelConstants.ORDER_COLLECTIO
 public class OrderEntity extends AbstractEntity {
     @DocumentReference(lazy = true)
     private UserEntity user;
-    @DocumentReference
-    private UserAddressEntity shippingAddress;
+    private UserAddressEntity userAddress;
     private long subTotal;
     private Payment payment;
     private List<OrderItem> orderItems = new ArrayList<>();
+    private List<OrderStatus> statusHistory = new ArrayList<>();
 }

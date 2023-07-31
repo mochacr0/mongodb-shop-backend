@@ -2,6 +2,8 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.OrderItemRequest;
 import com.example.springbootmongodb.common.data.OrderRequest;
+import com.example.springbootmongodb.common.data.OrderState;
+import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
@@ -14,7 +16,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -42,9 +46,9 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             throw new UnprocessableContentException(exception.getMessage());
         }
         //validate shipping address
-        UserAddressEntity shippingAddress;
+        UserAddressEntity userAddress;
         try {
-            shippingAddress = userAddressService.findById(request.getShippingAddressId());
+            userAddress = userAddressService.findById(request.getUserAddressId());
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
@@ -76,13 +80,19 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             subTotal += orderItem.getQuantity() * orderItem.getPrice();
         }
         Payment payment = paymentService.create(request.getPaymentMethod(), subTotal);
+        OrderStatus iniStatus = OrderStatus
+                .builder()
+                .state(OrderState.UNPAID)
+                .createdAt(LocalDateTime.now())
+                .build();
         OrderEntity order = OrderEntity
                 .builder()
                 .user(user)
-                .shippingAddress(shippingAddress)
+                .userAddress(userAddress)
                 .subTotal(subTotal)
                 .payment(payment)
                 .orderItems(orderItems)
+                .statusHistory(Collections.singletonList(iniStatus))
                 .build();
         return super.insert(order);
     }

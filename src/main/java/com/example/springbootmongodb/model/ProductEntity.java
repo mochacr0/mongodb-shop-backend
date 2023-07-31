@@ -28,8 +28,9 @@ public class ProductEntity extends AbstractEntity {
     private String name;
     private String description;
     private String imageUrl;
+    private double weight;
     private long totalSales;
-    private float rating;
+    private double rating;
     private long minPrice;
     private long maxPrice;
     @ReadOnlyProperty

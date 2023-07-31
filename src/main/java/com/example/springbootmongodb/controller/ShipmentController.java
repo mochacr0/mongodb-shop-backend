@@ -33,40 +33,48 @@ public class ShipmentController {
 
     @GetMapping(value = SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE)
     @Operation(summary = "Tính phí vận chuyển")
-    GHTKCalculateFeeResponse calculateDeliveryFee(@RequestParam(required = false) String pickAddressId,
-                                                  @RequestParam(required = false) String pickAddress,
-                                                  @RequestParam String pickProvince,
-                                                  @RequestParam String pickDistrict,
-                                                  @RequestParam(required = false) String pickWard,
-                                                  @RequestParam(required = false) String pickStreet,
-                                                  @RequestParam(required = false) String address,
-                                                  @RequestParam String province,
-                                                  @RequestParam String district,
-                                                  @RequestParam(required = false) String ward,
-                                                  @RequestParam(required = false) String street,
-                                                  @RequestParam String weight,
-                                                  @RequestParam(required = false) String value,
-                                                  @RequestParam(required = false) String transport,
-                                                  @RequestParam(required = false) String deliverOption,
-                                                  @RequestParam(required = false) List<Integer> tags) {
-        GHTKCalculateFeeRequest request = GHTKCalculateFeeRequest.builder()
-                .pickAddressId(pickAddressId)
-                .pickAddress(pickAddress)
-                .pickProvince(pickProvince)
-                .pickDistrict(pickDistrict)
-                .pickWard(pickWard)
-                .pickStreet(pickStreet)
-                .address(address)
-                .province(province)
-                .district(district)
-                .ward(ward)
-                .street(street)
-                .weight(weight)
-                .value(value)
-                .transport(transport)
-                .tags(tags)
-                .build();
-        return shipmentService.calculateFee(request);
+    GHTKCalculateFeeResponse calculateDeliveryFee(@RequestParam String userAddressId,
+                                                  @RequestParam Double weight) {
+        return shipmentService.calculateFee(userAddressId, weight);
     }
+
+//    @GetMapping(value = SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE)
+//    @Operation(summary = "Tính phí vận chuyển")
+//    GHTKCalculateFeeResponse calculateDeliveryFee(@RequestParam(required = false) String pickAddressId,
+//                                                  @RequestParam(required = false) String pickAddress,
+//                                                  @RequestParam String pickProvince,
+//                                                  @RequestParam String pickDistrict,
+//                                                  @RequestParam(required = false) String pickWard,
+//                                                  @RequestParam(required = false) String pickStreet,
+//                                                  @RequestParam(required = false) String address,
+//                                                  @RequestParam String province,
+//                                                  @RequestParam String district,
+//                                                  @RequestParam(required = false) String ward,
+//                                                  @RequestParam(required = false) String street,
+//                                                  @RequestParam String weight,
+//                                                  @RequestParam(required = false) String value,
+//                                                  @RequestParam(required = false) String transport,
+//                                                  @RequestParam(required = false) String deliverOption,
+//                                                  @RequestParam(required = false) List<Integer> tags) {
+//        GHTKCalculateFeeRequest request = GHTKCalculateFeeRequest.builder()
+//                .pickAddressId(pickAddressId)
+//                .pickAddress(pickAddress)
+//                .pickProvince(pickProvince)
+//                .pickDistrict(pickDistrict)
+//                .pickWard(pickWard)
+//                .pickStreet(pickStreet)
+//                .address(address)
+//                .province(province)
+//                .district(district)
+//                .ward(ward)
+//                .street(street)
+//                .weight(weight)
+//                .value(value)
+//                .transport(transport)
+//                .tags(tags)
+//                .build();
+//        return shipmentService.calculateFee(request);
+//
+//    }
 }
 

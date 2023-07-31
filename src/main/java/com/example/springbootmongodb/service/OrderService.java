@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.OrderRequest;
+import com.example.springbootmongodb.common.data.payment.momo.MomoQueryPaymentStatusResponse;
 import com.example.springbootmongodb.model.OrderEntity;
 
 public interface OrderService {
