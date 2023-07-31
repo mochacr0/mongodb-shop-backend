@@ -105,15 +105,16 @@ public class MomoPaymentServiceImpl implements PaymentService {
         order.setPayment(orderPayment);
         orderService.save(order);
         log.info("----------PAY URL: " + response.getPayUrl());
+        log.info("----------SEND REQUEST ID: " + requestId);
+        log.info("----------ORDER ID: " + order.getId());
+        log.info("----------AMOUNT: " + orderPayment.getAmount());
+        log.info("----------RECEIVE REQUEST ID: " + response.getRequestId());
         return response;
     }
 
     @Override
     public void processIpnRequest(MomoIpnCallbackResponse response, HttpServletRequest httpServletRequest) {
         log.info("Performing MomoPaymentService processIpnRequest");
-        if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
-            return;
-        }
         OrderEntity order;
         try {
             order = orderService.findById(response.getOrderId());
