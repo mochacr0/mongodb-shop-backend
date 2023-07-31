@@ -63,4 +63,19 @@ public class ModelConstants {
      * Cart constants
      */
     public static final String CART_COLLECTION_NAME = "carts";
+
+    /**
+     * Payment constants
+     */
+    public static final String PAYMENT_COLLECTION_NAME = "payments";
+
+    /**
+     * Order constants
+     */
+    public static final String ORDER_COLLECTION_NAME = "orders";
+
+    /**
+     * Shop address constants
+     */
+    public static final String SHOP_ADDRESS_COLLECTION_NAME = "shopAddresses";
 }

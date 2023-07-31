@@ -22,6 +22,8 @@ public class Product extends AbstractData {
     private String description;
     @Schema(description = "URL ảnh sản phẩm", example = "https://mochaimages.s3.ap-southeast-1.amazonaws.com/fc909db6-eade-4980-b8af-d328786fd882.jpeg")
     private String imageUrl;
+    @Schema(description = "Cân nặng sau khi đóng gói", example = "0.1")
+    private double weight;
     @Schema(description = "Tổng số lượng đã bán", example = "100")
     private long totalSales;
     @Schema(description = "Đơn giá sản phẩm thấp nhất", example = "1000")
@@ -29,7 +31,7 @@ public class Product extends AbstractData {
     @Schema(description = "Đơn giá sản phẩm cao nhất", example = "9000")
     private long maxPrice;
     @Schema(description = "Đánh giá sản phẩm", example = "5")
-    private float rating;
+    private double rating;
     @Schema(description = "Danh sách các item sản phẩm theo dạng map key-value, với key là mảng index biến thể")
     private Map<String, ProductItem> itemMap;
     @Schema(description = "Danh sách biến thể sản phẩm")

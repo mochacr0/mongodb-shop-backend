@@ -26,6 +26,8 @@ public class ProductRequest {
     private String description;
     @Schema(description = "Url ảnh sản phẩm", example = "https://mochaimages.s3.ap-southeast-1.amazonaws.com/fc909db6-eade-4980-b8af-d328786fd882.jpeg")
     private String imageUrl;
+    @Schema(description = "Cân nặng sau khi đóng gói", example = "0.1")
+    private double weight;
     @Schema(description = "Danh sách biến thể")
     private List<ProductVariationRequest> variations = new ArrayList<>();
     @Schema(description = "Danh sách item")
