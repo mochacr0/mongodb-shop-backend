@@ -6,5 +6,5 @@ import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKLv4AddressesR
 
 public interface ShipmentService {
     GHTKLv4AddressesResponse getLv4Addresses(String address, String province, String district, String wardStreet);
-    GHTKCalculateFeeResponse calculateFee(GHTKCalculateFeeRequest request);
+    GHTKCalculateFeeResponse calculateFee(String userAddressId, double weight);
 }

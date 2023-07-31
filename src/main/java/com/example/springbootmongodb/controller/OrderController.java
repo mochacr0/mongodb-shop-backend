@@ -6,15 +6,18 @@ import com.example.springbootmongodb.common.data.mapper.OrderMapper;
 import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
+import com.example.springbootmongodb.model.Payment;
 import com.example.springbootmongodb.service.OrderService;
 import com.example.springbootmongodb.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 
@@ -43,8 +46,9 @@ public class OrderController {
     @PostMapping(value = ORDER_INITIATE_PAYMENT_ROUTE)
     @Operation(summary = "Khởi tạo giao dịch thanh toán",
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
-    MomoCaptureWalletResponse initiatePayment(@PathVariable String orderId, HttpServletRequest httpServletRequest) {
-        return paymentService.initiatePayment(orderId, httpServletRequest);
+    RedirectView initiatePayment(@PathVariable String orderId, HttpServletRequest httpServletRequest) {
+        MomoCaptureWalletResponse captureWalletResponse = paymentService.initiatePayment(orderId, httpServletRequest);
+        return new RedirectView(captureWalletResponse.getPayUrl());
     }
 
     @GetMapping(value = ORDER_IPN_REQUEST_CALLBACK_ROUTE)
@@ -82,7 +86,7 @@ public class OrderController {
     @PostMapping(value = ORDER_REQUEST_ORDER_REFUND_ROUTE)
     @Operation(summary = "Hoàn tiền",
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
-    MomoRefundResponse refund(@PathVariable String orderId) {
+    Payment refund(@PathVariable String orderId) {
         return paymentService.refund(orderId);
     }
 }

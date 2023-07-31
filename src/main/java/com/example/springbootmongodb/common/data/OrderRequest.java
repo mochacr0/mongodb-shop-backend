@@ -11,7 +11,8 @@ import java.util.List;
 @Setter
 @Builder
 public class OrderRequest {
-    private String shippingAddressId;
     private String paymentMethod;
     private List<OrderItemRequest> orderItems = new ArrayList<>();
+    private String userAddressId;
+    private String note;
 }

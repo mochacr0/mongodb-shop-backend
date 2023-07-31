@@ -1,10 +1,9 @@
-package com.example.springbootmongodb.common.data.mapper;
+package com.example.springbootmongodb.common.data;
 
-import com.example.springbootmongodb.security.Authority;
 import lombok.Getter;
 
 @Getter
-public enum OrderStatus {
+public enum OrderState {
     UNPAID("0"),
     WAITING_TO_ACCEPT("1"),
     READY_TO_SHIP("2"),
@@ -15,13 +14,13 @@ public enum OrderStatus {
 
     private final String code;
 
-    OrderStatus(String code) {
+    OrderState(String code) {
         this.code = code;
     }
 
-    public OrderStatus parseFromInt(String code) {
-        OrderStatus status = null;
-        for (OrderStatus currentStatus : values()) {
+    public OrderState parseFromInt(String code) {
+        OrderState status = null;
+        for (OrderState currentStatus : values()) {
             if (currentStatus.getCode().equalsIgnoreCase(code)) {
                 status = currentStatus;
                 break;

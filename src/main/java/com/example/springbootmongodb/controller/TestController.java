@@ -6,6 +6,7 @@ import com.example.springbootmongodb.common.data.mapper.ProductMapper;
 import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
 import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
+import com.example.springbootmongodb.common.data.payment.momo.MomoQueryPaymentStatusResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
 import com.example.springbootmongodb.config.MomoCredentials;
 import com.example.springbootmongodb.model.*;
@@ -217,5 +218,10 @@ public class TestController {
     @GetMapping(value = "/13")
     void test13(@RequestParam(required = false) int value) {
         log.info("-------------------------------------Value: " + value);
+    }
+
+    @GetMapping(value = "/14")
+    Payment test14(@RequestParam String orderId) {
+        return paymentService.queryPaymentStatus(orderId);
     }
 }

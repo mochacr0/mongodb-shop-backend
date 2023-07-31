@@ -10,6 +10,7 @@ import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.ShopAddressEntity;
+import com.example.springbootmongodb.model.UserAddressEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
@@ -37,6 +38,7 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
     private final GHTKCredentials ghtkCredentials;
     private final ObjectMapper objectMapper;
     private final ShopAddressService shopAddressService;
+    private final UserAddressService userAddressService;
     private final String TOKEN_HEADER_NAME = "Token";
 
     @Override
@@ -86,24 +88,36 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
 //    }
 
     @Override
-    public GHTKCalculateFeeResponse calculateFee(GHTKCalculateFeeRequest request) {
+    public GHTKCalculateFeeResponse calculateFee(String userAddressId, double weight) {
         log.info("Performing ShipmentService calculateFee");
-        if (StringUtils.isNotEmpty(request.getPickAddressId())) {
-            ShopAddressEntity shopAddress;
-            try {
-                shopAddress = shopAddressService.findById(request.getPickAddressId());
-            } catch (ItemNotFoundException exception) {
-                throw new UnprocessableContentException(exception.getMessage());
-            }
-            request.setPickProvince(shopAddress.getProvince());
-            request.setPickDistrict(shopAddress.getDistrict());
-            request.setPickWard(shopAddress.getWard());
-            request.setPickStreet(shopAddress.getStreetAddress());
+        UserAddressEntity userAddress;
+        try {
+            userAddress = userAddressService.findById(userAddressId);
+        } catch(ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
         }
+        ShopAddressEntity shopAddress;
+        try {
+            shopAddress = shopAddressService.findDefaultAddress();
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        GHTKCalculateFeeRequest calculateFeeRequest = GHTKCalculateFeeRequest
+                .builder()
+                .pickProvince(shopAddress.getProvince())
+                .pickDistrict(shopAddress.getDistrict())
+                .pickWard(shopAddress.getWard())
+                .pickStreet(shopAddress.getStreetAddress())
+                .province(userAddress.getProvince())
+                .district(userAddress.getDistrict())
+                .ward(userAddress.getWard())
+                .address(userAddress.getStreetAddress())
+                .weight((int)weight * 1000)
+                .build();
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .GET()
-                .uri(URI.create(buildCalculateFeeUri(request)))
+                .uri(URI.create(buildCalculateFeeUri(calculateFeeRequest)))
                 .header(TOKEN_HEADER_NAME, ghtkCredentials.getApiToken())
                 .build();
         HttpResponse<String> httpResponse;

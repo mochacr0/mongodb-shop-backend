@@ -30,7 +30,7 @@ public class GHTKCalculateFeeRequest {
     private String district;
     private String ward;
     private String street;
-    private String weight;
+    private int weight;
     private String value;
     private String transport;
     @JsonProperty("deliver_option")

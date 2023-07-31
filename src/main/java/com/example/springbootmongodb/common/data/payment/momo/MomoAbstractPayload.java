@@ -12,8 +12,8 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @SuperBuilder
 public class MomoAbstractPayload {
-    private String partnerCode;
-    private String requestId;
-    private String orderId;
-    private String signature;
+    protected String partnerCode;
+    protected String requestId;
+    protected String orderId;
+    protected String signature;
 }

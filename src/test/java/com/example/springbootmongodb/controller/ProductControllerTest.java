@@ -422,6 +422,7 @@ class ProductControllerTest extends AbstractControllerTest {
                 .id(product.getId())
                 .name(product.getName())
                 .imageUrl(product.getImageUrl())
+                .weight(product.getWeight())
                 .variations(product.getVariations().stream().map(this::fromVariationToRequest).collect(Collectors.toList()))
                 .items(fromItemMapToItemRequests(product.getItemMap()))
                 .build();
