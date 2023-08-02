@@ -218,10 +218,10 @@ public class TestController {
         log.info("-------------------------------------Value: " + value);
     }
 
-    @GetMapping(value = "/14")
-    Payment test14(@RequestParam String orderId) {
-        return paymentService.queryPaymentStatus(orderId);
-    }
+//    @GetMapping(value = "/14")
+//    Payment test14(@RequestParam String orderId) {
+//        return paymentService.queryPaymentStatus(orderId);
+//    }
 
     @GetMapping(value = "/15")
     void test15() {

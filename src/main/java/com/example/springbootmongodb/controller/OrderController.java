@@ -45,8 +45,8 @@ public class OrderController {
     @Operation(summary = "Khởi tạo giao dịch thanh toán",
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     RedirectView initiatePayment(@PathVariable String orderId, HttpServletRequest httpServletRequest) {
-        MomoCaptureWalletResponse captureWalletResponse = paymentService.initiatePayment(orderId, httpServletRequest);
-        return new RedirectView(captureWalletResponse.getPayUrl());
+        String payUrl = orderService.initiatePayment(orderId, httpServletRequest);
+        return new RedirectView(payUrl);
     }
 
     @GetMapping(value = ORDER_IPN_REQUEST_CALLBACK_ROUTE)
@@ -81,12 +81,12 @@ public class OrderController {
         paymentService.processIpnRequest(request, httpServletRequest);
     }
 
-    @PostMapping(value = ORDER_REQUEST_ORDER_REFUND_ROUTE)
-    @Operation(summary = "Hoàn tiền",
-            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
-    Payment refund(@PathVariable String orderId) {
-        return paymentService.refund(orderId);
-    }
+//    @PostMapping(value = ORDER_REQUEST_ORDER_REFUND_ROUTE)
+//    @Operation(summary = "Hoàn tiền",
+//            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
+//    Payment refund(@PathVariable String orderId) {
+//        return paymentService.refund(orderId);
+//    }
 
     @PostMapping(value = ORDER_CANCEL_ORDER_ROUTE)
     @Operation(summary = "Hủy đơn hàng",
