@@ -13,10 +13,7 @@ import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import com.example.springbootmongodb.repository.ProductRepository;
 import com.example.springbootmongodb.repository.VariationOptionRepository;
-import com.example.springbootmongodb.service.CartService;
-import com.example.springbootmongodb.service.MediaService;
-import com.example.springbootmongodb.service.PaymentService;
-import com.example.springbootmongodb.service.ProductService;
+import com.example.springbootmongodb.service.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,6 +58,7 @@ public class TestController {
     private final CartService cartService;
     private final PaymentService paymentService;
     private final MomoCredentials momoCredentials;
+    private final OrderService orderService;
 
     private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
@@ -223,5 +221,10 @@ public class TestController {
     @GetMapping(value = "/14")
     Payment test14(@RequestParam String orderId) {
         return paymentService.queryPaymentStatus(orderId);
+    }
+
+    @GetMapping(value = "/15")
+    void test15() {
+        orderService.cancelExpiredOrders();
     }
 }

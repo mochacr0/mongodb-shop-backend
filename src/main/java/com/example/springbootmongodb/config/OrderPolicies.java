@@ -1,0 +1,11 @@
+package com.example.springbootmongodb.config;
+
+import lombok.Getter;
+
+@Getter
+public class OrderPolicies {
+    public static final int MAX_DAYS_UNPAID_TO_WAITING = 2; //wait for user payment
+    public static final int MAX_DAYS_WAITING_TO_PREPARING = 1; //wait for shop acceptance
+    public static final int MAX_DAYS_PREPARING_TO_READY = 2; //wait for shop preparation
+    public static final int MAX_DAYS_IN_CANCEL_TO_CANCELED = 2; //wait for shop response
+}
