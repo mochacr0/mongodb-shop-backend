@@ -22,7 +22,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.URI;
@@ -64,18 +63,11 @@ public class MomoPaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    @Transactional
-    public MomoCaptureWalletResponse initiatePayment(String orderId, HttpServletRequest httpServletRequest) {
-        OrderEntity order;
-        try {
-            order = orderService.findById(orderId);
-        } catch (ItemNotFoundException exception) {
-            throw new UnprocessableContentException(exception.getMessage());
-        }
-        validateOrder(order, PaymentStatus.NEW, OrderState.UNPAID);
-        Payment orderPayment = order.getPayment();
+    public Payment initiatePayment(String orderId, Payment payment, HttpServletRequest httpServletRequest) {
+        validatePaymentStatus(payment.getStatus(), PaymentStatus.NEW);
+        validatePaymentMethod(payment.getMethod(), PaymentMethod.MOMO);
         String requestId = UUID.randomUUID().toString();
-        String requestBody = buildCaptureWalletRequestBody(order, requestId, httpServletRequest);
+        String requestBody = buildCaptureWalletRequestBody(orderId, payment, requestId, httpServletRequest);
         HttpRequest initiateRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(MomoEndpoints.MOMO_CAPTURE_WALLET_ROUTE))
@@ -100,16 +92,15 @@ public class MomoPaymentServiceImpl implements PaymentService {
         if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
             throw new UnprocessableContentException(response.getMessage());
         }
-        orderPayment.setStatus(PaymentStatus.INITIATED);
-        orderPayment.setDescription(response.getMessage());
-        order.setPayment(orderPayment);
-        orderService.save(order);
+        payment.setStatus(PaymentStatus.INITIATED);
+        payment.setDescription(response.getMessage());
+        payment.setPayUrl(response.getPayUrl());
         log.info("----------PAY URL: " + response.getPayUrl());
         log.info("----------SEND REQUEST ID: " + requestId);
-        log.info("----------ORDER ID: " + order.getId());
-        log.info("----------AMOUNT: " + orderPayment.getAmount());
+        log.info("----------ORDER ID: " + orderId);
+        log.info("----------AMOUNT: " + payment.getAmount());
         log.info("----------RECEIVE REQUEST ID: " + response.getRequestId());
-        return response;
+        return payment;
     }
 
     @Override
@@ -124,7 +115,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
         validateOrder(order, PaymentStatus.INITIATED, OrderState.UNPAID);
         switch (response.getResultCode()) {
             case 0, 9000 -> processSuccessfulTrans(order, response);
-            case 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1030 -> processFailedTrans(order, response);
+            case 99, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1030 -> processFailedTrans(order, response);
         }
         order.getPayment().setDescription(response.getMessage());
         orderService.save(order);
@@ -156,18 +147,12 @@ public class MomoPaymentServiceImpl implements PaymentService {
 
 
     @Override
-    public Payment refund(String orderId) {
+    public Payment refund(Payment payment) {
         log.info("Performing PaymentService refund");
         //TODO: validate signature
-        OrderEntity order;
-        try {
-            order = orderService.findById(orderId);
-        } catch (ItemNotFoundException exception) {
-            throw new UnprocessableContentException(exception.getMessage());
-        }
-        Payment orderPayment = order.getPayment();
-        validateOrder(order, PaymentStatus.PAID, OrderState.WAITING_TO_ACCEPT, OrderState.PREPARING, OrderState.READY_TO_SHIP, OrderState.IN_CANCEL);
-        String requestBody = buildRefundRequest(orderPayment);
+        validatePaymentStatus(payment.getStatus(), PaymentStatus.PAID);
+        validatePaymentMethod(payment.getMethod(), PaymentMethod.MOMO);
+        String requestBody = buildRefundRequest(payment);
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(MomoEndpoints.MOMO_REFUND_ROUTE))
@@ -192,28 +177,19 @@ public class MomoPaymentServiceImpl implements PaymentService {
         if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
             throw new UnprocessableContentException(response.getMessage());
         }
-        orderPayment.setStatus(PaymentStatus.REFUNDED);
-        orderPayment.setDescription(response.getMessage());
-        order.setPayment(orderPayment);
-        orderService.save(order);
-        return orderPayment;
+        payment.setStatus(PaymentStatus.REFUNDED);
+        payment.setDescription(response.getMessage());
+        return payment;
     }
 
     @Override
-    public Payment queryPaymentStatus(String orderId) {
+    public Payment queryPaymentStatus(String orderId, Payment payment) {
         log.info("Performing PaymentService queryPaymentStatus");
-        OrderEntity order;
-        try {
-            order = orderService.findById(orderId);
-        } catch (ItemNotFoundException exception) {
-            throw new UnprocessableContentException(exception.getMessage());
-        }
-        Payment orderPayment = order.getPayment();
-        validatePaymentMethod(orderPayment.getMethod());
+        validatePaymentMethod(payment.getMethod(), PaymentMethod.MOMO);
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(MomoEndpoints.MOMO_QUERY_PAYMENT_STATUS_ROUTE))
-                .POST(HttpRequest.BodyPublishers.ofString(buildQueryStatusRequest(order.getId())))
+                .POST(HttpRequest.BodyPublishers.ofString(buildQueryStatusRequest(orderId)))
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
         HttpResponse<String> httpResponse;
@@ -235,19 +211,16 @@ public class MomoPaymentServiceImpl implements PaymentService {
 //                || orderPayment.getDescription().equalsIgnoreCase(response.getMessage())) {
 //            return orderPayment;
 //        }
-        orderPayment.setTransId(response.getTransId());
-        orderPayment.setDescription(response.getMessage());
-        order.setPayment(orderPayment);
-        orderService.save(order);
-        return orderPayment;
+        payment.setTransId(response.getTransId());
+        payment.setDescription(response.getMessage());
+        return payment;
     }
 
-    private String buildCaptureWalletRequestBody(OrderEntity order, String requestId, HttpServletRequest httpRequest) {
-        Payment payment = order.getPayment();
+    private String buildCaptureWalletRequestBody(String orderId, Payment payment, String requestId, HttpServletRequest httpRequest) {
         String baseUrl = UrlUtils.getBaseUrl(httpRequest);
         String ipnUrl = baseUrl + ORDER_IPN_REQUEST_CALLBACK_ROUTE;
         String redirectUrl = ipnUrl;
-        String valueToDigest = buildCaptureWalletRawSignature(payment.getAmount(), ipnUrl, order.getId(), DEFAULT_EXTRA_DATA, DEFAULT_EXTRA_DATA, redirectUrl, requestId);
+        String valueToDigest = buildCaptureWalletRawSignature(payment.getAmount(), ipnUrl, orderId, DEFAULT_EXTRA_DATA, DEFAULT_EXTRA_DATA, redirectUrl, requestId);
         HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
         String signedSignature = hmacUtils.hmacHex(valueToDigest);
         MomoCaptureWalletRequest captureWalletRequest = MomoCaptureWalletRequest
@@ -257,7 +230,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 .ipnUrl(ipnUrl)
                 .redirectUrl(ipnUrl)
                 .requestId(requestId)
-                .orderId(order.getId())
+                .orderId(orderId)
                 .orderInfo(DEFAULT_EXTRA_DATA)
                 .amount(payment.getAmount())
                 .autoCapture(true)
@@ -349,22 +322,31 @@ public class MomoPaymentServiceImpl implements PaymentService {
 
     private void validateOrder(OrderEntity order, PaymentStatus expectedPaymentStatus, OrderState... expectedOrderStates) {
         OrderState currentOrderState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
-        if (Arrays.stream(expectedOrderStates).noneMatch(expectedState -> expectedState == currentOrderState)) {
-            throw new InvalidDataException(String.format("Order is %s",
-                    currentOrderState.getMessage().toLowerCase()));
-        }
+        validateOrderState(currentOrderState, expectedOrderStates);
         Payment orderPayment = order.getPayment();
-        validatePaymentMethod(orderPayment.getMethod());
-        if (orderPayment.getStatus() != expectedPaymentStatus) {
-            throw new InvalidDataException(String.format("Payment is %s. It must be %s to perform this action",
-                    orderPayment.getStatus().name().toLowerCase(),
-                    expectedPaymentStatus.name().toLowerCase()));
+        validatePaymentMethod(orderPayment.getMethod(), PaymentMethod.MOMO);
+        validatePaymentStatus(orderPayment.getStatus(), expectedPaymentStatus);
+    }
+
+
+    private void validatePaymentMethod(PaymentMethod actualMethod, PaymentMethod expectedMethod) {
+        if (actualMethod != expectedMethod) {
+            throw new InvalidDataException(UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE);
         }
     }
 
-    private void validatePaymentMethod(PaymentMethod method) {
-        if (method != PaymentMethod.MOMO) {
-            throw new InvalidDataException(UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE);
+    private void validatePaymentStatus(PaymentStatus actualStatus, PaymentStatus expectedStatus) {
+        if (actualStatus != expectedStatus) {
+            throw new InvalidDataException(String.format("Payment is %s. It must be %s to perform this action",
+                    actualStatus.name().toLowerCase(),
+                    expectedStatus.name().toLowerCase()));
+        }
+    }
+
+    private void validateOrderState(OrderState actualState, OrderState... expectedStates) {
+        if (Arrays.stream(expectedStates).noneMatch(expectedState -> expectedState == actualState)) {
+            throw new InvalidDataException(String.format("Order is %s",
+                    actualState.getMessage()));
         }
     }
 

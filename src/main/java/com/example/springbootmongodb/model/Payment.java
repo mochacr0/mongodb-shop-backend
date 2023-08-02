@@ -12,6 +12,7 @@ import lombok.*;
 public class Payment {
     private String transId;
     private long amount;
+    private String payUrl;
     private PaymentMethod method;
     private PaymentStatus status;
     private String description;

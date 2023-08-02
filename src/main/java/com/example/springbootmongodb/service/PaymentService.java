@@ -9,8 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public interface PaymentService {
     Payment create(String paymentMethod, long amount);
-    MomoCaptureWalletResponse initiatePayment(String orderId, HttpServletRequest httpServletRequest);
+    Payment initiatePayment(String orderId, Payment payment, HttpServletRequest httpServletRequest);
     void processIpnRequest(MomoIpnCallbackResponse request, HttpServletRequest httpServletRequest);
-    Payment refund(String orderId);
-    Payment queryPaymentStatus(String orderId);
+    Payment refund(Payment payment);
+    Payment queryPaymentStatus(String orderId, Payment payment);
 }

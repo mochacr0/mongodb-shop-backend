@@ -12,16 +12,19 @@ import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.OrderRepository;
 import com.example.springbootmongodb.security.Authority;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -126,18 +129,21 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     @Transactional
     public OrderEntity cancel(String id) {
         log.info("Performing OrderService cancel");
-        OrderEntity order = findById(id);
         SecurityUser user = getCurrentUser();
+        OrderEntity order = findById(id);
+        validateOrderState(order, OrderState.UNPAID, OrderState.WAITING_TO_ACCEPT, OrderState.PREPARING, OrderState.READY_TO_SHIP, OrderState.IN_CANCEL);
         if (user.getAuthority().equals(Authority.USER)) {
-            processUserCancelRequest(order);
+            return processUserCancelRequest(order);
         }
         else if (user.getAuthority().equals(Authority.ADMIN)) {
-            processAdminCancelRequest(order);
+            return processAdminCancelRequest(order);
         }
-        return save(order);
+        else {
+            throw new AuthenticationServiceException("You aren't authorized to perform this operation!");
+        }
     }
 
-    private void processUserCancelRequest(OrderEntity order) {
+    private OrderEntity processUserCancelRequest(OrderEntity order) {
         OrderState currentState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
         OrderStatus canceledStatus = OrderStatus
                 .builder()
@@ -149,7 +155,8 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             case WAITING_TO_ACCEPT -> {
                 order.getStatusHistory().add(canceledStatus);
                 if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
-                    paymentService.refund(order.getId());
+                    Payment refundedPayment = paymentService.refund(order.getPayment());
+                    order.setPayment(refundedPayment);
                 }
             }
             case PREPARING, READY_TO_SHIP -> {
@@ -164,9 +171,10 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             }
             default -> throw new InvalidDataException(String.format("Cannot perform this action. Order is %s", currentState.getMessage()));
         }
+        return save(order);
      }
 
-    private void processAdminCancelRequest(OrderEntity order) {
+    private OrderEntity processAdminCancelRequest(OrderEntity order) {
         OrderState currentState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
         OrderStatus canceledStatus = OrderStatus
                 .builder()
@@ -178,7 +186,8 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             case UNPAID -> {}
             case WAITING_TO_ACCEPT, PREPARING -> {
                 if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
-                    paymentService.refund(order.getId());
+                    Payment refundedPayment = paymentService.refund(order.getPayment());
+                    order.setPayment(refundedPayment);
                 }
             }
             case READY_TO_SHIP -> {
@@ -186,11 +195,31 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             }
             default -> throw new InvalidDataException(String.format("Cannot perform this action. Order is %s", currentState.getMessage()));
         }
+        return save(order);
     }
 
     @Override
     public void cancelExpiredOrders() {
         log.info("Performing OrderService cancelExpiredOrders");
         orderRepository.cancelExpiredOrders();
+    }
+
+    @Override
+    public String initiatePayment(String id, HttpServletRequest httpServletRequest) {
+        log.info("Performing OrderService initiatePayment");
+        OrderEntity order = findById(id);
+        validateOrderState(order, OrderState.UNPAID);
+        Payment initiatedPayment = paymentService.initiatePayment(order.getId(), order.getPayment(), httpServletRequest);
+        order.setPayment(initiatedPayment);
+        save(order);
+        return initiatedPayment.getPayUrl();
+    }
+
+    private void validateOrderState(OrderEntity order, OrderState... expectedStates) {
+        OrderState actualState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
+        if (Arrays.stream(expectedStates).noneMatch(expectedState -> expectedState == actualState)) {
+            throw new InvalidDataException(String.format("Order is %s",
+                    actualState.getMessage().toLowerCase()));
+        }
     }
 }
