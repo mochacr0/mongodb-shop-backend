@@ -23,6 +23,7 @@ public class OrderMapper {
                 .statusHistory(entity.getStatusHistory())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .expiredAt(entity.getExpiredAt())
                 .build();
     }
 }

@@ -5,7 +5,6 @@ import com.example.springbootmongodb.common.data.OrderRequest;
 import com.example.springbootmongodb.common.data.mapper.OrderMapper;
 import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
-import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
 import com.example.springbootmongodb.model.Payment;
 import com.example.springbootmongodb.service.OrderService;
 import com.example.springbootmongodb.service.PaymentService;
@@ -13,7 +12,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -89,4 +87,13 @@ public class OrderController {
     Payment refund(@PathVariable String orderId) {
         return paymentService.refund(orderId);
     }
+
+    @PostMapping(value = ORDER_CANCEL_ORDER_ROUTE)
+    @Operation(summary = "Hủy đơn hàng",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
+    Order cancel(@PathVariable String orderId) {
+        return orderMapper.fromEntity(orderService.cancel(orderId));
+    }
+
+
 }

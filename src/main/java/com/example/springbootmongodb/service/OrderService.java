@@ -8,4 +8,6 @@ public interface OrderService {
     OrderEntity create(OrderRequest request);
     OrderEntity findById(String id);
     OrderEntity save(OrderEntity order);
+    OrderEntity cancel(String id);
+    void cancelExpiredOrders();
 }

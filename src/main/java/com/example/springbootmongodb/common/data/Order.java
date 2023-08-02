@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,4 +26,5 @@ public class Order extends AbstractData {
     private UserAddress shippingAddress;
     private List<OrderItem> orderItems = new ArrayList<>();
     private List<OrderStatus> statusHistory = new ArrayList<>();
+    private LocalDateTime expiredAt;
 }
