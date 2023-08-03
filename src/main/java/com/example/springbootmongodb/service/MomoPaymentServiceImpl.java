@@ -32,12 +32,13 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.UUID;
 
+import static com.example.springbootmongodb.config.OrderPolicies.MAX_DAYS_WAITING_TO_PREPARING;
 import static com.example.springbootmongodb.controller.ControllerConstants.ORDER_IPN_REQUEST_CALLBACK_ROUTE;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class MomoPaymentServiceImpl implements PaymentService {
+public class MomoPaymentServiceImpl extends AbstractService implements PaymentService {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final MomoCredentials momoCredentials;
@@ -125,12 +126,14 @@ public class MomoPaymentServiceImpl implements PaymentService {
         Payment orderPayment = order.getPayment();
         orderPayment.setStatus(PaymentStatus.PAID);
         orderPayment.setTransId(response.getTransId());
+        LocalDateTime now = LocalDateTime.now();
         OrderStatus newOrderStatus = OrderStatus
                 .builder()
                 .state(OrderState.WAITING_TO_ACCEPT)
-                .createdAt(LocalDateTime.now())
+                .createdAt(now)
                 .build();
         order.getStatusHistory().add(newOrderStatus);
+        order.setExpiredAt(now.plusDays(MAX_DAYS_WAITING_TO_PREPARING));
     }
 
     private void processFailedTrans(OrderEntity order, MomoIpnCallbackResponse response) {
@@ -143,6 +146,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(newOrderStatus);
+        order.setExpiredAt(null);
     }
 
 
@@ -321,33 +325,10 @@ public class MomoPaymentServiceImpl implements PaymentService {
     }
 
     private void validateOrder(OrderEntity order, PaymentStatus expectedPaymentStatus, OrderState... expectedOrderStates) {
-        OrderState currentOrderState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
-        validateOrderState(currentOrderState, expectedOrderStates);
+        validateOrderState(order, expectedOrderStates);
         Payment orderPayment = order.getPayment();
         validatePaymentMethod(orderPayment.getMethod(), PaymentMethod.MOMO);
         validatePaymentStatus(orderPayment.getStatus(), expectedPaymentStatus);
-    }
-
-
-    private void validatePaymentMethod(PaymentMethod actualMethod, PaymentMethod expectedMethod) {
-        if (actualMethod != expectedMethod) {
-            throw new InvalidDataException(UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE);
-        }
-    }
-
-    private void validatePaymentStatus(PaymentStatus actualStatus, PaymentStatus expectedStatus) {
-        if (actualStatus != expectedStatus) {
-            throw new InvalidDataException(String.format("Payment is %s. It must be %s to perform this action",
-                    actualStatus.name().toLowerCase(),
-                    expectedStatus.name().toLowerCase()));
-        }
-    }
-
-    private void validateOrderState(OrderState actualState, OrderState... expectedStates) {
-        if (Arrays.stream(expectedStates).noneMatch(expectedState -> expectedState == actualState)) {
-            throw new InvalidDataException(String.format("Order is %s",
-                    actualState.getMessage()));
-        }
     }
 
 }

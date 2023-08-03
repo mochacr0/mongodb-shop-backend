@@ -13,4 +13,5 @@ public interface OrderService {
     OrderEntity cancel(String id);
     void cancelExpiredOrders();
     String initiatePayment(String id, HttpServletRequest request);
+    OrderEntity accept(String id);
 }

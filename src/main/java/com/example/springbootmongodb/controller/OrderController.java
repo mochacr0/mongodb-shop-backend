@@ -95,5 +95,10 @@ public class OrderController {
         return orderMapper.fromEntity(orderService.cancel(orderId));
     }
 
-
+    @PostMapping(value = ORDER_ACCEPT_ORDER_ROUTE)
+    @Operation(summary = "Chấp nhận đơn hàng",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
+    Order accept(@PathVariable String orderId) {
+        return orderMapper.fromEntity(orderService.accept(orderId));
+    }
 }
