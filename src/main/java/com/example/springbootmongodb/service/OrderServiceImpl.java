@@ -1,10 +1,10 @@
 package com.example.springbootmongodb.service;
 
-import com.example.springbootmongodb.common.data.Order;
 import com.example.springbootmongodb.common.data.OrderItemRequest;
 import com.example.springbootmongodb.common.data.OrderRequest;
 import com.example.springbootmongodb.common.data.OrderState;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
+import com.example.springbootmongodb.common.data.payment.PaymentStatus;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
@@ -24,11 +24,10 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.example.springbootmongodb.config.OrderPolicies.MAX_DAYS_IN_CANCEL_TO_CANCELED;
+import static com.example.springbootmongodb.config.OrderPolicies.*;
 
 @Service
 @Slf4j
@@ -47,14 +46,12 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     @Override
     public OrderEntity create(OrderRequest request) {
         log.info("Performing OrderService create");
-        //validate user
         UserEntity user;
         try {
             user = userService.findCurrentUser();
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
-        //validate shipping address
         UserAddressEntity userAddress;
         try {
             userAddress = userAddressService.findById(request.getUserAddressId());
@@ -87,6 +84,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                     .build();
             orderItems.add(orderItem);
             subTotal += orderItem.getQuantity() * orderItem.getPrice();
+
         }
         OrderEntity order = OrderEntity
                 .builder()
@@ -95,16 +93,21 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .subTotal(subTotal)
                 .orderItems(orderItems)
                 .build();
-        OrderStatus iniStatus = OrderStatus.builder().createdAt(LocalDateTime.now()).build();
+        LocalDateTime expiredAt = null;
+        LocalDateTime now = LocalDateTime.now();
+        OrderStatus iniStatus = OrderStatus.builder().createdAt(now).build();
         Payment payment = paymentService.create(request.getPaymentMethod(), subTotal);
         if (payment.getMethod() == PaymentMethod.MOMO) {
             iniStatus.setState(OrderState.UNPAID);
+            expiredAt = now.plusMinutes(MAX_MINUTES_WAITING_TO_INITIATE_PAYMENT);
         }
         else if (payment.getMethod() == PaymentMethod.CASH){
             iniStatus.setState(OrderState.WAITING_TO_ACCEPT);
+            expiredAt = now.plusDays(MAX_DAYS_WAITING_TO_PREPARING);
         }
         order.setStatusHistory(Collections.singletonList(iniStatus));
         order.setPayment(payment);
+        order.setExpiredAt(expiredAt);
         return super.insert(order);
     }
 
@@ -151,13 +154,17 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         switch (currentState) {
-            case UNPAID -> order.getStatusHistory().add(canceledStatus);
+            case UNPAID -> {
+                order.getStatusHistory().add(canceledStatus);
+                order.setExpiredAt(null);
+            }
             case WAITING_TO_ACCEPT -> {
                 order.getStatusHistory().add(canceledStatus);
                 if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
                     Payment refundedPayment = paymentService.refund(order.getPayment());
                     order.setPayment(refundedPayment);
                 }
+                order.setExpiredAt(null);
             }
             case PREPARING, READY_TO_SHIP -> {
                 OrderStatus inCancelStatus = OrderStatus
@@ -182,12 +189,14 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(canceledStatus);
+        order.setExpiredAt(null);
         switch (currentState) {
             case UNPAID -> {}
             case WAITING_TO_ACCEPT, PREPARING -> {
                 if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
                     Payment refundedPayment = paymentService.refund(order.getPayment());
                     order.setPayment(refundedPayment);
+                    order.setExpiredAt(null);
                 }
             }
             case READY_TO_SHIP -> {
@@ -211,15 +220,28 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         validateOrderState(order, OrderState.UNPAID);
         Payment initiatedPayment = paymentService.initiatePayment(order.getId(), order.getPayment(), httpServletRequest);
         order.setPayment(initiatedPayment);
+        order.setExpiredAt(LocalDateTime.now().plusHours(1).plusMinutes(40)); //Momo default transaction timeout: 1 hour and 40 minutes
         save(order);
         return initiatedPayment.getPayUrl();
     }
 
-    private void validateOrderState(OrderEntity order, OrderState... expectedStates) {
-        OrderState actualState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
-        if (Arrays.stream(expectedStates).noneMatch(expectedState -> expectedState == actualState)) {
-            throw new InvalidDataException(String.format("Order is %s",
-                    actualState.getMessage().toLowerCase()));
+    @Override
+    public OrderEntity accept(String id) {
+        log.info("Performing OrderService accept");
+        OrderEntity order = findById(id);
+        validateOrderState(order, OrderState.WAITING_TO_ACCEPT);
+        Payment orderPayment = order.getPayment();
+        if (orderPayment.getMethod() == PaymentMethod.MOMO) {
+            validatePaymentStatus(orderPayment.getStatus(), PaymentStatus.PAID);
         }
+        LocalDateTime now = LocalDateTime.now();
+        OrderStatus preparingStatus = OrderStatus
+                .builder()
+                .state(OrderState.PREPARING)
+                .createdAt(now)
+                .build();
+        order.getStatusHistory().add(preparingStatus);
+        order.setExpiredAt(now.plusDays(MAX_DAYS_PREPARING_TO_READY));
+        return save(order);
     }
 }
