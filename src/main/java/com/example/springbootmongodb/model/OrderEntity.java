@@ -30,4 +30,6 @@ public class OrderEntity extends AbstractEntity {
     private List<OrderItem> orderItems = new ArrayList<>();
     private List<OrderStatus> statusHistory = new ArrayList<>();
     private LocalDateTime expiredAt;
+    private String note;
+    private Shipment shipment;
 }

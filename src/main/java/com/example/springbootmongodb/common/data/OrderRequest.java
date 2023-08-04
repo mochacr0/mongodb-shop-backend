@@ -13,6 +13,7 @@ import java.util.List;
 public class OrderRequest {
     private String paymentMethod;
     private List<OrderItemRequest> orderItems = new ArrayList<>();
-    private String userAddressId;
     private String note;
+    private ShopAddress shopAddress;
+    private UserAddress userAddress;
 }

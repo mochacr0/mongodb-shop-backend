@@ -4,6 +4,7 @@ import com.example.springbootmongodb.common.data.UserAddress;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.service.UserService;
+import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -27,7 +28,9 @@ public class UserAddressMapper {
                 .province(userAddress.getProvince())
                 .district(userAddress.getDistrict())
                 .ward(userAddress.getWard())
-                .streetAddress(userAddress.getStreetAddress())
+                .hamlet(StringUtils.isEmpty(userAddress.getHamlet()) ? "Khác" : userAddress.getHamlet())
+                .street(userAddress.getStreet())
+                .address(userAddress.getAddress())
                 .build();
     }
 
@@ -39,8 +42,10 @@ public class UserAddressMapper {
                 .phoneNumber(entity.getPhoneNumber())
                 .province(entity.getProvince())
                 .district(entity.getDistrict())
+                .hamlet(entity.getHamlet())
                 .ward(entity.getWard())
-                .streetAddress(entity.getStreetAddress())
+                .street(entity.getStreet())
+                .address(entity.getAddress())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -67,6 +72,8 @@ public class UserAddressMapper {
         entity.setProvince(address.getProvince());
         entity.setDistrict(address.getDistrict());
         entity.setWard(address.getWard());
-        entity.setStreetAddress(address.getStreetAddress());
+        entity.setHamlet(address.getHamlet());
+        entity.setStreet(address.getStreet());
+        entity.setAddress(address.getAddress());
     }
 }
