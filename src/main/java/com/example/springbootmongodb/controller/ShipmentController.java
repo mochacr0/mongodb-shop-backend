@@ -1,6 +1,5 @@
 package com.example.springbootmongodb.controller;
 
-import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKCalculateFeeRequest;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKCalculateFeeResponse;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKLv4AddressesResponse;
 import com.example.springbootmongodb.service.ShipmentService;
@@ -10,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE;
 import static com.example.springbootmongodb.controller.ControllerConstants.SHIPMENT_GET_LV4_ADDRESSES_ROUTE;
@@ -35,7 +32,7 @@ public class ShipmentController {
     @Operation(summary = "Tính phí vận chuyển")
     GHTKCalculateFeeResponse calculateDeliveryFee(@RequestParam String userAddressId,
                                                   @RequestParam Double weight) {
-        return shipmentService.calculateFee(userAddressId, weight);
+        return shipmentService.calculateDeliveryFee(userAddressId, weight);
     }
 
 //    @GetMapping(value = SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE)

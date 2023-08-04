@@ -1,14 +1,15 @@
 package com.example.springbootmongodb.service;
 
-import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKCalculateFeeRequest;
-import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKCalculateFeeResponse;
-import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKLv4AddressesResponse;
-import com.example.springbootmongodb.common.security.SecurityUser;
+import com.example.springbootmongodb.common.data.mapper.ShopAddressMapper;
+import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
+import com.example.springbootmongodb.common.data.shipment.ghtk.*;
 import com.example.springbootmongodb.config.GHTKCredentials;
 import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
+import com.example.springbootmongodb.model.OrderEntity;
+import com.example.springbootmongodb.model.Shipment;
 import com.example.springbootmongodb.model.ShopAddressEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,7 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -39,6 +39,7 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
     private final ObjectMapper objectMapper;
     private final ShopAddressService shopAddressService;
     private final UserAddressService userAddressService;
+    private final ShopAddressMapper mapper;
     private final String TOKEN_HEADER_NAME = "Token";
 
     @Override
@@ -88,7 +89,7 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
 //    }
 
     @Override
-    public GHTKCalculateFeeResponse calculateFee(String userAddressId, double weight) {
+    public GHTKCalculateFeeResponse calculateDeliveryFee(String userAddressId, double weight) {
         log.info("Performing ShipmentService calculateFee");
         UserAddressEntity userAddress;
         try {
@@ -107,11 +108,11 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
                 .pickProvince(shopAddress.getProvince())
                 .pickDistrict(shopAddress.getDistrict())
                 .pickWard(shopAddress.getWard())
-                .pickStreet(shopAddress.getStreetAddress())
+                .pickStreet(shopAddress.getStreet())
                 .province(userAddress.getProvince())
                 .district(userAddress.getDistrict())
                 .ward(userAddress.getWard())
-                .address(userAddress.getStreetAddress())
+                .address(userAddress.getStreet())
                 .weight((int)weight * 1000)
                 .build();
         HttpRequest httpRequest = HttpRequest
@@ -135,8 +136,20 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
         if (StringUtils.isNotEmpty(response.getMessage())) {
             throw new InvalidDataException(response.getMessage());
         }
+        response.setShopAddress(mapper.fromEntity(shopAddress));
         return response;
     }
+
+    @Override
+    public Shipment placeOrder(OrderEntity order, ShipmentRequest request) {
+        log.info("Performing ShipmentService placeOrder");
+        GHTKPickOption pickOption = GHTKPickOption.parseFromString(request.getPickOption());
+        GHTKWorkShiftOption pickWorkShiftOption = GHTKWorkShiftOption.parseFromString(request.getPickWorkShipOption());
+        GHTKWorkShiftOption deliverWorkShiftOption = GHTKWorkShiftOption.parseFromString(request.getDeliverWorkShipOption());
+        //TODO: build GHTK place shipment order request body;
+        return null;
+    }
+
 
     private String buildCalculateFeeUri(GHTKCalculateFeeRequest request) {
         return UriComponentsBuilder.fromUriString(GHTK_CALCULATE_DELIVERY_FEE_ROUTE)

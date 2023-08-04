@@ -33,6 +33,7 @@ public class ApplicationErrorHandler extends ResponseEntityExceptionHandler {
         exceptionToStatusMap.put(IllegalArgumentException.class, HttpStatus.BAD_REQUEST);
         exceptionToStatusMap.put(IncorrectParameterException.class, HttpStatus.BAD_REQUEST);
         exceptionToStatusMap.put(PropertyReferenceException.class, HttpStatus.BAD_REQUEST);
+        exceptionToStatusMap.put(UnsupportedEnumTypeException.class, HttpStatus.BAD_REQUEST);
         exceptionToStatusMap.put(ValidationException.class, HttpStatus.BAD_REQUEST);
         exceptionToStatusMap.put(AuthenticationException.class, HttpStatus.UNAUTHORIZED);
         exceptionToStatusMap.put(AccessDeniedException.class, HttpStatus.FORBIDDEN);

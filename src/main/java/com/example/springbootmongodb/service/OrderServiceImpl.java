@@ -1,10 +1,11 @@
 package com.example.springbootmongodb.service;
 
-import com.example.springbootmongodb.common.data.OrderItemRequest;
-import com.example.springbootmongodb.common.data.OrderRequest;
-import com.example.springbootmongodb.common.data.OrderState;
+import com.example.springbootmongodb.common.data.*;
+import com.example.springbootmongodb.common.data.mapper.ShopAddressMapper;
+import com.example.springbootmongodb.common.data.mapper.UserAddressMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.PaymentStatus;
+import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
@@ -38,6 +39,11 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     private final UserAddressService userAddressService;
     private final ProductItemService productItemService;
     private final UserService userService;
+    private final ShopAddressService shopAddressService;
+    private final ShopAddressMapper shopAddressMapper;
+    private final UserAddressMapper userAddressMapper;
+    private final ShipmentService shipmentService;
+
     @Override
     public MongoRepository<OrderEntity, String> getRepository() {
         return this.orderRepository;
@@ -46,18 +52,41 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     @Override
     public OrderEntity create(OrderRequest request) {
         log.info("Performing OrderService create");
+
+        ///validate user authority
         UserEntity user;
         try {
             user = userService.findCurrentUser();
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
-        UserAddressEntity userAddress;
+        if (request.getShopAddress() == null) {
+            throw new InvalidDataException("Shop address should be specified");
+        }
+
+        //validate shop address
+        ShopAddress existingShopAddress;
         try {
-            userAddress = userAddressService.findById(request.getUserAddressId());
+            existingShopAddress = shopAddressMapper.fromEntity(shopAddressService.findById(request.getShopAddress().getId()));
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
+        if (!existingShopAddress.equals(request.getShopAddress())) {
+            throw new InvalidDataException("Our shop address has updated, affecting the delivery fee. " +
+                    "Please review your order for accurate costs");
+        }
+
+        //validate user address
+        UserAddress existingUserAddress;
+        try {
+            existingUserAddress = userAddressMapper.fromEntity(userAddressService.findById(request.getUserAddress().getId()));
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        if (!existingUserAddress.equals(request.getUserAddress())) {
+            throw new InvalidDataException("Your delivery address has been updated. Please verify your new address before proceeding with your order.");
+        }
+
         //validate items
         if (CollectionUtils.isEmpty(request.getOrderItems())) {
             throw new InvalidDataException("There is no items to place order");
@@ -89,7 +118,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         OrderEntity order = OrderEntity
                 .builder()
                 .user(user)
-                .userAddress(userAddress)
+//                .userAddress(existingUserAddress)
                 .subTotal(subTotal)
                 .orderItems(orderItems)
                 .build();
@@ -105,9 +134,15 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             iniStatus.setState(OrderState.WAITING_TO_ACCEPT);
             expiredAt = now.plusDays(MAX_DAYS_WAITING_TO_PREPARING);
         }
+        Shipment shipment = Shipment
+                .builder()
+                .userAddress(existingUserAddress)
+                .shopAddress(existingShopAddress)
+                .build();
         order.setStatusHistory(Collections.singletonList(iniStatus));
         order.setPayment(payment);
         order.setExpiredAt(expiredAt);
+        order.setShipment(shipment);
         return super.insert(order);
     }
 
@@ -129,7 +164,6 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     }
 
     @Override
-    @Transactional
     public OrderEntity cancel(String id) {
         log.info("Performing OrderService cancel");
         SecurityUser user = getCurrentUser();
@@ -243,5 +277,14 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         order.getStatusHistory().add(preparingStatus);
         order.setExpiredAt(now.plusDays(MAX_DAYS_PREPARING_TO_READY));
         return save(order);
+    }
+
+    @Override
+    public OrderEntity placeShipmentOrder(String id, ShipmentRequest shipmentRequest) {
+        log.info("Performing OrderService placeShipmentOrder");
+        OrderEntity order = findById(id);
+        validateOrderState(order, OrderState.PREPARING);
+        shipmentService.placeOrder(order, shipmentRequest);
+        return null;
     }
 }

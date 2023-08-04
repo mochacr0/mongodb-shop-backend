@@ -1,6 +1,5 @@
 package com.example.springbootmongodb.model;
 
-import com.example.springbootmongodb.common.data.UserAddress;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -23,7 +22,9 @@ public class UserAddressEntity extends AbstractEntity {
     private String province;
     private String district;
     private String ward;
-    private String streetAddress;
+    private String hamlet;
+    private String street;
+    private String address;
 
     @Override
     public String toString() {
@@ -42,8 +43,13 @@ public class UserAddressEntity extends AbstractEntity {
         builder.append(this.getDistrict());
         builder.append(", ward=");
         builder.append(this.getWard());
-        builder.append(", streetAddress=");
-        builder.append(this.getStreetAddress());
+        builder.append(", hamlet=");
+        builder.append(this.getHamlet());
+        builder.append(", street=");
+        builder.append(this.getStreet());
+        builder.append(", address=");
+        builder.append(this.getAddress());
+        builder.append("]");
         return builder.toString();
     }
 //    @Override
