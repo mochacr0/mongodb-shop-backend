@@ -12,4 +12,5 @@ public interface ProductItemService {
     void bulkDisableByProductId(String productId);
     void deleteByProductId(String productId);
     ProductItemEntity findById(String id);
+    ProductItemEntity save(ProductItemEntity productItem);
 }

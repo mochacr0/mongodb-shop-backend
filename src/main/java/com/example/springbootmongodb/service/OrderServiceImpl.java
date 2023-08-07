@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.example.springbootmongodb.config.OrderPolicies.*;
 
@@ -43,6 +46,8 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     private final ShopAddressMapper shopAddressMapper;
     private final UserAddressMapper userAddressMapper;
     private final ShipmentService shipmentService;
+    private final CartService cartService;
+    private final ThreadPoolTaskExecutor taskExecutor;
 
     @Override
     public MongoRepository<OrderEntity, String> getRepository() {
@@ -50,6 +55,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     }
 
     @Override
+    @Transactional
     public OrderEntity create(OrderRequest request) {
         log.info("Performing OrderService create");
 
@@ -91,30 +97,39 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         if (CollectionUtils.isEmpty(request.getOrderItems())) {
             throw new InvalidDataException("There is no items to place order");
         }
-        List<OrderItem> orderItems = new ArrayList<>();
         long subTotal = 0;
-        for (OrderItemRequest itemRequest : request.getOrderItems()) {
-            if (itemRequest.getQuantity() <= 0) {
-                throw new InvalidDataException("Order item quantity should be positive");
-            }
-            ProductItemEntity productItem;
-            try {
-                productItem = productItemService.findById(itemRequest.getProductItemId());
-            } catch (ItemNotFoundException exception) {
-                throw new UnprocessableContentException(exception.getMessage());
-            }
-            OrderItem orderItem = OrderItem
-                    .builder()
-                    .productItemId(productItem.getId())
-                    .productName(productItem.getProduct().getName())
-                    .price(productItem.getPrice())
-                    .weight(productItem.getWeight())
-                    .variationDescription(productItem.getVariationDescription())
-                    .quantity(itemRequest.getQuantity())
-                    .build();
-            orderItems.add(orderItem);
+        List<String> productItemIds = new ArrayList<>();
+        List<OrderItem> orderItems = processOrderItemRequests(request.getOrderItems());
+//        List<OrderItem> orderItems = new ArrayList<>();
+//        for (OrderItemRequest itemRequest : request.getOrderItems()) {
+//            if (itemRequest.getQuantity() <= 0) {
+//                throw new InvalidDataException("Order item quantity should be positive");
+//            }
+//            ProductItemEntity productItem;
+//            try {
+//                productItem = productItemService.findById(itemRequest.getProductItemId());
+//            } catch (ItemNotFoundException exception) {
+//                throw new UnprocessableContentException(exception.getMessage());
+//            }
+//            if (productItem.getQuantity() < itemRequest.getQuantity()) {
+//                throw new InvalidDataException(String.format("Product item with id [%s] is out of stock", productItem.getId()));
+//            }
+//            productItemIds.add(itemRequest.getProductItemId());
+//            OrderItem orderItem = OrderItem
+//                    .builder()
+//                    .productItemId(productItem.getId())
+//                    .productName(productItem.getProduct().getName())
+//                    .price(productItem.getPrice())
+//                    .weight(productItem.getWeight())
+//                    .variationDescription(productItem.getVariationDescription())
+//                    .quantity(itemRequest.getQuantity())
+//                    .build();
+//            orderItems.add(orderItem);
+//            subTotal += orderItem.getQuantity() * orderItem.getPrice();
+//        }
+        for (OrderItem orderItem : orderItems) {
+            productItemIds.add(orderItem.getProductItemId());
             subTotal += orderItem.getQuantity() * orderItem.getPrice();
-
         }
         OrderEntity order = OrderEntity
                 .builder()
@@ -144,7 +159,9 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         order.setPayment(payment);
         order.setExpiredAt(expiredAt);
         order.setShipment(shipment);
-        return super.insert(order);
+        order = super.insert(order);
+        cartService.bulkRemoveItems(productItemIds);
+        return order;
     }
 
     @Override
@@ -165,6 +182,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     }
 
     @Override
+    @Transactional
     public OrderEntity cancel(String id) {
         log.info("Performing OrderService cancel");
         SecurityUser user = getCurrentUser();
@@ -190,10 +208,12 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .build();
         switch (currentState) {
             case UNPAID -> {
+                orderRepository.rollbackOrderItemQuantities(order.getOrderItems());
                 order.getStatusHistory().add(canceledStatus);
                 order.setExpiredAt(null);
             }
             case WAITING_TO_ACCEPT -> {
+                orderRepository.rollbackOrderItemQuantities(order.getOrderItems());
                 order.getStatusHistory().add(canceledStatus);
                 if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
                     Payment refundedPayment = paymentService.refund(order.getPayment());
@@ -218,13 +238,6 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
 
     private OrderEntity processAdminCancelRequest(OrderEntity order) {
         OrderState currentState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
-        OrderStatus canceledStatus = OrderStatus
-                .builder()
-                .state(OrderState.CANCELED)
-                .createdAt(LocalDateTime.now())
-                .build();
-        order.getStatusHistory().add(canceledStatus);
-        order.setExpiredAt(null);
         switch (currentState) {
             case UNPAID -> {}
             case WAITING_TO_ACCEPT, PREPARING -> {
@@ -239,6 +252,14 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             }
             default -> throw new InvalidDataException(String.format("Cannot perform this action. Order is %s", currentState.getMessage()));
         }
+        orderRepository.rollbackOrderItemQuantities(order.getOrderItems());
+        OrderStatus canceledStatus = OrderStatus
+                .builder()
+                .state(OrderState.CANCELED)
+                .createdAt(LocalDateTime.now())
+                .build();
+        order.getStatusHistory().add(canceledStatus);
+        order.setExpiredAt(null);
         return save(order);
     }
 
@@ -287,5 +308,38 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         validateOrderState(order, OrderState.PREPARING);
         order.setShipment(shipmentService.placeOrder(order, shipmentRequest));
         return save(order);
+    }
+
+    private List<OrderItem> processOrderItemRequests(List<OrderItemRequest> orderItemRequests) {
+        List<CompletableFuture<OrderItem>> processFutures = orderItemRequests.stream().map(orderItemRequest -> {
+            return CompletableFuture.supplyAsync(() -> {
+                if (orderItemRequest.getQuantity() <= 0) {
+                    throw new InvalidDataException("Order item quantity should be positive");
+                }
+                ProductItemEntity productItem;
+                try {
+                    productItem = productItemService.findById(orderItemRequest.getProductItemId());
+                } catch (ItemNotFoundException exception) {
+                    throw new UnprocessableContentException(exception.getMessage());
+                }
+                if (productItem.getQuantity() < orderItemRequest.getQuantity()) {
+                    throw new InvalidDataException(String.format("Product item with id [%s] is out of stock", productItem.getId()));
+                }
+                productItem.setQuantity(productItem.getQuantity() - orderItemRequest.getQuantity());
+                productItemService.save(productItem);
+                return OrderItem
+                        .builder()
+                        .productItemId(productItem.getId())
+                        .productName(productItem.getProduct().getName())
+                        .price(productItem.getPrice())
+                        .weight(productItem.getWeight())
+                        .variationDescription(productItem.getVariationDescription())
+                        .quantity(orderItemRequest.getQuantity())
+                        .build();
+            }, taskExecutor);
+        }).collect(Collectors.toList());
+        CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(processFutures.toArray(new CompletableFuture[processFutures.size()]));
+        combinedFuture.join();
+        return processFutures.stream().map(CompletableFuture::join).toList();
     }
 }

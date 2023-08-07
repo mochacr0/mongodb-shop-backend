@@ -11,10 +11,12 @@ import com.example.springbootmongodb.model.VariationOptionEntity;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import io.jsonwebtoken.lang.Collections;
 import io.micrometer.common.util.StringUtils;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +29,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class ProductItemServiceImpl implements ProductItemService {
+public class ProductItemServiceImpl extends DataBaseService<ProductItemEntity> implements ProductItemService {
     private final ProductItemRepository itemRepository;
     private final ProductItemMapper mapper;
     public static final String PRODUCT_MISSING_ITEMS_ERROR_MESSAGE = "Product is missing some items";
@@ -37,6 +39,12 @@ public class ProductItemServiceImpl implements ProductItemService {
     @Autowired
     @Lazy
     private ProductService productService;
+
+    @Override
+    public MongoRepository<ProductItemEntity, String> getRepository() {
+        return itemRepository;
+    }
+
     @Override
     @Transactional
     public List<ProductItemEntity> bulkCreate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations, double productWeight) {
@@ -141,6 +149,13 @@ public class ProductItemServiceImpl implements ProductItemService {
         }
         return itemRepository.findById(id).orElseThrow(() ->
                 new ItemNotFoundException(String.format("Product item with Id [%s] is not found", id)));
+    }
+
+
+    @Override
+    public ProductItemEntity save(ProductItemEntity productItem) {
+        log.info("Performing ProductItemService save");
+        return super.save(productItem);
     }
 
 }
