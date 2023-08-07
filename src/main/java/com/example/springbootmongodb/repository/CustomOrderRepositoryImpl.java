@@ -2,7 +2,10 @@ package com.example.springbootmongodb.repository;
 
 import com.example.springbootmongodb.common.data.OrderState;
 import com.example.springbootmongodb.model.OrderEntity;
+import com.example.springbootmongodb.model.OrderItem;
 import com.example.springbootmongodb.model.OrderStatus;
+import com.example.springbootmongodb.model.ProductItemEntity;
+import io.jsonwebtoken.lang.Collections;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -10,6 +13,8 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
@@ -26,5 +31,18 @@ public class CustomOrderRepositoryImpl implements CustomOrderRepository {
         BulkOperations cancelExpiredOrdersOperation = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, OrderEntity.class);
         cancelExpiredOrdersOperation.updateMulti(queryStatement, updateStatement);
         cancelExpiredOrdersOperation.execute();
+    }
+
+    @Override
+    public void rollbackOrderItemQuantities(List<OrderItem> orderItems) {
+        BulkOperations rollbackOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ProductItemEntity.class);
+        if (Collections.isEmpty(orderItems)) {
+            return;
+        }
+        for (OrderItem orderItem : orderItems) {
+            rollbackOperations.updateOne(Query.query(where("_id").is(orderItem.getProductItemId())),
+                    new Update().inc("quantity", orderItem.getQuantity()));
+        }
+        rollbackOperations.execute();
     }
 }
