@@ -8,7 +8,6 @@ import java.util.List;
 public interface UserAddressService {
     UserAddressEntity create(UserAddress address);
     UserAddressEntity save(String addressId, UserAddress address);
-    List<UserAddressEntity> findUserAddressesByUserId(String userId);
     List<UserAddressEntity> findCurrentUserAddresses();
     void deleteById(String addressId);
     UserAddressEntity findById(String addressId);

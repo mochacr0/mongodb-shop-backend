@@ -5,6 +5,7 @@ import com.example.springbootmongodb.common.data.OrderRequest;
 import com.example.springbootmongodb.common.data.mapper.OrderMapper;
 import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
+import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.model.Payment;
 import com.example.springbootmongodb.service.OrderService;
 import com.example.springbootmongodb.service.PaymentService;
@@ -101,4 +102,11 @@ public class OrderController {
     Order accept(@PathVariable String orderId) {
         return orderMapper.fromEntity(orderService.accept(orderId));
     }
-}
+
+    @PostMapping(value = ORDER_PLACE_SHIPMENT_ORDER_ROUTE)
+    @Operation(summary = "Đặt đơn vận chuyển",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
+    Order placeShipmentOrder(@PathVariable String orderId,
+                             @RequestBody ShipmentRequest request) {
+        return orderMapper.fromEntity(orderService.placeShipmentOrder(orderId, request));
+    }}

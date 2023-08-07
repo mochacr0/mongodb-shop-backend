@@ -1,5 +1,8 @@
 package com.example.springbootmongodb.common.data.shipment;
 
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKPickOption;
+import com.example.springbootmongodb.exception.UnsupportedEnumTypeException;
+import io.micrometer.common.util.StringUtils;
 import lombok.Getter;
 
 @Getter
@@ -24,5 +27,22 @@ public enum ShipmentState {
     private final String code;
     ShipmentState(String code) {
         this.code = code;
+    }
+
+    public static ShipmentState parseFromInt(int code) {
+        ShipmentState state = null;
+        String value = String.valueOf(code);
+        if (StringUtils.isNotEmpty(value)) {
+            for (ShipmentState currentState : values()) {
+                if (currentState.getCode().equalsIgnoreCase(value)) {
+                    state = currentState;
+                    break;
+                }
+            }
+        }
+        if (state == null) {
+            throw new UnsupportedEnumTypeException(String.format("Shipment state [%d] is not supported", code));
+        }
+        return state;
     }
 }

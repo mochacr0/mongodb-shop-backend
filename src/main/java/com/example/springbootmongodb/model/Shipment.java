@@ -16,11 +16,13 @@ import java.util.List;
 @Builder
 public class Shipment {
     private String id;
-    private String labelId;
     private String note;
     private UserAddress userAddress;
     private ShopAddress shopAddress;
     private ShopAddress returnAddress;
     private List<ShipmentStatus> statusHistory = new ArrayList<>();
-    private LocalDateTime createdAt;
+    private String estimatedPickTime;
+    private String estimatedDeliverTime;
+    private int deliveryFee;
+    private int insuranceFee;
 }

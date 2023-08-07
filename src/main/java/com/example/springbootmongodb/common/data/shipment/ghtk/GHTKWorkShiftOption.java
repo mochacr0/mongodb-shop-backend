@@ -5,13 +5,13 @@ import lombok.Getter;
 
 @Getter
 public enum GHTKWorkShiftOption {
-    MORNING("1"),
-    AFTERNOON("2"),
-    NIGHT("3");
+    MORNING(1),
+    AFTERNOON(2),
+    NIGHT(3);
 
-    private final String code;
+    private final int code;
 
-    GHTKWorkShiftOption(String code) {
+    GHTKWorkShiftOption(int code) {
         this.code = code;
     }
 

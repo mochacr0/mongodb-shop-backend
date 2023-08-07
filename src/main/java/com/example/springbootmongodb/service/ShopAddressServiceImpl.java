@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+import static com.example.springbootmongodb.common.validator.ConstraintValidator.validateFields;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class ShopAddressServiceImpl extends DataBaseService<ShopAddressEntity> i
     @Override
     public ShopAddressEntity create(ShopAddressRequest request) {
         log.info("Performing ShopAddressService create");
+        validateFields(request);
         if (shopAddressRepository.count() > SHOP_ADDRESS_LIMIT) {
             throw new InvalidDataException(String.format("Only %d addresses are allowed per user.", SHOP_ADDRESS_LIMIT));
         }
@@ -55,6 +58,7 @@ public class ShopAddressServiceImpl extends DataBaseService<ShopAddressEntity> i
         if (StringUtils.isEmpty(id)) {
             throw new InvalidDataException("Shop address Id should be specified");
         }
+        validateFields(request);
         ShopAddressEntity existingAddress;
         try {
             existingAddress = findById(id);

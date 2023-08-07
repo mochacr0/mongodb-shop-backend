@@ -45,6 +45,7 @@ public class CustomProductItemRepositoryImpl implements CustomProductItemReposit
                             new Update()
                                     .set("quantity", request.getQuantity())
                                     .set("price", request.getPrice())
+                                    .set("weight", request.getWeight())
                                     .set("variationDescription", request.getVariationDescription())
                                     .set("variationIndex", request.getVariationIndex()));
         }

@@ -8,8 +8,10 @@ import lombok.*;
 @Setter
 @Builder
 public class ShipmentRequest {
+    private String returnAddressId;
     private String pickOption;
     private String pickWorkShipOption;
     private String deliverWorkShipOption;
     private String note;
+    private boolean isFreeShip;
 }

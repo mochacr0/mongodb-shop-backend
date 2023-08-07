@@ -107,6 +107,7 @@ public class ControllerConstants {
     public static final String ORDER_REQUEST_ORDER_REFUND_ROUTE = ORDER_PAYMENT_ROUTE + "/refund";
     public static final String ORDER_CANCEL_ORDER_ROUTE = ORDER_GET_ORDER_BY_ID_ROUTE + "/cancel";
     public static final String ORDER_ACCEPT_ORDER_ROUTE = ORDER_GET_ORDER_BY_ID_ROUTE + "/accept";
+    public static final String ORDER_PLACE_SHIPMENT_ORDER_ROUTE = ORDER_GET_ORDER_BY_ID_ROUTE + "/shipment";
 
     /**
      * Shipping constants

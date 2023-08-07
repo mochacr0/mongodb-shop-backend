@@ -90,15 +90,14 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddressEntity> i
     }
 
     @Override
-    public List<UserAddressEntity> findUserAddressesByUserId(String userId) {
-        log.info("Performing UserAddressService findUserAddressesByUserId");
-        return userAddressRepository.findByUserId(userId);
-    }
-
-    @Override
     public List<UserAddressEntity> findCurrentUserAddresses() {
         log.info("Performing UserAddressService findCurrentUserAddresses");
         return findUserAddressesByUserId(getCurrentUser().getId());
+    }
+
+    private List<UserAddressEntity> findUserAddressesByUserId(String userId) {
+        log.info("Performing UserAddressService findUserAddressesByUserId");
+        return userAddressRepository.findByUserId(userId);
     }
 
     @Override

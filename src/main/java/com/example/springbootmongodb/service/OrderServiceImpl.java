@@ -108,6 +108,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                     .productItemId(productItem.getId())
                     .productName(productItem.getProduct().getName())
                     .price(productItem.getPrice())
+                    .weight(productItem.getWeight())
                     .variationDescription(productItem.getVariationDescription())
                     .quantity(itemRequest.getQuantity())
                     .build();
@@ -284,7 +285,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         log.info("Performing OrderService placeShipmentOrder");
         OrderEntity order = findById(id);
         validateOrderState(order, OrderState.PREPARING);
-        shipmentService.placeOrder(order, shipmentRequest);
-        return null;
+        order.setShipment(shipmentService.placeOrder(order, shipmentRequest));
+        return save(order);
     }
 }
