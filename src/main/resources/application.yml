@@ -12,6 +12,12 @@ spring:
         secret-key: "4OqTcdgjOnw0IKzmw3KVdDDkZRggJJd/x07eRsnp"
       region:
         static: "ap-southeast-1"
+server:
+  port: 5000
+  servlet:
+    encoding:
+      charset: "UTF-8"
+      force: true
 jwt:
   settings:
     accessTokenExpiryTimeSeconds: 1800
@@ -27,8 +33,6 @@ logging:
           mongodb:
             core:
               MongoTemplate: "DEBUG"
-server:
-  port: 5000
 security:
   oauth2:
     googleClientId: "66028302633-0eoupfkn27i2sm67jl3fucsg799ni25d.apps.googleusercontent.com"

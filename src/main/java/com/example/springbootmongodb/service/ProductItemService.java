@@ -7,8 +7,8 @@ import com.example.springbootmongodb.model.ProductVariationEntity;
 import java.util.List;
 
 public interface ProductItemService {
-    List<ProductItemEntity> bulkCreate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations);
-    List<ProductItemEntity> bulkUpdate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations);
+    List<ProductItemEntity> bulkCreate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations, double productWeight);
+    List<ProductItemEntity> bulkUpdate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations, double productWeight);
     void bulkDisableByProductId(String productId);
     void deleteByProductId(String productId);
     ProductItemEntity findById(String id);

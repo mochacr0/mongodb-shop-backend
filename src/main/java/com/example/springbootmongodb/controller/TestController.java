@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
@@ -226,5 +227,10 @@ public class TestController {
     @GetMapping(value = "/15")
     void test15() {
         orderService.cancelExpiredOrders();
+    }
+
+    @GetMapping(value = "/16")
+    void test16(@RequestParam(required = false) boolean check) {
+        log.info(String.valueOf(BooleanUtils.toInteger(check)));
     }
 }

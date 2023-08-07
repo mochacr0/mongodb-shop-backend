@@ -31,21 +31,21 @@ public class ProductItemServiceImpl implements ProductItemService {
     private final ProductItemRepository itemRepository;
     private final ProductItemMapper mapper;
     public static final String PRODUCT_MISSING_ITEMS_ERROR_MESSAGE = "Product is missing some items";
-    public static final String NON_POSITIVE_QUANTITY_ERROR_MESSAGE = "Product sku must be equal or greater than 0";
+    public static final String NON_POSITIVE_QUANTITY_ERROR_MESSAGE = "Product quantity must be equal or greater than 0";
     public static final String MINIMUM_PRICE_VIOLATION_ERROR_MESSAGE = "Product price must be equal or greater than 0";
     public static final String REQUIRED_ITEM_ID_ERROR_MESSAGE = "Product item Id should be specified";
-
     @Autowired
     @Lazy
     private ProductService productService;
     @Override
     @Transactional
-    public List<ProductItemEntity> bulkCreate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations) {
+    public List<ProductItemEntity> bulkCreate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations, double productWeight) {
         log.info("Performing ProductItemService bulkCreate");
         validateRequest(requests, variations);
         ProductEntity product = variations.get(0).getProduct();
         List<ProductItemEntity> newItems = new ArrayList<>();
         for (ProductItemRequest request : requests) {
+            request.setWeight(productWeight);
             validateItemRequest(request);
             ProductItemEntity newItem = mapper.toEntity(request);
             List<VariationOptionEntity> newItemOptions = new ArrayList<>();
@@ -70,7 +70,7 @@ public class ProductItemServiceImpl implements ProductItemService {
     }
 
     @Override
-    public List<ProductItemEntity> bulkUpdate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations) {
+    public List<ProductItemEntity> bulkUpdate(List<ProductItemRequest> requests, List<ProductVariationEntity> variations, double productWeight) {
         log.info("Performing ProductItemService bulkUpdate");
         validateRequest(requests, variations);
         ProductEntity product = variations.get(0).getProduct();
@@ -79,6 +79,7 @@ public class ProductItemServiceImpl implements ProductItemService {
         }
         Map<String, ProductItemRequest> requestMap = new HashMap<>();
         for (ProductItemRequest request : requests) {
+            request.setWeight(productWeight);
             validateItemRequest(request);
             requestMap.put(request.getId(), request);
         }

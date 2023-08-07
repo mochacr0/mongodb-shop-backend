@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static com.example.springbootmongodb.common.validator.ConstraintValidator.validateFields;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -43,37 +45,20 @@ import java.util.stream.Collectors;
     private final ObjectMapper objectMapper;
     private final CategoryService categoryService;
     public static final String DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE = "There is already a product with that name";
+    public static final String MINIMUM_WEIGHT_VIOLATION_ERROR_MESSAGE = "Product weight must be greater than 0";
+    public static final String REQUIRED_PRODUCT_NAME_ERROR_MESSAGE = "Product name should be specified";
+
     @Override
     public MongoRepository<ProductEntity, String> getRepository() {
         return productRepository;
     }
-//    @Override
-//    @Transactional
-//    public ProductEntity create(ProductRequest request) {
-//      log.info("Performing ProductService create");
-//      CategoryEntity category;
-//      try {
-//          category = categoryService.findById(request.getCategoryId());
-//      } catch (ItemNotFoundException exception) {
-//          throw new UnprocessableContentException(exception.getMessage());
-//      }
-//      if (existsByName(request.getName())) {
-//          throw new InvalidDataException(DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE);
-//      }
-//      ProductEntity newProduct = mapper.toEntity(request);
-//      ProductEntity createdProduct = super.insert(newProduct);
-//      List<ProductVariationEntity> createdVariations = variationService.bulkCreate(request.getVariations(), createdProduct);
-//      List<ProductItemEntity> createdItems = itemService.bulkCreate(request.getItems(), createdVariations);
-//      createdProduct.setVariations(createdVariations);
-//      createdProduct.setItems(createdItems);
-//      updatePriceRange(createdProduct);
-//      return super.save(createdProduct);
-//    }
+
 
     @Override
     @Transactional
     public ProductEntity createAsync(ProductRequest request) {
         log.info("Performing ProductService create");
+        validateRequest(request);
         if (existsByName(request.getName())) {
             throw new InvalidDataException(DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE);
         }
@@ -93,19 +78,28 @@ import java.util.stream.Collectors;
         ProductEntity newProduct = mapper.toEntity(request);
         ProductEntity createdProduct = super.insert(newProduct);
         List<ProductVariationEntity> createdVariations = variationService.bulkCreateAsync(request.getVariations(), createdProduct);
-        List<ProductItemEntity> createdItems = itemService.bulkCreate(request.getItems(), createdVariations);
+        List<ProductItemEntity> createdItems = itemService.bulkCreate(request.getItems(), createdVariations, request.getWeight());
         createdProduct.setVariations(createdVariations);
         createdProduct.setItems(createdItems);
         updatePriceRange(createdProduct);
         super.save(createdProduct);
-        mediaService.persistCreatingProductImagesAsync(request);
+//        mediaService.persistCreatingProductImagesAsync(request);
         return createdProduct;
     }
+
+    private void validateRequest(ProductRequest request) {
+        validateFields(request);
+        if (request.getWeight() <= 0) {
+            throw new InvalidDataException(MINIMUM_WEIGHT_VIOLATION_ERROR_MESSAGE);
+        }
+    }
+
 
     @Override
     @Transactional
     public ProductEntity updateAsync(String id, ProductRequest request) {
         log.info("Performing ProductService updateAsync");
+        validateRequest(request);
         long currentTime = System.currentTimeMillis();
         ProductEntity existingProduct = findById(id);
         if (!existingProduct.getName().equals(request.getName())) {
@@ -147,11 +141,11 @@ import java.util.stream.Collectors;
         List<ProductItemEntity> savedItems;
         if (updateVariationsResult.getIsModified().get()) {
             itemService.bulkDisableByProductId(existingProduct.getId());
-            savedItems = itemService.bulkCreate(request.getItems(), updatedVariations);
+            savedItems = itemService.bulkCreate(request.getItems(), updatedVariations, existingProduct.getWeight());
         }
         else {
             //create new items
-            savedItems = itemService.bulkUpdate(request.getItems(), updatedVariations);
+            savedItems = itemService.bulkUpdate(request.getItems(), updatedVariations, existingProduct.getWeight());
         }
         log.info("After item update: " + (System.currentTimeMillis() - currentTime));
         existingProduct.setVariations(updatedVariations);
@@ -176,6 +170,9 @@ import java.util.stream.Collectors;
     @Override
     public ProductEntity findByName(String name) {
         log.info("Performing ProductService findByName");
+        if (StringUtils.isEmpty(name)) {
+            throw new InvalidDataException(REQUIRED_PRODUCT_NAME_ERROR_MESSAGE);
+        }
         Optional<ProductEntity> productOpt = productRepository.findByName(name);
         if (productOpt.isEmpty()) {
             throw new ItemNotFoundException(String.format("Product with name [%s] is not found", name));

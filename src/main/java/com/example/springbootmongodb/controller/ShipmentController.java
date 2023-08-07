@@ -4,14 +4,14 @@ import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKCalculateFeeR
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKLv4AddressesResponse;
 import com.example.springbootmongodb.service.ShipmentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.example.springbootmongodb.controller.ControllerConstants.SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE;
-import static com.example.springbootmongodb.controller.ControllerConstants.SHIPMENT_GET_LV4_ADDRESSES_ROUTE;
+import static com.example.springbootmongodb.controller.ControllerConstants.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,7 +29,8 @@ public class ShipmentController {
     }
 
     @GetMapping(value = SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE)
-    @Operation(summary = "Tính phí vận chuyển")
+    @Operation(summary = "Tính phí vận chuyển",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     GHTKCalculateFeeResponse calculateDeliveryFee(@RequestParam String userAddressId,
                                                   @RequestParam Double weight) {
         return shipmentService.calculateDeliveryFee(userAddressId, weight);

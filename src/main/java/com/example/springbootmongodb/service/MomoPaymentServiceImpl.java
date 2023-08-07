@@ -82,7 +82,7 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
             throw new InternalErrorException(exception.getMessage());
         }
         if (httpResponse.statusCode() >= 500) {
-            throw new UnavailableServiceException(httpResponse.body());
+            throw new InternalErrorException(httpResponse.body());
         }
         MomoCaptureWalletResponse response;
         try {

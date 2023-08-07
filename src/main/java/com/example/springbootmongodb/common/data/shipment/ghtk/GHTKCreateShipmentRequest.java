@@ -11,6 +11,6 @@ import java.util.List;
 @Setter
 @Builder
 public class GHTKCreateShipmentRequest {
-    private List<GHTKProductRequest> product = new ArrayList<>();
+    private List<GHTKProductRequest> products = new ArrayList<>();
     private GHTKOrderRequest order;
 }
