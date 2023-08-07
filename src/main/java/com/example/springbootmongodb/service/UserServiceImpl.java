@@ -141,7 +141,8 @@ public class UserServiceImpl extends DataBaseService<UserEntity> implements User
         if (StringUtils.isNotEmpty(savedUserEntity.getId())) {
             UserCredentials savedUserCredentials = savedUserEntity.getUserCredentials();
             if (StringUtils.isNotEmpty(savedUserEntity.getUserCredentials().getActivationToken())) {
-                String activateLink = String.format(this.ACTIVATION_URL_PATTERN, UrlUtils.getBaseUrl(request), savedUserCredentials.getActivationToken());
+//                String activateLink = String.format(this.ACTIVATION_URL_PATTERN, UrlUtils.getBaseUrl(request), savedUserCredentials.getActivationToken());
+                String activateLink = String.format(this.ACTIVATION_URL_PATTERN, "http://localhost:3000", savedUserCredentials.getActivationToken());
                 mailService.sendActivationMail(user.getEmail(), activateLink);
             }
         }
