@@ -9,7 +9,12 @@ import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletR
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoQueryPaymentStatusResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKAbstractResponse;
+import com.example.springbootmongodb.config.GHTKCredentials;
 import com.example.springbootmongodb.config.MomoCredentials;
+import com.example.springbootmongodb.exception.InternalErrorException;
+import com.example.springbootmongodb.exception.InvalidDataException;
+import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import com.example.springbootmongodb.repository.ProductRepository;
@@ -27,7 +32,9 @@ import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -36,11 +43,16 @@ import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import static com.example.springbootmongodb.common.data.shipment.ghtk.GHTKEndpoints.GHTK_CANCEL_SHIPMENT_ROUTE_PATTERN;
 import static com.example.springbootmongodb.config.S3Configuration.DEFAULT_BUCKET;
 import static com.example.springbootmongodb.config.S3Configuration.TEMPORARY_TAG;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -64,6 +76,8 @@ public class TestController {
     private final PaymentService paymentService;
     private final MomoCredentials momoCredentials;
     private final OrderService orderService;
+    private final GHTKCredentials ghtkCredentials;
+    private final HttpClient httpClient;
 
     private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
@@ -234,7 +248,36 @@ public class TestController {
     }
 
     @GetMapping(value = "/16")
-    void test16(@RequestParam(required = false) boolean check) {
-        log.info(String.valueOf(BooleanUtils.toInteger(check)));
+    GHTKAbstractResponse test16(@RequestParam(required = true) String labelId) {
+        HttpRequest httpRequest = HttpRequest
+                .newBuilder()
+                .uri(URI.create(String.format(GHTK_CANCEL_SHIPMENT_ROUTE_PATTERN, labelId)))
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header("Token", ghtkCredentials.getApiToken())
+                .build();
+        HttpResponse<String> httpResponse;
+        try {
+            httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException exception) {
+            throw new InternalErrorException(exception.getMessage());
+        }
+        if (httpResponse.statusCode() >= 500) {
+            throw new InternalErrorException(httpResponse.body());
+        }
+        GHTKAbstractResponse cancelResponse;
+        try {
+            cancelResponse = objectMapper.readValue(httpResponse.body(), GHTKAbstractResponse.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        if (!cancelResponse.isSuccess()) {
+            switch (httpResponse.statusCode()) {
+                case 400 -> throw new InvalidDataException(cancelResponse.getMessage());
+                case 422 -> throw new UnprocessableContentException(cancelResponse.getMessage());
+                default -> throw new InternalErrorException(cancelResponse.getMessage());
+            }
+        }
+        return cancelResponse;
     }
 }

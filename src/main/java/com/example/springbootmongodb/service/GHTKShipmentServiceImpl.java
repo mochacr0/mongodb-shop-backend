@@ -17,6 +17,7 @@ import com.example.springbootmongodb.model.Shipment;
 import com.example.springbootmongodb.model.ShopAddressEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -35,8 +37,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static com.example.springbootmongodb.common.data.shipment.ghtk.GHTKEndpoints.GHTK_CALCULATE_DELIVERY_FEE_ROUTE;
-import static com.example.springbootmongodb.common.data.shipment.ghtk.GHTKEndpoints.GHTK_GET_LV4_ADDRESSES_ROUTE;
+import static com.example.springbootmongodb.common.data.shipment.ghtk.GHTKEndpoints.*;
 
 @Service
 @Slf4j
@@ -149,7 +150,7 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
     }
 
     @Override
-    public Shipment placeOrder(OrderEntity order, ShipmentRequest request) {
+    public Shipment place(OrderEntity order, ShipmentRequest request) {
         log.info("Performing ShipmentService placeOrder");
         //TODO: build GHTK place shipment order request body;
         String requestBody = buildCreateShipmentRequestBody(order, request);
@@ -199,6 +200,46 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
         return orderShipment;
     }
 
+    @Override
+    public Shipment cancel(String orderId, Shipment shipment) {
+        log.info("Performing ShipmentService cancel");
+        HttpRequest httpRequest = HttpRequest
+                .newBuilder()
+                .uri(URI.create(String.format(GHTK_CANCEL_SHIPMENT_ROUTE_PATTERN, shipment.getId())))
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header(TOKEN_HEADER_NAME, ghtkCredentials.getApiToken())
+                .build();
+        HttpResponse<String> httpResponse;
+        try {
+            httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException exception) {
+            throw new InternalErrorException(exception.getMessage());
+        }
+        if (httpResponse.statusCode() >= 500) {
+            throw new InternalErrorException(httpResponse.body());
+        }
+        GHTKAbstractResponse cancelResponse;
+        try {
+            cancelResponse = objectMapper.readValue(httpResponse.body(), GHTKAbstractResponse.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        if (!cancelResponse.isSuccess()) {
+            switch (httpResponse.statusCode()) {
+                case 400 -> throw new InvalidDataException(cancelResponse.getMessage());
+                case 422 -> throw new UnprocessableContentException(cancelResponse.getMessage());
+                default -> throw new InternalErrorException(cancelResponse.getMessage());
+            }
+        }
+        ShipmentStatus cancelShipmentStatus = ShipmentStatus
+                .builder()
+                .state(ShipmentState.CANCELED)
+                .description("Đơn vị vận chuyển đang xử lý yêu cầu hủy đơn")
+                .build();
+        shipment.getStatusHistory().add(cancelShipmentStatus);
+        return shipment;
+    }
 
     private String buildCalculateFeeUri(GHTKCalculateFeeRequest request) {
         return UriComponentsBuilder.fromUriString(GHTK_CALCULATE_DELIVERY_FEE_ROUTE)

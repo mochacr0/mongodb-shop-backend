@@ -247,8 +247,17 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                     order.setExpiredAt(null);
                 }
             }
-            case READY_TO_SHIP -> {
+            case READY_TO_SHIP, IN_CANCEL -> {
                 //TODO: cancel shipment
+                if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
+                    Payment refundedPayment = paymentService.refund(order.getPayment());
+                    order.setPayment(refundedPayment);
+                    order.setExpiredAt(null);
+                }
+                if (StringUtils.isNotEmpty(order.getShipment().getId())) {
+                    Shipment canceledShipment = shipmentService.cancel(order.getId(), order.getShipment());
+                    order.setShipment(canceledShipment);
+                }
             }
             default -> throw new InvalidDataException(String.format("Cannot perform this action. Order is %s", currentState.getMessage()));
         }
@@ -306,7 +315,13 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         log.info("Performing OrderService placeShipmentOrder");
         OrderEntity order = findById(id);
         validateOrderState(order, OrderState.PREPARING);
-        order.setShipment(shipmentService.placeOrder(order, shipmentRequest));
+        order.setShipment(shipmentService.place(order, shipmentRequest));
+        OrderStatus readyToShipStatus = OrderStatus
+                .builder()
+                .state(OrderState.READY_TO_SHIP)
+                .createdAt(LocalDateTime.now())
+                .build();
+        order.getStatusHistory().add(readyToShipStatus);
         return save(order);
     }
 
