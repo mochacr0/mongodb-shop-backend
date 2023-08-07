@@ -10,4 +10,5 @@ public class GHTKEndpoints {
     public static final String GHTK_GET_PICK_UP_ADDRESSES_ROUTE = GHTK_BASE_URL + "/services/shipment/list_pick_add";
     public static final String GHTK_GET_LV4_ADDRESSES_ROUTE = GHTK_BASE_URL + "/services/address/getAddressLevel4";
     public static final String GHTK_GET_SHIPMENT_PRODUCT_INFO_ROUTE = GHTK_BASE_URL + "/services/kho-hang/thong-tin-san-pham";
+    public static final String GHTK_CANCEL_SHIPMENT_ROUTE_PATTERN = GHTK_BASE_URL + "/services/shipment/cancel/%s";
 }
