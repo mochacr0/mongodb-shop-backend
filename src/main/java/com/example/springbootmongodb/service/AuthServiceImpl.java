@@ -35,8 +35,9 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
     private final CommonValidator commonValidator;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenFactory jwtTokenFactory;
+
     @Override
-    @Transactional
+//    @Transactional
     public void activateEmail(String activationToken) {
         log.info("Performing service activateEmail");
         if (StringUtils.isEmpty(activationToken)) {
