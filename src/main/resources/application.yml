@@ -21,7 +21,7 @@ server:
 jwt:
   settings:
     accessTokenExpiryTimeSeconds: 1800
-    refreshTokenExpiryTimeSeconds: 3600
+    refreshTokenExpiryTimeSeconds: 2592000
     tokenSigningKeyString: "vietcaikeyquanquegichodu256bitsbaygioroidmvietnhieuvanchuadulasao"
     tokenIssuer: "localhost"
 logging:
