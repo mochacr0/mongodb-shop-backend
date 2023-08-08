@@ -13,4 +13,5 @@ import java.time.LocalDateTime;
 public class OrderStatus {
     private OrderState state;
     private LocalDateTime createdAt;
+    private String description;
 }

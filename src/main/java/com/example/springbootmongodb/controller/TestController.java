@@ -1,22 +1,23 @@
 package com.example.springbootmongodb.controller;
 
+import com.example.springbootmongodb.common.data.OrderState;
 import com.example.springbootmongodb.common.data.TemporaryImage;
 import com.example.springbootmongodb.common.data.VariationOption;
 import com.example.springbootmongodb.common.data.mapper.ProductMapper;
 import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
-import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
-import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
-import com.example.springbootmongodb.common.data.payment.momo.MomoQueryPaymentStatusResponse;
-import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
+import com.example.springbootmongodb.common.data.payment.PaymentStatus;
+import com.example.springbootmongodb.common.data.payment.momo.*;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKAbstractResponse;
+import com.example.springbootmongodb.config.GHTKCredentials;
 import com.example.springbootmongodb.config.MomoCredentials;
+import com.example.springbootmongodb.exception.InternalErrorException;
+import com.example.springbootmongodb.exception.InvalidDataException;
+import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import com.example.springbootmongodb.repository.ProductRepository;
 import com.example.springbootmongodb.repository.VariationOptionRepository;
-import com.example.springbootmongodb.service.CartService;
-import com.example.springbootmongodb.service.MediaService;
-import com.example.springbootmongodb.service.PaymentService;
-import com.example.springbootmongodb.service.ProductService;
+import com.example.springbootmongodb.service.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,9 +25,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -35,10 +41,16 @@ import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import static com.example.springbootmongodb.common.data.shipment.ghtk.GHTKEndpoints.GHTK_CANCEL_SHIPMENT_ROUTE_PATTERN;
 import static com.example.springbootmongodb.config.S3Configuration.DEFAULT_BUCKET;
 import static com.example.springbootmongodb.config.S3Configuration.TEMPORARY_TAG;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -61,6 +73,9 @@ public class TestController {
     private final CartService cartService;
     private final PaymentService paymentService;
     private final MomoCredentials momoCredentials;
+    private final OrderService orderService;
+    private final GHTKCredentials ghtkCredentials;
+    private final HttpClient httpClient;
 
     private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
@@ -220,8 +235,114 @@ public class TestController {
         log.info("-------------------------------------Value: " + value);
     }
 
-    @GetMapping(value = "/14")
-    Payment test14(@RequestParam String orderId) {
-        return paymentService.queryPaymentStatus(orderId);
+//    @GetMapping(value = "/14")
+//    Payment test14(@RequestParam String orderId) {
+//        return paymentService.queryPaymentStatus(orderId);
+//    }
+
+    @GetMapping(value = "/15")
+    void test15() {
+        orderService.cancelExpiredOrders();
+    }
+
+    @GetMapping(value = "/16")
+    GHTKAbstractResponse test16(@RequestParam(required = true) String labelId) {
+        HttpRequest httpRequest = HttpRequest
+                .newBuilder()
+                .uri(URI.create(String.format(GHTK_CANCEL_SHIPMENT_ROUTE_PATTERN, labelId)))
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header("Token", ghtkCredentials.getApiToken())
+                .build();
+        HttpResponse<String> httpResponse;
+        try {
+            httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException exception) {
+            throw new InternalErrorException(exception.getMessage());
+        }
+        if (httpResponse.statusCode() >= 500) {
+            throw new InternalErrorException(httpResponse.body());
+        }
+        GHTKAbstractResponse cancelResponse;
+        try {
+            cancelResponse = objectMapper.readValue(httpResponse.body(), GHTKAbstractResponse.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        if (!cancelResponse.isSuccess()) {
+            switch (httpResponse.statusCode()) {
+                case 400 -> throw new InvalidDataException(cancelResponse.getMessage());
+                case 422 -> throw new UnprocessableContentException(cancelResponse.getMessage());
+                default -> throw new InternalErrorException(cancelResponse.getMessage());
+            }
+        }
+        return cancelResponse;
+    }
+
+    @GetMapping(value = "/17")
+    Payment test17(@RequestParam String orderId,
+                @RequestParam Integer amount) {
+        OrderEntity order = orderService.findById(orderId);
+        Payment payment = order.getPayment();
+        String requestBody = buildRefundRequest(payment, amount);
+        HttpRequest httpRequest = HttpRequest
+                .newBuilder()
+                .uri(URI.create(MomoEndpoints.MOMO_REFUND_ROUTE))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+        HttpResponse<String> httpResponse;
+        try {
+            httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException exception) {
+            throw new InternalErrorException(exception.getMessage());
+        }
+        if (httpResponse.statusCode() >= 500) {
+            throw new InternalErrorException(httpResponse.body());
+        }
+        MomoRefundResponse response;
+        try {
+            response = objectMapper.readValue(httpResponse.body(), MomoRefundResponse.class);
+        } catch (JsonProcessingException exception) {
+            throw new InternalErrorException(exception.getMessage());
+        }
+        if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
+            throw new UnprocessableContentException(response.getMessage());
+        }
+        payment.setStatus(PaymentStatus.REFUNDED);
+        payment.setDescription(response.getMessage());
+        return payment;
+    }
+
+    public String buildRefundRequest(Payment payment, int amount) {
+        String requestId = UUID.randomUUID().toString();
+        String testOrderId = UUID.randomUUID().toString();
+        String valueToDigest = "accessKey=" + momoCredentials.getAccessKey() +
+                "&amount=" + amount +
+                "&description=" + "Test refund" +
+                "&orderId=" + testOrderId +
+                "&partnerCode=" + momoCredentials.getPartnerCode() +
+                "&requestId=" + requestId +
+                "&transId=" + payment.getTransId();
+        HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
+        String signedSignature = hmacUtils.hmacHex(valueToDigest);
+        MomoRefundRequest refundRequest = MomoRefundRequest
+                .builder()
+                .orderId(testOrderId)
+                .partnerCode(momoCredentials.getPartnerCode())
+                .amount(amount)
+                .requestId(requestId)
+                .description("Test refund")
+                .lang(MomoResponseLanguage.VI.getValue())
+                .transId(payment.getTransId())
+                .signature(signedSignature)
+                .build();
+        String requestBody;
+        try {
+            requestBody = objectMapper.writeValueAsString(refundRequest);
+        } catch (JsonProcessingException e) {
+            throw new InternalErrorException("Serializing failed");
+        }
+        return requestBody;
     }
 }

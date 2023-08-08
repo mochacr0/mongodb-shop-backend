@@ -1,6 +1,5 @@
 package com.example.springbootmongodb.service;
 
-import com.example.springbootmongodb.common.data.Order;
 import com.example.springbootmongodb.common.data.OrderState;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.PaymentStatus;
@@ -18,12 +17,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.URI;
@@ -31,14 +29,16 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.UUID;
 
+import static com.example.springbootmongodb.config.OrderPolicies.MAX_DAYS_WAITING_TO_PREPARING;
 import static com.example.springbootmongodb.controller.ControllerConstants.ORDER_IPN_REQUEST_CALLBACK_ROUTE;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class MomoPaymentServiceImpl implements PaymentService {
+public class MomoPaymentServiceImpl extends AbstractService implements PaymentService {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final MomoCredentials momoCredentials;
@@ -64,23 +64,16 @@ public class MomoPaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    @Transactional
-    public MomoCaptureWalletResponse initiatePayment(String orderId, HttpServletRequest httpServletRequest) {
-        OrderEntity order;
-        try {
-            order = orderService.findById(orderId);
-        } catch (ItemNotFoundException exception) {
-            throw new UnprocessableContentException(exception.getMessage());
-        }
-        Payment orderPayment = order.getPayment();
-        validatePayment(orderPayment, PaymentStatus.NEW);
+    public Payment initiatePayment(String orderId, Payment payment, HttpServletRequest httpServletRequest) {
+        validatePaymentStatus(payment.getStatus(), PaymentStatus.NEW);
+        validatePaymentMethod(payment.getMethod(), PaymentMethod.MOMO);
         String requestId = UUID.randomUUID().toString();
-        String requestBody = buildCaptureWalletRequestBody(order, requestId, httpServletRequest);
+        String requestBody = buildCaptureWalletRequestBody(orderId, payment, requestId, httpServletRequest);
         HttpRequest initiateRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(MomoEndpoints.MOMO_CAPTURE_WALLET_ROUTE))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
         HttpResponse<String> httpResponse;
         try {
@@ -89,7 +82,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
             throw new InternalErrorException(exception.getMessage());
         }
         if (httpResponse.statusCode() >= 500) {
-            throw new UnavailableServiceException(httpResponse.body());
+            throw new InternalErrorException(httpResponse.body());
         }
         MomoCaptureWalletResponse response;
         try {
@@ -100,16 +93,15 @@ public class MomoPaymentServiceImpl implements PaymentService {
         if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
             throw new UnprocessableContentException(response.getMessage());
         }
-        orderPayment.setStatus(PaymentStatus.INITIATED);
-        orderPayment.setDescription(response.getMessage());
-        order.setPayment(orderPayment);
-        orderService.save(order);
+        payment.setStatus(PaymentStatus.INITIATED);
+        payment.setDescription(response.getMessage());
+        payment.setPayUrl(response.getPayUrl());
         log.info("----------PAY URL: " + response.getPayUrl());
         log.info("----------SEND REQUEST ID: " + requestId);
-        log.info("----------ORDER ID: " + order.getId());
-        log.info("----------AMOUNT: " + orderPayment.getAmount());
+        log.info("----------ORDER ID: " + orderId);
+        log.info("----------AMOUNT: " + payment.getAmount());
         log.info("----------RECEIVE REQUEST ID: " + response.getRequestId());
-        return response;
+        return payment;
     }
 
     @Override
@@ -121,14 +113,12 @@ public class MomoPaymentServiceImpl implements PaymentService {
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
-        Payment orderPayment = order.getPayment();
-        validatePayment(orderPayment, PaymentStatus.INITIATED);
+        validateOrder(order, PaymentStatus.INITIATED, OrderState.UNPAID);
         switch (response.getResultCode()) {
             case 0, 9000 -> processSuccessfulTrans(order, response);
-            case 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1030 -> processFailedTrans(order, response);
+            case 99, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1030 -> processFailedTrans(order, response);
         }
-        orderPayment.setDescription(response.getMessage());
-        order.setPayment(orderPayment);
+        order.getPayment().setDescription(response.getMessage());
         orderService.save(order);
     }
 
@@ -136,12 +126,14 @@ public class MomoPaymentServiceImpl implements PaymentService {
         Payment orderPayment = order.getPayment();
         orderPayment.setStatus(PaymentStatus.PAID);
         orderPayment.setTransId(response.getTransId());
+        LocalDateTime now = LocalDateTime.now();
         OrderStatus newOrderStatus = OrderStatus
                 .builder()
                 .state(OrderState.WAITING_TO_ACCEPT)
-                .createdAt(LocalDateTime.now())
+                .createdAt(now)
                 .build();
         order.getStatusHistory().add(newOrderStatus);
+        order.setExpiredAt(now.plusDays(MAX_DAYS_WAITING_TO_PREPARING));
     }
 
     private void processFailedTrans(OrderEntity order, MomoIpnCallbackResponse response) {
@@ -154,27 +146,22 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(newOrderStatus);
+        order.setExpiredAt(null);
     }
 
 
     @Override
-    public Payment refund(String orderId) {
+    public Payment refund(Payment payment) {
         log.info("Performing PaymentService refund");
         //TODO: validate signature
-        OrderEntity order;
-        try {
-            order = orderService.findById(orderId);
-        } catch (ItemNotFoundException exception) {
-            throw new UnprocessableContentException(exception.getMessage());
-        }
-        Payment orderPayment = order.getPayment();
-        validatePayment(orderPayment, PaymentStatus.PAID);
-        String requestBody = buildRefundRequest(orderPayment);
+        validatePaymentStatus(payment.getStatus(), PaymentStatus.PAID);
+        validatePaymentMethod(payment.getMethod(), PaymentMethod.MOMO);
+        String requestBody = buildRefundRequest(payment);
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(MomoEndpoints.MOMO_REFUND_ROUTE))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
         HttpResponse<String> httpResponse;
         try {
@@ -194,29 +181,20 @@ public class MomoPaymentServiceImpl implements PaymentService {
         if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
             throw new UnprocessableContentException(response.getMessage());
         }
-        orderPayment.setStatus(PaymentStatus.REFUNDED);
-        orderPayment.setDescription(response.getMessage());
-        order.setPayment(orderPayment);
-        orderService.save(order);
-        return orderPayment;
+        payment.setStatus(PaymentStatus.REFUNDED);
+        payment.setDescription(response.getMessage());
+        return payment;
     }
 
     @Override
-    public Payment queryPaymentStatus(String orderId) {
+    public Payment queryPaymentStatus(String orderId, Payment payment) {
         log.info("Performing PaymentService queryPaymentStatus");
-        OrderEntity order;
-        try {
-            order = orderService.findById(orderId);
-        } catch (ItemNotFoundException exception) {
-            throw new UnprocessableContentException(exception.getMessage());
-        }
-        Payment orderPayment = order.getPayment();
-        validatePaymentMethod(orderPayment.getMethod());
+        validatePaymentMethod(payment.getMethod(), PaymentMethod.MOMO);
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(MomoEndpoints.MOMO_QUERY_PAYMENT_STATUS_ROUTE))
-                .POST(HttpRequest.BodyPublishers.ofString(buildQueryStatusRequest(order.getId())))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .POST(HttpRequest.BodyPublishers.ofString(buildQueryStatusRequest(orderId)))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
         HttpResponse<String> httpResponse;
         try {
@@ -237,19 +215,16 @@ public class MomoPaymentServiceImpl implements PaymentService {
 //                || orderPayment.getDescription().equalsIgnoreCase(response.getMessage())) {
 //            return orderPayment;
 //        }
-        orderPayment.setTransId(response.getTransId());
-        orderPayment.setDescription(response.getMessage());
-        order.setPayment(orderPayment);
-        orderService.save(order);
-        return orderPayment;
+        payment.setTransId(response.getTransId());
+        payment.setDescription(response.getMessage());
+        return payment;
     }
 
-    private String buildCaptureWalletRequestBody(OrderEntity order, String requestId, HttpServletRequest httpRequest) {
-        Payment payment = order.getPayment();
+    private String buildCaptureWalletRequestBody(String orderId, Payment payment, String requestId, HttpServletRequest httpRequest) {
         String baseUrl = UrlUtils.getBaseUrl(httpRequest);
         String ipnUrl = baseUrl + ORDER_IPN_REQUEST_CALLBACK_ROUTE;
         String redirectUrl = ipnUrl;
-        String valueToDigest = buildCaptureWalletRawSignature(payment.getAmount(), ipnUrl, order.getId(), DEFAULT_EXTRA_DATA, DEFAULT_EXTRA_DATA, redirectUrl, requestId);
+        String valueToDigest = buildCaptureWalletRawSignature(payment.getAmount(), ipnUrl, orderId, DEFAULT_EXTRA_DATA, DEFAULT_EXTRA_DATA, redirectUrl, requestId);
         HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
         String signedSignature = hmacUtils.hmacHex(valueToDigest);
         MomoCaptureWalletRequest captureWalletRequest = MomoCaptureWalletRequest
@@ -259,7 +234,7 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 .ipnUrl(ipnUrl)
                 .redirectUrl(ipnUrl)
                 .requestId(requestId)
-                .orderId(order.getId())
+                .orderId(orderId)
                 .orderInfo(DEFAULT_EXTRA_DATA)
                 .amount(payment.getAmount())
                 .autoCapture(true)
@@ -349,19 +324,11 @@ public class MomoPaymentServiceImpl implements PaymentService {
                 "&requestId=" + requestId;
     }
 
-    private void validatePayment(Payment payment, PaymentStatus expectedStatus) {
-        validatePaymentMethod(payment.getMethod());
-        if (payment.getStatus() != expectedStatus) {
-            throw new InvalidDataException(String.format("Order is %s. It must be %s to perform this action",
-                    payment.getStatus().name().toLowerCase(),
-                    expectedStatus.name().toLowerCase()));
-        }
-    }
-
-    private void validatePaymentMethod(PaymentMethod method) {
-        if (method != PaymentMethod.MOMO) {
-            throw new InvalidDataException(UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE);
-        }
+    private void validateOrder(OrderEntity order, PaymentStatus expectedPaymentStatus, OrderState... expectedOrderStates) {
+        validateOrderState(order, expectedOrderStates);
+        Payment orderPayment = order.getPayment();
+        validatePaymentMethod(orderPayment.getMethod(), PaymentMethod.MOMO);
+        validatePaymentStatus(orderPayment.getStatus(), expectedPaymentStatus);
     }
 
 }

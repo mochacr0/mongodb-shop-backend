@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
+import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -278,6 +279,7 @@ class ProductControllerTest extends AbstractControllerTest {
             ProductRequest productRequest = new ProductRequest();
             //create new valid product
             productRequest.setName(generateRandomString());
+            productRequest.setWeight(0.1d);
             List<ProductVariationRequest> variationRequests = new ArrayList<>();
             variationRequests.add(createVariationRequest(2));
             variationRequests.add(createVariationRequest(1));
@@ -301,6 +303,7 @@ class ProductControllerTest extends AbstractControllerTest {
             //create new valid product
             productRequest.setName(generateRandomString());
             productRequest.setImageUrl(DEFAULT_IMAGE_URL);
+            productRequest.setWeight(0.1d);
             List<ProductVariationRequest> variationRequests = new ArrayList<>();
             variationRequests.add(createVariationRequest(2));
             variationRequests.add(createVariationRequest(1));
@@ -468,6 +471,7 @@ class ProductControllerTest extends AbstractControllerTest {
     private void assertProduct(ProductRequest productRequest, Product createdProduct) {
         Assertions.assertEquals(productRequest.getName(), createdProduct.getName());
         Assertions.assertEquals(productRequest.getVariations().size(), createdProduct.getVariations().size());
+        Assertions.assertEquals(productRequest.getWeight(), createdProduct.getWeight());
         for (int i = 0; i < productRequest.getVariations().size(); i++) {
             assertVariation(productRequest.getVariations().get(i), createdProduct.getVariations().get(i));
         }

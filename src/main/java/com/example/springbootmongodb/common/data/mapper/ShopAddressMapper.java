@@ -3,7 +3,6 @@ package com.example.springbootmongodb.common.data.mapper;
 import com.example.springbootmongodb.common.data.ShopAddress;
 import com.example.springbootmongodb.common.data.ShopAddressRequest;
 import com.example.springbootmongodb.model.ShopAddressEntity;
-import com.nimbusds.openid.connect.sdk.op.EndpointName;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,7 +14,9 @@ public class ShopAddressMapper {
                 .province(request.getProvince())
                 .district(request.getDistrict())
                 .ward(request.getWard())
-                .streetAddress(request.getStreetAddress())
+                .hamlet(request.getHamlet())
+                .street(request.getStreet())
+                .address(request.getAddress())
                 .isDefault(request.isDefault())
                 .build();
     }
@@ -28,7 +29,9 @@ public class ShopAddressMapper {
                 .province(entity.getProvince())
                 .district(entity.getDistrict())
                 .ward(entity.getWard())
-                .streetAddress(entity.getStreetAddress())
+                .hamlet(entity.getHamlet())
+                .street(entity.getStreet())
+                .address(entity.getAddress())
                 .isDefault(entity.isDefault())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
@@ -40,7 +43,9 @@ public class ShopAddressMapper {
         entity.setProvince(request.getProvince());
         entity.setDistrict(request.getDistrict());
         entity.setWard(request.getWard());
-        entity.setStreetAddress(request.getStreetAddress());
+        entity.setHamlet(request.getHamlet());
+        entity.setStreet(request.getStreet());
+        entity.setAddress(request.getAddress());
         entity.setDefault(request.isDefault());
     }
 }
