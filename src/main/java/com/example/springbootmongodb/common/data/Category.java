@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.common.data;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -24,6 +25,7 @@ public class Category extends AbstractData {
     List<Category> subCategories;
 
     @Schema(name = "isDefault", description = "Có phải danh mục mặc định hay không", example = "false")
+    @JsonProperty(value = "isDefault")
     public boolean isDefault() {
         return this.isDefault;
     }
