@@ -25,6 +25,7 @@ public class ProductItemEntity extends AbstractEntity {
     private boolean isDisabled;
     private String variationDescription;
     private String variationIndex;
+    private double weight;
     @Field(name = "productId")
     @DocumentReference(lazy = true)
     @JsonBackReference

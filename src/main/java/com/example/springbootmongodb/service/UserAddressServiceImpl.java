@@ -10,6 +10,7 @@ import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.repository.UserAddressRepository;
+import com.example.springbootmongodb.security.Authority;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+
+import static com.example.springbootmongodb.common.validator.ConstraintValidator.validateFields;
 
 @Service
 @Slf4j
@@ -44,6 +47,7 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddressEntity> i
     @Transactional
     public UserAddressEntity create(UserAddress address) {
         log.info("Performing UserAddressService create");
+        validateFields(address);
         UserEntity existingUser = userService.findById(getCurrentUser().getId());
         long totalAddresses = userAddressRepository.countByUserId(existingUser.getId());
         if (totalAddresses >= 5) {
@@ -86,15 +90,14 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddressEntity> i
     }
 
     @Override
-    public List<UserAddressEntity> findUserAddressesByUserId(String userId) {
-        log.info("Performing UserAddressService findUserAddressesByUserId");
-        return userAddressRepository.findByUserId(userId);
-    }
-
-    @Override
     public List<UserAddressEntity> findCurrentUserAddresses() {
         log.info("Performing UserAddressService findCurrentUserAddresses");
         return findUserAddressesByUserId(getCurrentUser().getId());
+    }
+
+    private List<UserAddressEntity> findUserAddressesByUserId(String userId) {
+        log.info("Performing UserAddressService findUserAddressesByUserId");
+        return userAddressRepository.findByUserId(userId);
     }
 
     @Override
@@ -123,7 +126,7 @@ public class UserAddressServiceImpl extends DataBaseService<UserAddressEntity> i
             throw new ItemNotFoundException(String.format("User address with id [%s] is not found", addressId));
         }
         UserAddressEntity addressEntity = addressEntityOptional.get();
-        if (!securityUser.getId().equals(addressEntity.getUserId())) {
+        if (!securityUser.getId().equals(addressEntity.getUserId()) && securityUser.getAuthority() != Authority.ADMIN) {
             throw new InvalidDataException(MISMATCHED_USER_IDS_MESSAGE);
         }
         return addressEntity;

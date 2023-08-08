@@ -1,35 +1,53 @@
 package com.example.springbootmongodb.common.data;
 
+import com.example.springbootmongodb.common.validator.Required;
 import com.example.springbootmongodb.model.ToEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+
+import java.util.Objects;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @SuperBuilder
-@EqualsAndHashCode(callSuper = true)
 public class UserAddress extends AbstractData implements ToEntity<UserAddressEntity> {
     @Schema(description = "User Id", example = "647d222a59a4582894a95c10")
     private String userId;
+    @Required(fieldName = "Receiver name")
     @Schema(description = "Tên nguười nhận hàng", example = "Nguyen Van A")
     private String name;
+    @Required(fieldName = "Phone number")
     @Schema(description = "Số điện thoại của người nhận hàng", example = "0123456789")
     private String phoneNumber;
-    @Schema(description = "Tỉnh", example = "0123456789")
+    @Required(fieldName = "Province")
+    @Schema(description = "Tỉnh", example = "Tỉnh 1")
     private String province;
-    @Schema(description = "Quận", example = "0123456789")
+    @Required(fieldName = "District")
+    @Schema(description = "Quận", example = "Quận 1")
     private String district;
-    @Schema(description = "Phường", example = "0123456789")
+    @Required(fieldName = "Ward")
+    @Schema(description = "Phường", example = "Phường 1")
     private String ward;
-    @Schema(description = "Đường, số nhà ", example = "0123456789")
-    private String streetAddress;
-    @Schema( description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
+    @Required(fieldName = "Street name")
+    @Schema(description = "Đường ", example = "Đường 1")
+    private String street;
+    @Required(fieldName = "Detail address")
+    @Schema(description = "Địa chỉ chi tiết", example = "Số 1")
+    private String address;
+    @Schema(description = "Thôn/ấp/xóm/tổ", example = "Tổ 1")
+    private String hamlet;
     private boolean isDefault;
+
+    @Schema(name = "isDefault", description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
+    @JsonProperty(value = "isDefault")
+    public boolean isDefault() {
+        return isDefault;
+    }
 
     @Override
     public String toString() {
@@ -48,10 +66,15 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
         builder.append(this.getDistrict());
         builder.append(", ward=");
         builder.append(this.getWard());
-        builder.append(", streetAddress=");
-        builder.append(this.getStreetAddress());
+        builder.append(", hamlet=");
+        builder.append(this.getHamlet());
+        builder.append(", street=");
+        builder.append(this.getStreet());
+        builder.append(", address=");
+        builder.append(this.getAddress());
         builder.append(", isDefault=");
         builder.append(this.isDefault());
+        builder.append("]");
         return builder.toString();
     }
 
@@ -64,21 +87,29 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
                 .province(this.getProvince())
                 .district(this.getDistrict())
                 .ward(this.getWard())
-                .streetAddress(this.getStreetAddress())
+                .street(this.getStreet())
                 .build();
     }
 
-    public static UserAddress fromEntity(UserAddressEntity entity) {
-        return builder()
-                .id(entity.getId())
-                .userId(entity.getUserId())
-                .name(entity.getName())
-                .phoneNumber(entity.getPhoneNumber())
-                .province(entity.getProvince())
-                .district(entity.getDistrict())
-                .ward(entity.getWard())
-                .streetAddress(entity.getStreetAddress())
-                .build();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UserAddress that = (UserAddress) o;
+        return Objects.equals(getId(), that.getId())
+                && Objects.equals(getUserId(), that.getUserId())
+                && Objects.equals(getName(), that.getName())
+                && Objects.equals(getPhoneNumber(), that.getPhoneNumber())
+                && Objects.equals(getProvince(), that.getProvince())
+                && Objects.equals(getDistrict(), that.getDistrict())
+                && Objects.equals(getHamlet(), that.getHamlet())
+                && Objects.equals(getWard(), that.getWard())
+                && Objects.equals(getStreet(), that.getStreet())
+                && Objects.equals(getAddress(), that.getAddress());
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getUserId(), getName(), getPhoneNumber(), getProvince(), getDistrict(), getWard(), getHamlet(), getStreet(), getAddress(), isDefault());
+    }
 }

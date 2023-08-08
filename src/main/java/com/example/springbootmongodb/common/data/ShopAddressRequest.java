@@ -1,5 +1,7 @@
 package com.example.springbootmongodb.common.data;
 
+import com.example.springbootmongodb.common.validator.Required;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -11,19 +13,30 @@ import lombok.*;
 public class ShopAddressRequest {
     @Schema(description = "Id của địa chỉ", example = "647d222a59a4582894a95c10")
     private String id;
+    @Required(fieldName = "Phone number")
     @Schema(description = "Số điện thoại của chủ cửa hàng", example = "0123456789")
     private String phoneNumber;
-    @Schema(description = "Tỉnh/Thành", example = "0123456789")
+    @Required(fieldName = "Province")
+    @Schema(description = "Tỉnh/Thành", example = "Tỉnh 1")
     private String province;
-    @Schema(description = "Quận/Huyện", example = "0123456789")
+    @Required(fieldName = "District")
+    @Schema(description = "Quận/Huyện", example = "Quận 1")
     private String district;
-    @Schema(description = "Phường/Xã", example = "0123456789")
+    @Required(fieldName = "Ward")
+    @Schema(description = "Phường/Xã", example = "Phường 1")
     private String ward;
-    @Schema(description = "Đường, số nhà", example = "0123456789")
-    private String streetAddress;
+    @Schema(description = "Thôn/ấp/xóm/tổ", example = "Tổ 1")
+    private String hamlet;
+    @Required(fieldName = "Street name")
+    @Schema(description = "Đường", example = "Đường 1")
+    private String street;
+    @Required(fieldName = "Detail address")
+    @Schema(description = "Địa chỉ chi tiết", example = "Số 1")
+    private String address;
     private boolean isDefault;
 
-    @Schema(description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
+    @Schema(name = "isDefault", description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
+    @JsonProperty(value = "isDefault")
     public boolean isDefault() {
         return isDefault;
     }

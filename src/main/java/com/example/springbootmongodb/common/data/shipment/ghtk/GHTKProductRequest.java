@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.common.data.shipment.ghtk;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @NoArgsConstructor
@@ -13,6 +14,6 @@ public class GHTKProductRequest {
     private int price;
     private double weight;
     private int quantity;
-    @JsonAlias("product_code")
+    @JsonProperty("product_code")
     private int productCode;
 }

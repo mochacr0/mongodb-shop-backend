@@ -28,6 +28,7 @@ public class ProductItemMapper {
                 .quantity(request.getQuantity())
                 .price(request.getPrice())
                 .options(new ArrayList<>())
+                .weight(request.getWeight())
                 .build();
     }
 
@@ -64,6 +65,7 @@ public class ProductItemMapper {
         String variationIndex = request.getVariationIndex().stream().map(String::valueOf).collect(Collectors.joining(","));
         entity.setQuantity(request.getQuantity());
         entity.setPrice(request.getPrice());
+        entity.setWeight(request.getWeight());
         entity.setVariationDescription(variationDescription);
         entity.setVariationIndex(variationIndex);
         entity.setVariationIndex(variationIndex);

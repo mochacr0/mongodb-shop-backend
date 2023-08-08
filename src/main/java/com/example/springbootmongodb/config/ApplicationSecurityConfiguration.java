@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.Customizer;
@@ -103,8 +104,7 @@ public class ApplicationSecurityConfiguration {
             //TEST
 //            USERS_DELETE_USER_BY_ID_ROUTE,
             USERS_ACTIVATE_USER_CREDENTIALS_ROUTE,
-            SHIPMENT_GET_LV4_ADDRESSES_ROUTE,
-            SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE));
+            SHIPMENT_GET_LV4_ADDRESSES_ROUTE));
 
     @Bean
     public AuthenticationManager authenticationManager(ObjectPostProcessor<Object> objectPostProcessor) throws Exception {
@@ -155,8 +155,7 @@ public class ApplicationSecurityConfiguration {
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(customizer -> customizer.configurationSource(buildCorsConfigurationSource()))
-                .sessionManagement(sessionManagement -> sessionManagement
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()

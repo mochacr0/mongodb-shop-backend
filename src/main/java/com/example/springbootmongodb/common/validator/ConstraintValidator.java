@@ -21,6 +21,7 @@ public class ConstraintValidator {
         HibernateValidatorConfiguration validatorConfiguration = Validation.byProvider(HibernateValidator.class).configure();
         ConstraintMapping constraintMapping = validatorConfiguration.createConstraintMapping();
         constraintMapping.constraintDefinition(Length.class).validatedBy(StringLengthValidator.class);
+        constraintMapping.constraintDefinition(Required.class).validatedBy(StringRequiredValidator.class).validatedBy(NumberRequiredValidator.class);
         validatorConfiguration.addMapping(constraintMapping);
         fieldsValidator = validatorConfiguration.buildValidatorFactory().getValidator();
     }

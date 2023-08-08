@@ -5,15 +5,15 @@ import com.example.springbootmongodb.common.data.OrderRequest;
 import com.example.springbootmongodb.common.data.mapper.OrderMapper;
 import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
-import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
+import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.model.Payment;
 import com.example.springbootmongodb.service.OrderService;
 import com.example.springbootmongodb.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -47,11 +47,12 @@ public class OrderController {
     @Operation(summary = "Khởi tạo giao dịch thanh toán",
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     RedirectView initiatePayment(@PathVariable String orderId, HttpServletRequest httpServletRequest) {
-        MomoCaptureWalletResponse captureWalletResponse = paymentService.initiatePayment(orderId, httpServletRequest);
-        return new RedirectView(captureWalletResponse.getPayUrl());
+        String payUrl = orderService.initiatePayment(orderId, httpServletRequest);
+        return new RedirectView(payUrl);
     }
 
     @GetMapping(value = ORDER_IPN_REQUEST_CALLBACK_ROUTE)
+    @Operation(summary = "Momo IPN callback (Không dùng API này)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void momoCallback(@RequestParam("partnerCode") String partnerCode,
                       @RequestParam("orderId") String orderId,
@@ -83,10 +84,31 @@ public class OrderController {
         paymentService.processIpnRequest(request, httpServletRequest);
     }
 
-    @PostMapping(value = ORDER_REQUEST_ORDER_REFUND_ROUTE)
-    @Operation(summary = "Hoàn tiền",
+//    @PostMapping(value = ORDER_REQUEST_ORDER_REFUND_ROUTE)
+//    @Operation(summary = "Hoàn tiền",
+//            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
+//    Payment refund(@PathVariable String orderId) {
+//        return paymentService.refund(orderId);
+//    }
+
+    @PostMapping(value = ORDER_CANCEL_ORDER_ROUTE)
+    @Operation(summary = "Hủy đơn hàng",
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
-    Payment refund(@PathVariable String orderId) {
-        return paymentService.refund(orderId);
+    Order cancel(@PathVariable String orderId) {
+        return orderMapper.fromEntity(orderService.cancel(orderId));
     }
-}
+
+    @PostMapping(value = ORDER_ACCEPT_ORDER_ROUTE)
+    @Operation(summary = "Chấp nhận đơn hàng",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
+    Order accept(@PathVariable String orderId) {
+        return orderMapper.fromEntity(orderService.accept(orderId));
+    }
+
+    @PostMapping(value = ORDER_PLACE_SHIPMENT_ORDER_ROUTE)
+    @Operation(summary = "Đặt đơn vận chuyển",
+            security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
+    Order placeShipmentOrder(@PathVariable String orderId,
+                             @RequestBody ShipmentRequest request) {
+        return orderMapper.fromEntity(orderService.placeShipmentOrder(orderId, request));
+    }}

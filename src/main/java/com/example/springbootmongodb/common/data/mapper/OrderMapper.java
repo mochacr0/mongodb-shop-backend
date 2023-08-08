@@ -15,14 +15,15 @@ public class OrderMapper {
                 .builder()
                 .id(entity.getId())
                 .user(userMapper.fromEntity(entity.getUser()))
-                .shippingAddress(addressMapper.fromEntity(entity.getUserAddress()))
                 .subTotal(entity.getSubTotal())
                 .totalAmount(entity.getSubTotal())
                 .payment(entity.getPayment())
                 .orderItems(entity.getOrderItems())
                 .statusHistory(entity.getStatusHistory())
+                .shipment(entity.getShipment())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .expiredAt(entity.getExpiredAt())
                 .build();
     }
 }

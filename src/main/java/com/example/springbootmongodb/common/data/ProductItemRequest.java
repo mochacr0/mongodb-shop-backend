@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.common.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
@@ -23,4 +24,6 @@ public class ProductItemRequest {
     private long price;
     @Schema(description = "Tổ hợp index của biến thể sản phẩm", example = "[0,1]")
     private List<Integer> variationIndex = new ArrayList<>();
+    @JsonIgnore
+    private double weight;
 }
