@@ -76,7 +76,8 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
         userCredentials.setActivationToken(activationToken);
         userCredentials.setActivationTokenExpirationMillis(System.currentTimeMillis() + securitySettings.getActivationTokenExpirationMillis());
         userService.save(user);
-        String activationLink = String.format(this.ACTIVATION_URL_PATTERN, UrlUtils.getBaseUrl(request), activationToken);
+//        String activationLink = String.format(this.ACTIVATION_URL_PATTERN, UrlUtils.getBaseUrl(request), activationToken);
+        String activationLink = String.format(this.ACTIVATION_URL_PATTERN, "http://localhost:3000", activationToken);
         mailService.sendActivationMail(email, activationLink);
     }
 
