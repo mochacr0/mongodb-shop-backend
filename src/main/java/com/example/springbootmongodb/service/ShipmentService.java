@@ -8,7 +8,7 @@ import com.example.springbootmongodb.model.Shipment;
 
 public interface ShipmentService {
     GHTKLv4AddressesResponse getLv4Addresses(String address, String province, String district, String wardStreet);
-    GHTKCalculateFeeResponse calculateDeliveryFee(String userAddressId, double weight);
+    GHTKCalculateFeeResponse calculateDeliveryFee(String userAddressId, double weight, int quantity);
     Shipment place(OrderEntity order, ShipmentRequest request);
     Shipment cancel(String orderId, Shipment shipment);
 }

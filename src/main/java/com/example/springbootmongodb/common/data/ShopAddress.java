@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.common.data;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,13 +15,21 @@ import java.util.Objects;
 @Setter
 @SuperBuilder
 public class ShopAddress extends AbstractData {
+    @Schema(description = "Số điện thoại của shop", example = "0123456789")
     private String phoneNumber;
+    @Schema(description = "Tỉnh", example = "Tỉnh 1")
     private String province;
+    @Schema(description = "Quận", example = "Quận 1")
     private String district;
+    @Schema(description = "Phường", example = "Phường 1")
     private String ward;
+    @Schema(description = "Thôn/ấp/xóm/tổ", example = "Tổ 1")
     private String hamlet;
+    @Schema(description = "Đường ", example = "Đường 1")
     private String street;
+    @Schema(description = "Địa chỉ chi tiết", example = "Số 1")
     private String address;
+    @Schema(name = "isDefault", description = "Địa chỉ này có phải là địa chỉ mặc định của shop hay không", example = "false")
     private boolean isDefault;
 
     @Override

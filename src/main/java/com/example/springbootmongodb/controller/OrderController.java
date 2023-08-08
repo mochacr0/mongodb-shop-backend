@@ -10,6 +10,7 @@ import com.example.springbootmongodb.model.Payment;
 import com.example.springbootmongodb.service.OrderService;
 import com.example.springbootmongodb.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,6 +52,7 @@ public class OrderController {
     }
 
     @GetMapping(value = ORDER_IPN_REQUEST_CALLBACK_ROUTE)
+    @Operation(summary = "Momo IPN callback (Không dùng API này)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void momoCallback(@RequestParam("partnerCode") String partnerCode,
                       @RequestParam("orderId") String orderId,

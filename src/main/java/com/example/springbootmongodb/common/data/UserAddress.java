@@ -3,6 +3,7 @@ package com.example.springbootmongodb.common.data;
 import com.example.springbootmongodb.common.validator.Required;
 import com.example.springbootmongodb.model.ToEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -40,8 +41,12 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
     private String address;
     @Schema(description = "Thôn/ấp/xóm/tổ", example = "Tổ 1")
     private String hamlet;
-    @Schema( description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
     private boolean isDefault;
+
+    @Schema(name = "isDefault", description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
+    public boolean isDefault() {
+        return isDefault;
+    }
 
     @Override
     public String toString() {
