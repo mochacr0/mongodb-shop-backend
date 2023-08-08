@@ -6,6 +6,8 @@ import com.example.springbootmongodb.common.data.mapper.UserAddressMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.PaymentStatus;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKPickOption;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKWorkShiftOption;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
@@ -24,7 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -315,13 +319,22 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         log.info("Performing OrderService placeShipmentOrder");
         OrderEntity order = findById(id);
         validateOrderState(order, OrderState.PREPARING);
-        order.setShipment(shipmentService.place(order, shipmentRequest));
+        Shipment placedShipment = shipmentService.place(order, shipmentRequest);
+        order.setShipment(placedShipment);
         OrderStatus readyToShipStatus = OrderStatus
                 .builder()
                 .state(OrderState.READY_TO_SHIP)
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(readyToShipStatus);
+        if (shipmentRequest.getPickOption().equals(GHTKPickOption.POST.getValue())) {
+            String[] splitTime = placedShipment.getEstimatedPickTime().split(" ");
+            String dayPart = splitTime[0];
+            GHTKWorkShiftOption pickWorkShiftOption = GHTKWorkShiftOption.parseFromDayPart(dayPart);
+            String estimatedPickTimeString = splitTime[1];
+            LocalDateTime expiredAt = LocalDateTime.parse(String.format("%sT%s", estimatedPickTimeString, pickWorkShiftOption.getEndTime()));
+            order.setExpiredAt(expiredAt);
+        }
         return save(order);
     }
 
