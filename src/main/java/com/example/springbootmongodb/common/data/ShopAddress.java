@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.common.data;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +31,7 @@ public class ShopAddress extends AbstractData {
     @Schema(description = "Địa chỉ chi tiết", example = "Số 1")
     private String address;
     @Schema(name = "isDefault", description = "Địa chỉ này có phải là địa chỉ mặc định của shop hay không", example = "false")
+    @JsonProperty(value = "isDefault")
     private boolean isDefault;
 
     @Override

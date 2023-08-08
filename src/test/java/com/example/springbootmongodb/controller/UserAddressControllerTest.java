@@ -194,6 +194,13 @@ class UserAddressControllerTest extends AbstractControllerTest {
     private UserAddress createUserAddress() {
         UserAddress address = new UserAddress();
         address.setName(generateRandomString());
+        address.setAddress("Số 1");
+        address.setStreet("Đường 1");
+        address.setHamlet("Tổ 1");
+        address.setWard("Phường 1");
+        address.setDistrict("Quận 1");
+        address.setProvince("Tỉnh 1");
+        address.setPhoneNumber("0132234114");
         return address;
     }
 }

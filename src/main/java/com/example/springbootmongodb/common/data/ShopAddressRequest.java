@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.common.data;
 
 import com.example.springbootmongodb.common.validator.Required;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -35,6 +36,7 @@ public class ShopAddressRequest {
     private boolean isDefault;
 
     @Schema(name = "isDefault", description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
+    @JsonProperty(value = "isDefault")
     public boolean isDefault() {
         return isDefault;
     }

@@ -44,6 +44,7 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
     private boolean isDefault;
 
     @Schema(name = "isDefault", description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
+    @JsonProperty(value = "isDefault")
     public boolean isDefault() {
         return isDefault;
     }
