@@ -3,6 +3,7 @@ package com.example.springbootmongodb.model;
 import com.example.springbootmongodb.common.data.ShopAddress;
 import com.example.springbootmongodb.common.data.UserAddress;
 import com.example.springbootmongodb.common.data.payment.ShipmentStatus;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKWorkShiftOption;
 import lombok.*;
 
 import java.time.LocalDateTime;

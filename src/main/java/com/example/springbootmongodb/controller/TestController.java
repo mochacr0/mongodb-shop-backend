@@ -5,10 +5,8 @@ import com.example.springbootmongodb.common.data.TemporaryImage;
 import com.example.springbootmongodb.common.data.VariationOption;
 import com.example.springbootmongodb.common.data.mapper.ProductMapper;
 import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
-import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
-import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
-import com.example.springbootmongodb.common.data.payment.momo.MomoQueryPaymentStatusResponse;
-import com.example.springbootmongodb.common.data.payment.momo.MomoRefundResponse;
+import com.example.springbootmongodb.common.data.payment.PaymentStatus;
+import com.example.springbootmongodb.common.data.payment.momo.*;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKAbstractResponse;
 import com.example.springbootmongodb.config.GHTKCredentials;
 import com.example.springbootmongodb.config.MomoCredentials;
@@ -279,5 +277,72 @@ public class TestController {
             }
         }
         return cancelResponse;
+    }
+
+    @GetMapping(value = "/17")
+    Payment test17(@RequestParam String orderId,
+                @RequestParam Integer amount) {
+        OrderEntity order = orderService.findById(orderId);
+        Payment payment = order.getPayment();
+        String requestBody = buildRefundRequest(payment, amount);
+        HttpRequest httpRequest = HttpRequest
+                .newBuilder()
+                .uri(URI.create(MomoEndpoints.MOMO_REFUND_ROUTE))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+        HttpResponse<String> httpResponse;
+        try {
+            httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException exception) {
+            throw new InternalErrorException(exception.getMessage());
+        }
+        if (httpResponse.statusCode() >= 500) {
+            throw new InternalErrorException(httpResponse.body());
+        }
+        MomoRefundResponse response;
+        try {
+            response = objectMapper.readValue(httpResponse.body(), MomoRefundResponse.class);
+        } catch (JsonProcessingException exception) {
+            throw new InternalErrorException(exception.getMessage());
+        }
+        if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
+            throw new UnprocessableContentException(response.getMessage());
+        }
+        payment.setStatus(PaymentStatus.REFUNDED);
+        payment.setDescription(response.getMessage());
+        return payment;
+    }
+
+    public String buildRefundRequest(Payment payment, int amount) {
+        String requestId = UUID.randomUUID().toString();
+        String testOrderId = UUID.randomUUID().toString();
+        String valueToDigest = "accessKey=" + momoCredentials.getAccessKey() +
+                "&amount=" + amount +
+                "&description=" + "Test refund" +
+                "&orderId=" + testOrderId +
+                "&partnerCode=" + momoCredentials.getPartnerCode() +
+                "&requestId=" + requestId +
+                "&transId=" + payment.getTransId();
+        HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
+        String signedSignature = hmacUtils.hmacHex(valueToDigest);
+        MomoRefundRequest refundRequest = MomoRefundRequest
+                .builder()
+                .orderId(testOrderId)
+                .partnerCode(momoCredentials.getPartnerCode())
+                .amount(amount)
+                .requestId(requestId)
+                .description("Test refund")
+                .lang(MomoResponseLanguage.VI.getValue())
+                .transId(payment.getTransId())
+                .signature(signedSignature)
+                .build();
+        String requestBody;
+        try {
+            requestBody = objectMapper.writeValueAsString(refundRequest);
+        } catch (JsonProcessingException e) {
+            throw new InternalErrorException("Serializing failed");
+        }
+        return requestBody;
     }
 }
