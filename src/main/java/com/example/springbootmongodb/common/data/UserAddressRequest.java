@@ -33,7 +33,7 @@ public class UserAddressRequest {
     private String address;
     private boolean isDefault;
 
-    @Schema(description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
+    @Schema(name = "isDefault", description = "Địa chỉ này có phải là địa chỉ mặc định hay không", example = "false")
     public boolean isDefault() {
         return isDefault;
     }

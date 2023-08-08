@@ -98,7 +98,7 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
 //    }
 
     @Override
-    public GHTKCalculateFeeResponse calculateDeliveryFee(String userAddressId, double weight) {
+    public GHTKCalculateFeeResponse calculateDeliveryFee(String userAddressId, double weight, int quantity) {
         log.info("Performing ShipmentService calculateFee");
         UserAddressEntity userAddress;
         try {
@@ -122,7 +122,7 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
                 .district(userAddress.getDistrict())
                 .ward(userAddress.getWard())
                 .address(userAddress.getStreet())
-                .weight((int)weight * 1000)
+                .weight((int)weight * 1000 * quantity)
                 .build();
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
