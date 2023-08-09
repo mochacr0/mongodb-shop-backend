@@ -34,7 +34,7 @@ public class ControllerConstants {
     public static final String AUTH_CHANGE_PASSWORD_ROUTE = AUTH_ROUTE + "/changePassword";
     public static final String AUTH_REQUEST_PASSWORD_RESET_EMAIL_ROUTE = AUTH_ROUTE + "/requestPasswordReset";
     public static final String AUTH_RESET_PASSWORD_ROUTE = AUTH_ROUTE + "/resetPassword";
-    public static final String OAUTH2_AUTHENTICATION_SUCCESS_REDIRECT = "/?accessToken=";
+    public static final String OAUTH2_AUTHENTICATION_SUCCESS_REDIRECT_PATTERN = "/?accessToken=%s&refreshToken=%s";
     public static final String OAUTH2_AUTHENTICATION_FAILURE_REDIRECT = "/oauth2?error=";
 
 

@@ -7,8 +7,8 @@ import com.example.springbootmongodb.config.SecuritySettingsConfiguration;
 import com.example.springbootmongodb.config.UserPasswordPolicy;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.UserEntity;
-import com.example.springbootmongodb.security.JwtToken;
 import com.example.springbootmongodb.security.JwtTokenFactory;
+import com.example.springbootmongodb.security.JwtTokenPair;
 import com.example.springbootmongodb.service.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-import static com.example.springbootmongodb.controller.ControllerConstants.OAUTH2_AUTHENTICATION_SUCCESS_REDIRECT;
+import static com.example.springbootmongodb.controller.ControllerConstants.OAUTH2_AUTHENTICATION_SUCCESS_REDIRECT_PATTERN;
 
 @Slf4j
 @Component(value = "OAuth2AuthenticationSuccessHandler")
@@ -49,8 +49,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             OAuth2AuthenticationToken authenticationToken = (OAuth2AuthenticationToken)authentication;
             OAuth2User oauth2User = authenticationToken.getPrincipal();
             SecurityUser securityUser = getOrCreateSecurityUserFromOAuth2User(oauth2User, authenticationToken.getAuthorizedClientRegistrationId(), request);
-            JwtToken jwtAccessToken = this.jwtTokenFactory.createAccessToken(securityUser);
-            this.getRedirectStrategy().sendRedirect(request, response,  OAUTH2_AUTHENTICATION_SUCCESS_REDIRECT + jwtAccessToken.getValue());
+            JwtTokenPair jwtTokenPair = this.jwtTokenFactory.createJwtTokenPair(securityUser);
+            this.getRedirectStrategy().sendRedirect(request, response,  String.format(OAUTH2_AUTHENTICATION_SUCCESS_REDIRECT_PATTERN, jwtTokenPair.getAccessToken(), jwtTokenPair.getRefreshToken()));
         }
         catch(Exception e) {
             log.debug("Error occurred during processing authentication success result. " +

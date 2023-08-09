@@ -110,5 +110,4 @@ public class JwtTokenFactory {
             throw new ExpiredJwtTokenException("Expired JWT token");
         }
     }
-
 }
