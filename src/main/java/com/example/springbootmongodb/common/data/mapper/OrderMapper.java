@@ -24,6 +24,7 @@ public class OrderMapper {
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .expiredAt(entity.getExpiredAt())
+                .completedAt(entity.getCompletedAt())
                 .build();
     }
 }

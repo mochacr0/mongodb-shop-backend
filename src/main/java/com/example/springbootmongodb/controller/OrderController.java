@@ -6,6 +6,8 @@ import com.example.springbootmongodb.common.data.mapper.OrderMapper;
 import com.example.springbootmongodb.common.data.payment.momo.MomoCaptureWalletResponse;
 import com.example.springbootmongodb.common.data.payment.momo.MomoIpnCallbackResponse;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKUpdateStatusRequest;
+import com.example.springbootmongodb.model.OrderEntity;
 import com.example.springbootmongodb.model.Payment;
 import com.example.springbootmongodb.service.OrderService;
 import com.example.springbootmongodb.service.PaymentService;
@@ -111,4 +113,17 @@ public class OrderController {
     Order placeShipmentOrder(@PathVariable String orderId,
                              @RequestBody ShipmentRequest request) {
         return orderMapper.fromEntity(orderService.placeShipmentOrder(orderId, request));
-    }}
+    }
+
+    @PostMapping(value = ORDER_UPDATE_SHIPMENT_STATUS_CALLBACK_ROUTE)
+    @Operation(summary = "Callback update trạng thái đơn hàng của GHTK")
+    Order ghtkUpdateStatusCallback(@RequestBody GHTKUpdateStatusRequest request) {
+        return orderMapper.fromEntity(orderService.processShipmentStatusUpdateRequest(request));
+    }
+
+    @PostMapping(ORDER_CONFIRM_ORDER_DELIVERED_ROUTE)
+    @Operation(summary = "Xác nhận đã nhận hàng")
+    Order confirmDelivered(@PathVariable String orderId) {
+        return orderMapper.fromEntity(orderService.confirmDelivered(orderId));
+    }
+}

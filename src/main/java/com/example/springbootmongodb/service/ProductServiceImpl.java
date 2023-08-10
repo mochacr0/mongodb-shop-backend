@@ -83,7 +83,7 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
         createdProduct.setItems(createdItems);
         updatePriceRange(createdProduct);
         super.save(createdProduct);
-//        mediaService.persistCreatingProductImagesAsync(request);
+        mediaService.persistCreatingProductImagesAsync(request);
         return createdProduct;
     }
 

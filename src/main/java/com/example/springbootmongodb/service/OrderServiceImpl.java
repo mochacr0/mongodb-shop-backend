@@ -5,8 +5,11 @@ import com.example.springbootmongodb.common.data.mapper.ShopAddressMapper;
 import com.example.springbootmongodb.common.data.mapper.UserAddressMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.PaymentStatus;
+import com.example.springbootmongodb.common.data.payment.ShipmentStatus;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
+import com.example.springbootmongodb.common.data.shipment.ShipmentState;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKPickOption;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKUpdateStatusRequest;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKWorkShiftOption;
 import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.exception.InvalidDataException;
@@ -26,9 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -241,29 +242,37 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
      }
 
     private OrderEntity processAdminCancelRequest(OrderEntity order) {
-        OrderState currentState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
-        switch (currentState) {
+        OrderState currentOrderState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
+        Shipment orderShipment = order.getShipment();
+        ShipmentState currentShipmentState = orderShipment.getStatusHistory().get(orderShipment.getStatusHistory().size() - 1).getState();
+        switch (currentOrderState) {
             case UNPAID -> {}
             case WAITING_TO_ACCEPT, PREPARING -> {
-                if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
-                    Payment refundedPayment = paymentService.refund(order.getPayment());
-                    order.setPayment(refundedPayment);
-                    order.setExpiredAt(null);
+                refundInCancel(order);
+            }
+            case READY_TO_SHIP -> {
+                refundInCancel(order);
+                //cancel shipment
+                //FAILED_TO_PICK is already one of the ending states of shipment so don't need to cancel
+                if (currentShipmentState != ShipmentState.FAILED_TO_PICKUP) {
+                    Shipment canceledShipment = shipmentService.cancel(order.getId(), order.getShipment());
+                    order.setShipment(canceledShipment);
                 }
             }
-            case READY_TO_SHIP, IN_CANCEL -> {
-                //TODO: cancel shipment
-                if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
-                    Payment refundedPayment = paymentService.refund(order.getPayment());
-                    order.setPayment(refundedPayment);
-                    order.setExpiredAt(null);
-                }
+            case IN_CANCEL -> {
+                refundInCancel(order);
+                //case IN_CANCEL and shipment order has been placed
                 if (StringUtils.isNotEmpty(order.getShipment().getId())) {
                     Shipment canceledShipment = shipmentService.cancel(order.getId(), order.getShipment());
                     order.setShipment(canceledShipment);
                 }
             }
-            default -> throw new InvalidDataException(String.format("Cannot perform this action. Order is %s", currentState.getMessage()));
+            case FAILED_TO_DELIVER -> {
+                if (currentShipmentState != ShipmentState.RETURNED) {
+                    throw new InvalidDataException("Order hasn't been returned yet");
+                }
+            }
+            default -> throw new InvalidDataException(String.format("Cannot perform this action. Order is %s", currentOrderState.getMessage()));
         }
         orderRepository.rollbackOrderItemQuantities(order.getOrderItems());
         OrderStatus canceledStatus = OrderStatus
@@ -274,6 +283,14 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         order.getStatusHistory().add(canceledStatus);
         order.setExpiredAt(null);
         return save(order);
+    }
+
+    private void refundInCancel(OrderEntity order) {
+        if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
+            Payment refundedPayment = paymentService.refund(order.getPayment());
+            order.setPayment(refundedPayment);
+            order.setExpiredAt(null);
+        }
     }
 
     @Override
@@ -337,6 +354,110 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         }
         return save(order);
     }
+
+    @Override
+    @Transactional
+    public OrderEntity processShipmentStatusUpdateRequest(GHTKUpdateStatusRequest request) {
+        log.info("Performing OrderService processShipmentStatusUpdateRequest");
+        OrderEntity order;
+        try {
+            order = findById(request.getPartnerId());
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        validateUnexpectedOrderStates(order, OrderState.WAITING_TO_ACCEPT, OrderState.PREPARING, OrderState.CANCELED, OrderState.COMPLETED);
+        Shipment orderShipment = order.getShipment();
+        ShipmentState updateState = ShipmentState.parseFromInt(request.getStatusId());
+        ShipmentStatus updatedStatus = ShipmentStatus
+                .builder()
+                .state(updateState)
+                .description(request.getReason())
+                .build();
+        orderShipment.getStatusHistory().add(updatedStatus);
+        order.setShipment(orderShipment);
+        LocalDateTime now =  LocalDateTime.now();
+        switch (updateState) {
+            case ACCEPTED -> order.setExpiredAt(null);
+            case PICKING_UP -> {}
+            case PICKUP_DELAYED -> {
+                //update expiredAt to new pick up date time
+            }
+            case FAILED_TO_PICKUP, RETURNED -> {
+                //cancel order
+                save(order);
+                return cancel(order.getId());
+            }
+            case PICKED_UP -> {
+                OrderStatus orderPickedUpStatus = OrderStatus
+                        .builder()
+                        .state(OrderState.PICKED_UP)
+                        .createdAt(now)
+                        .description("Order has been handed over to the shipping carrier")
+                        .build();
+                order.getStatusHistory().add(orderPickedUpStatus);
+                order.setExpiredAt(null);
+            }
+            case DELIVERING -> {
+                OrderStatus orderDeliveringStatus = OrderStatus
+                        .builder()
+                        .state(OrderState.DELIVERING)
+                        .createdAt(now)
+                        .description("Delivering")
+                        .build();
+                order.getStatusHistory().add(orderDeliveringStatus);
+            }
+            case DELIVERY_DELAYED -> {}
+            case FAILED_TO_DELIVER -> {
+                OrderStatus orderFailedToDeliverStatus = OrderStatus
+                        .builder()
+                        .state(OrderState.FAILED_TO_DELIVER)
+                        .createdAt(now)
+                        .description("Failed to deliver")
+                        .build();
+                order.getStatusHistory().add(orderFailedToDeliverStatus);
+            }
+            case DELIVERED -> {
+                OrderStatus orderWaitingToConfirmState = OrderStatus
+                        .builder()
+                        .state(OrderState.TO_CONFIRM_RECEIVE)
+                        .createdAt(now)
+                        .description("Waiting for user confirmation")
+                        .build();
+                order.getStatusHistory().add(orderWaitingToConfirmState);
+                order.setCompletedAt(now.plusDays(MAX_DAYS_FOR_RETURN_REFUND));
+            }
+            case RETURNING -> {}
+            default -> throw new InvalidDataException("Unhandled states");
+        }
+        return save(order);
+    }
+
+    @Override
+    public void markCompletedOrders() {
+        log.info("Performing OrderService markCompletedOrders");
+
+    }
+
+    @Override
+    public OrderEntity confirmDelivered(String id) {
+        log.info("Performing UserService confirm");
+        OrderEntity order;
+        try {
+            order = findById(id);
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        validateOrderState(order, OrderState.TO_CONFIRM_RECEIVE);
+        OrderStatus completedStatus = OrderStatus
+                .builder()
+                .state(OrderState.COMPLETED)
+                .description("Order received")
+                .createdAt(LocalDateTime.now())
+                .build();
+        order.getStatusHistory().add(completedStatus);
+        return save(order);
+    }
+
 
     private List<OrderItem> processOrderItemRequests(List<OrderItemRequest> orderItemRequests) {
         List<CompletableFuture<OrderItem>> processFutures = orderItemRequests.stream().map(orderItemRequest -> {
