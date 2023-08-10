@@ -17,7 +17,6 @@ import com.example.springbootmongodb.model.Shipment;
 import com.example.springbootmongodb.model.ShopAddressEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +25,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -239,6 +237,10 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
                 .build();
         shipment.getStatusHistory().add(cancelShipmentStatus);
         return shipment;
+    }
+
+    private void processAcceptedState(GHTKUpdateStatusRequest request) {
+
     }
 
     private String buildCalculateFeeUri(GHTKCalculateFeeRequest request) {

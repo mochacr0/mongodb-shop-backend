@@ -29,4 +29,5 @@ public class Order extends AbstractData {
     private LocalDateTime expiredAt;
     private String note;
     private Shipment shipment;
+    private LocalDateTime completedAt;
 }

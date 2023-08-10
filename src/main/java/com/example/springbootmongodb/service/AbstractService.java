@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.service;
 
+import com.example.springbootmongodb.common.data.Order;
 import com.example.springbootmongodb.common.data.OrderState;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.PaymentStatus;
@@ -48,6 +49,14 @@ public abstract class AbstractService {
     protected void validateOrderState(OrderEntity order, OrderState... expectedStates) {
         OrderState actualState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
         if (Arrays.stream(expectedStates).noneMatch(expectedState -> expectedState == actualState)) {
+            throw new InvalidDataException(String.format("Order is %s",
+                    actualState.getMessage().toLowerCase()));
+        }
+    }
+
+    protected void validateUnexpectedOrderStates(OrderEntity order, OrderState... unexpectedStates) {
+        OrderState actualState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
+        if (Arrays.stream(unexpectedStates).anyMatch(unexpectedState -> unexpectedState == actualState)) {
             throw new InvalidDataException(String.format("Order is %s",
                     actualState.getMessage().toLowerCase()));
         }

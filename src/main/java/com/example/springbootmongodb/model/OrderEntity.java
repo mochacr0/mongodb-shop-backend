@@ -32,4 +32,5 @@ public class OrderEntity extends AbstractEntity {
     private LocalDateTime expiredAt;
     private String note;
     private Shipment shipment;
+    private LocalDateTime completedAt;
 }
