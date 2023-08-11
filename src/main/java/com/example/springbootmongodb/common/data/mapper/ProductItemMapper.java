@@ -2,7 +2,8 @@ package com.example.springbootmongodb.common.data.mapper;
 
 import com.example.springbootmongodb.common.data.ProductItem;
 import com.example.springbootmongodb.common.data.ProductItemRequest;
-import com.example.springbootmongodb.common.utils.DaoUtils;
+import com.example.springbootmongodb.common.data.payment.momo.MomoPayWithMethodItem;
+import com.example.springbootmongodb.model.OrderItem;
 import com.example.springbootmongodb.model.ProductItemEntity;
 import com.example.springbootmongodb.model.VariationOptionEntity;
 import io.micrometer.common.util.StringUtils;
@@ -33,26 +34,29 @@ public class ProductItemMapper {
     }
 
     public ProductItem fromEntity(ProductItemEntity entity) {
-        String imageUrl = entity.getProduct().getImageUrl();
-//        List<String> variations = new ArrayList<>();
-//        for (VariationOptionEntity option : entity.getOptions()) {
-//            if (StringUtils.isNotEmpty(option.getImageUrl())) {
-//                imageUrl = option.getImageUrl();
-//            }
-//            variations.add(String.format("%s:%s", option.getVariation().getName(), option.getName()));
-//        }
-//        String variationDescription = String.join(", ", variations);
         return ProductItem
                 .builder()
                 .id(entity.getId())
                 .variationDescription(entity.getVariationDescription())
-                .imageUrl(imageUrl)
+                .imageUrl(entity.getImageUrl())
                 .quantity(entity.getQuantity())
                 .price(entity.getPrice())
                 .product(productMapper.fromEntityToSimplification(entity.getProduct()))
 //                .options(DaoUtils.toListData(entity.getOptions(), optionMapper::fromEntity))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+
+    public MomoPayWithMethodItem fromOrderItemToMomoItem(OrderItem orderItem) {
+        return MomoPayWithMethodItem
+                .builder()
+                .id(orderItem.getProductItemId())
+                .name(orderItem.getProductName())
+                .imageUrl(orderItem.getImageUrl())
+                .price(orderItem.getPrice())
+                .quantity(orderItem.getQuantity())
+                .totalPrice(orderItem.getPrice() * orderItem.getQuantity())
                 .build();
     }
 

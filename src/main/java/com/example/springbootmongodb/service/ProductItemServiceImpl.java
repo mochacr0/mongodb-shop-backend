@@ -56,12 +56,19 @@ public class ProductItemServiceImpl extends DataBaseService<ProductItemEntity> i
             request.setWeight(productWeight);
             validateItemRequest(request);
             ProductItemEntity newItem = mapper.toEntity(request);
-            List<VariationOptionEntity> newItemOptions = new ArrayList<>();
             String variationIndex = request.getVariationIndex().stream().map(String::valueOf).collect(Collectors.joining(","));
+            List<VariationOptionEntity> newItemOptions = new ArrayList<>();
             String variationDescription = "";
+            String imageUrl = product.getImageUrl();
             for (int i = 0; i < request.getVariationIndex().size(); i++) {
+                //get option
                 ProductVariationEntity newItemVariation = variations.get(i);
                 VariationOptionEntity newItemOption = newItemVariation.getOptions().get(request.getVariationIndex().get(i));
+                //get image url from option
+                if (StringUtils.isNotEmpty(newItemOption.getImageUrl())) {
+                    imageUrl = newItemOption.getImageUrl();
+                }
+                //add this option into item's option list
                 newItemOptions.add(newItemOption);
                 //format variation description
                 variationDescription = variationDescription.concat(String.format("%s:%s, ", newItemVariation.getName(), newItemOption.getName()));
@@ -72,6 +79,7 @@ public class ProductItemServiceImpl extends DataBaseService<ProductItemEntity> i
             newItem.setProduct(product);
             newItem.setVariationDescription(variationDescription);
             newItem.setVariationIndex(variationIndex);
+            newItem.setImageUrl(imageUrl);
             newItems.add(newItem);
         }
         return itemRepository.bulkCreate(newItems);
@@ -96,9 +104,20 @@ public class ProductItemServiceImpl extends DataBaseService<ProductItemEntity> i
             if (updateRequest == null) {
                 throw new InvalidDataException(PRODUCT_MISSING_ITEMS_ERROR_MESSAGE);
             }
+            String imageUrl = getImageUrl(variations, product, updateRequest);
             mapper.updateFields(updateItem, updateRequest);
+            updateItem.setImageUrl(imageUrl);
         }
         return itemRepository.bulkUpdate(product.getItems());
+    }
+
+    private String getImageUrl(List<ProductVariationEntity> variations, ProductEntity product, ProductItemRequest updateRequest) {
+        String imageUrl = product.getImageUrl();
+        VariationOptionEntity primaryOption = variations.get(0).getOptions().get(updateRequest.getVariationIndex().get(0));
+        if (StringUtils.isNotEmpty(primaryOption.getImageUrl())) {
+            imageUrl = primaryOption.getImageUrl();
+        }
+        return imageUrl;
     }
 
     @Override
@@ -157,5 +176,4 @@ public class ProductItemServiceImpl extends DataBaseService<ProductItemEntity> i
         log.info("Performing ProductItemService save");
         return super.save(productItem);
     }
-
 }
