@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.*;
+import com.example.springbootmongodb.common.data.mapper.ProductItemMapper;
 import com.example.springbootmongodb.common.data.mapper.ShopAddressMapper;
 import com.example.springbootmongodb.common.data.mapper.UserAddressMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
@@ -52,6 +53,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     private final ShipmentService shipmentService;
     private final CartService cartService;
     private final ThreadPoolTaskExecutor taskExecutor;
+    private final ProductItemMapper productItemMapper;
 
     @Override
     public MongoRepository<OrderEntity, String> getRepository() {
@@ -358,7 +360,8 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 return OrderItem
                         .builder()
                         .productItemId(productItem.getId())
-                        .productName(productItem.getProduct().getName())
+                        .productName(String.format("%s %s", productItem.getProduct().getName(), productItem.getVariationDescription()))
+                        .imageUrl(productItem.getImageUrl())
                         .price(productItem.getPrice())
                         .weight(productItem.getWeight())
                         .variationDescription(productItem.getVariationDescription())

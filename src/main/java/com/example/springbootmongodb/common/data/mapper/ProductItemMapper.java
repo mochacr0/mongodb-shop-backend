@@ -34,20 +34,11 @@ public class ProductItemMapper {
     }
 
     public ProductItem fromEntity(ProductItemEntity entity) {
-        String imageUrl = entity.getProduct().getImageUrl();
-//        List<String> variations = new ArrayList<>();
-//        for (VariationOptionEntity option : entity.getOptions()) {
-//            if (StringUtils.isNotEmpty(option.getImageUrl())) {
-//                imageUrl = option.getImageUrl();
-//            }
-//            variations.add(String.format("%s:%s", option.getVariation().getName(), option.getName()));
-//        }
-//        String variationDescription = String.join(", ", variations);
         return ProductItem
                 .builder()
                 .id(entity.getId())
                 .variationDescription(entity.getVariationDescription())
-                .imageUrl(imageUrl)
+                .imageUrl(entity.getImageUrl())
                 .quantity(entity.getQuantity())
                 .price(entity.getPrice())
                 .product(productMapper.fromEntityToSimplification(entity.getProduct()))
@@ -62,6 +53,7 @@ public class ProductItemMapper {
                 .builder()
                 .id(orderItem.getProductItemId())
                 .name(orderItem.getProductName())
+                .imageUrl(orderItem.getImageUrl())
                 .price(orderItem.getPrice())
                 .quantity(orderItem.getQuantity())
                 .totalPrice(orderItem.getPrice() * orderItem.getQuantity())
