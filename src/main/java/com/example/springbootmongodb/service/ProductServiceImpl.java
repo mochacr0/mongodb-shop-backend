@@ -83,7 +83,7 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
         createdProduct.setItems(createdItems);
         updatePriceRange(createdProduct);
         super.save(createdProduct);
-        mediaService.persistCreatingProductImagesAsync(request);
+//        mediaService.persistCreatingProductImagesAsync(request);
         return createdProduct;
     }
 
@@ -100,7 +100,6 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
     public ProductEntity updateAsync(String id, ProductRequest request) {
         log.info("Performing ProductService updateAsync");
         validateRequest(request);
-        long currentTime = System.currentTimeMillis();
         ProductEntity existingProduct = findById(id);
         if (!existingProduct.getName().equals(request.getName())) {
             Optional<ProductEntity> nameDuplicatedProductOpt = productRepository.findByName(request.getName());
@@ -122,22 +121,18 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
         if (category != null) {
             request.setCategoryId(category.getId());
         }
-        log.info("After validation: " + (System.currentTimeMillis() - currentTime));
         ProductEntity oldProduct;
         try {
             oldProduct = objectMapper.readValue(objectMapper.writeValueAsString(existingProduct), ProductEntity.class);
         } catch (JsonProcessingException e) {
             throw new InternalErrorException("Internal Server Error, please try again");
         }
-        log.info("After copy: " + (System.currentTimeMillis() - currentTime));
         mapper.updateFields(existingProduct, request);
         List<ProductVariationEntity> oldVariations = existingProduct.getVariations();
         BulkUpdateResult<ProductVariationEntity> updateVariationsResult = variationService.bulkUpdateAsync(request.getVariations(), existingProduct);
-        log.info("After variations bulk update: " + (System.currentTimeMillis() - currentTime));
         List<ProductVariationEntity> updatedVariations = updateVariationsResult.getData();
         //disable old variations
         disabledOldVariations(oldVariations, updatedVariations);
-        log.info("After variations bulk disable: " + (System.currentTimeMillis() - currentTime));
         List<ProductItemEntity> savedItems;
         if (updateVariationsResult.getIsModified().get()) {
             itemService.bulkDisableByProductId(existingProduct.getId());
@@ -147,13 +142,11 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
             //create new items
             savedItems = itemService.bulkUpdate(request.getItems(), updatedVariations, existingProduct.getWeight());
         }
-        log.info("After item update: " + (System.currentTimeMillis() - currentTime));
         existingProduct.setVariations(updatedVariations);
         existingProduct.setItems(savedItems);
         updatePriceRange(existingProduct);
         mediaService.persistUpdatingProductImagesAsync(request, oldProduct);
         super.save(existingProduct);
-        log.info("After product save: " + (System.currentTimeMillis() - currentTime));
         return existingProduct;
     }
 

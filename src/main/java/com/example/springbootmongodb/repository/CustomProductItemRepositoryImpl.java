@@ -47,7 +47,8 @@ public class CustomProductItemRepositoryImpl implements CustomProductItemReposit
                                     .set("price", request.getPrice())
                                     .set("weight", request.getWeight())
                                     .set("variationDescription", request.getVariationDescription())
-                                    .set("variationIndex", request.getVariationIndex()));
+                                    .set("variationIndex", request.getVariationIndex())
+                                    .set("imageUrl", request.getImageUrl()));
         }
         bulkUpdateOperation.execute();
         return mongoTemplate.find(Query
