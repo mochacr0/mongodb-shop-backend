@@ -2,10 +2,10 @@ package com.example.springbootmongodb.common.data.mapper;
 
 import com.example.springbootmongodb.common.data.ProductItem;
 import com.example.springbootmongodb.common.data.ProductItemRequest;
-import com.example.springbootmongodb.common.utils.DaoUtils;
+import com.example.springbootmongodb.common.data.payment.momo.MomoPayWithMethodItem;
+import com.example.springbootmongodb.model.OrderItem;
 import com.example.springbootmongodb.model.ProductItemEntity;
 import com.example.springbootmongodb.model.VariationOptionEntity;
-import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -53,6 +53,17 @@ public class ProductItemMapper {
 //                .options(DaoUtils.toListData(entity.getOptions(), optionMapper::fromEntity))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+
+    public MomoPayWithMethodItem fromOrderItemToMomoItem(OrderItem orderItem) {
+        return MomoPayWithMethodItem
+                .builder()
+                .id(orderItem.getProductItemId())
+                .name(orderItem.getProductName())
+                .price(orderItem.getPrice())
+                .quantity(orderItem.getQuantity())
+                .totalPrice(orderItem.getPrice() * orderItem.getQuantity())
                 .build();
     }
 

@@ -287,7 +287,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         log.info("Performing OrderService initiatePayment");
         OrderEntity order = findById(id);
         validateOrderState(order, OrderState.UNPAID);
-        Payment initiatedPayment = paymentService.initiatePayment(order.getId(), order.getPayment(), httpServletRequest);
+        Payment initiatedPayment = paymentService.initiatePayment(order, order.getPayment(), httpServletRequest);
         order.setPayment(initiatedPayment);
         order.setExpiredAt(LocalDateTime.now().plusHours(1).plusMinutes(40)); //Momo default transaction timeout: 1 hour and 40 minutes
         save(order);
