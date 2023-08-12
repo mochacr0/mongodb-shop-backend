@@ -1,13 +1,17 @@
 package com.example.springbootmongodb.controller;
 
+import com.example.springbootmongodb.common.data.Order;
 import com.example.springbootmongodb.common.data.OrderState;
 import com.example.springbootmongodb.common.data.TemporaryImage;
 import com.example.springbootmongodb.common.data.VariationOption;
+import com.example.springbootmongodb.common.data.mapper.OrderMapper;
 import com.example.springbootmongodb.common.data.mapper.ProductMapper;
 import com.example.springbootmongodb.common.data.mapper.VariationOptionMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentStatus;
 import com.example.springbootmongodb.common.data.payment.momo.*;
+import com.example.springbootmongodb.common.data.shipment.ShipmentState;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKAbstractResponse;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKUpdateStatusRequest;
 import com.example.springbootmongodb.config.GHTKCredentials;
 import com.example.springbootmongodb.config.MomoCredentials;
 import com.example.springbootmongodb.exception.InternalErrorException;
@@ -76,6 +80,7 @@ public class TestController {
     private final OrderService orderService;
     private final GHTKCredentials ghtkCredentials;
     private final HttpClient httpClient;
+    private final OrderMapper orderMapper;
 
     private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
@@ -344,5 +349,29 @@ public class TestController {
             throw new InternalErrorException("Serializing failed");
         }
         return requestBody;
+    }
+
+    @GetMapping("/completeOrder/{orderId}")
+    Order testCaseOrderCompleted(@PathVariable String orderId) {
+        OrderEntity order = orderService.findById(orderId);
+        GHTKUpdateStatusRequest request = GHTKUpdateStatusRequest
+                .builder()
+                .shipmentId(order.getShipment().getId())
+                .partnerId(order.getId())
+                .weight(0.2f)
+                .fee(45000)
+                .returnPartPackage(0)
+                .statusId(Integer.valueOf(ShipmentState.ACCEPTED.getCode()))
+                .build();
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.PICKING_UP.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.PICKED_UP.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.DELIVERING.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.DELIVERED.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        return orderMapper.fromEntity(orderService.confirmDelivered(order.getId()));
     }
 }

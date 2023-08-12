@@ -45,4 +45,15 @@ public class CustomOrderRepositoryImpl implements CustomOrderRepository {
         }
         rollbackOperations.execute();
     }
+
+    @Override
+    public void markCompletedOrders() {
+        Query queryStatement = Query.query(where("completedAt").lte(LocalDateTime.now()));
+        Update updateStatement = new Update();
+        updateStatement.push("statusHistory", OrderStatus.builder().state(OrderState.COMPLETED).createdAt(LocalDateTime.now()).build());
+        updateStatement.set("completedAt", null);
+        BulkOperations cancelExpiredOrdersOperation = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, OrderEntity.class);
+        cancelExpiredOrdersOperation.updateMulti(queryStatement, updateStatement);
+        cancelExpiredOrdersOperation.execute();
+    }
 }
