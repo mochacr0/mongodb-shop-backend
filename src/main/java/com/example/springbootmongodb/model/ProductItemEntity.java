@@ -26,6 +26,7 @@ public class ProductItemEntity extends AbstractEntity {
     private String variationDescription;
     private String variationIndex;
     private double weight;
+    private String imageUrl;
     @Field(name = "productId")
     @DocumentReference(lazy = true)
     @JsonBackReference
