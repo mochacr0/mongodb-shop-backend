@@ -8,10 +8,13 @@ public enum OrderState {
     WAITING_TO_ACCEPT("1", "waiting to accept"),
     PREPARING("2", "preparing"),
     READY_TO_SHIP("3", "ready to ship"),
-    DELIVERING("4", "delivering"),
-    IN_CANCEL("5", "waiting to cancel"),
-    CANCELED("6", "canceled"),
-    COMPLETED("7", "completed");
+    PICKED_UP("4", "picked up"),
+    DELIVERING("5", "delivering"),
+    FAILED_TO_DELIVER("6", "failed to deliver"),
+    TO_CONFIRM_RECEIVE("7", "waiting for user confirmation"),
+    IN_CANCEL("8", "waiting to cancel"),
+    CANCELED("9", "canceled"),
+    COMPLETED("10", "completed");
 
     private final String code;
 

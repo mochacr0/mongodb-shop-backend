@@ -108,6 +108,8 @@ public class ControllerConstants {
     public static final String ORDER_CANCEL_ORDER_ROUTE = ORDER_GET_ORDER_BY_ID_ROUTE + "/cancel";
     public static final String ORDER_ACCEPT_ORDER_ROUTE = ORDER_GET_ORDER_BY_ID_ROUTE + "/accept";
     public static final String ORDER_PLACE_SHIPMENT_ORDER_ROUTE = ORDER_GET_ORDER_BY_ID_ROUTE + "/shipment";
+    public static final String ORDER_UPDATE_SHIPMENT_STATUS_CALLBACK_ROUTE = ORDER_ROUTE + "/ghtk/callback";
+    public static final String ORDER_CONFIRM_ORDER_DELIVERED_ROUTE = ORDER_GET_ORDER_BY_ID_ROUTE + "/confirmDelivered";
 
     /**
      * Shipping constants

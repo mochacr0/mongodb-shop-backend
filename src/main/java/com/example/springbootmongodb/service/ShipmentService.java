@@ -3,6 +3,7 @@ package com.example.springbootmongodb.service;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKCalculateFeeResponse;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKLv4AddressesResponse;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKUpdateStatusRequest;
 import com.example.springbootmongodb.model.OrderEntity;
 import com.example.springbootmongodb.model.Shipment;
 
