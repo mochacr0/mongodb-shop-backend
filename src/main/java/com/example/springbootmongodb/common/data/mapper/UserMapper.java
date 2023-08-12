@@ -2,6 +2,7 @@ package com.example.springbootmongodb.common.data.mapper;
 
 import com.example.springbootmongodb.common.data.RegisterUserRequest;
 import com.example.springbootmongodb.common.data.User;
+import com.example.springbootmongodb.common.data.payment.momo.MomoUserInfo;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.security.Authority;
 import com.example.springbootmongodb.security.oauth2.OAuth2UserInfo;
@@ -47,6 +48,14 @@ public class UserMapper {
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .userCredentials(entity.getUserCredentials())
+                .build();
+    }
+
+    public MomoUserInfo fromEntityToMomoUserInfo(UserEntity entity) {
+        return MomoUserInfo
+                .builder()
+                .email(entity.getEmail())
+                .name(entity.getName())
                 .build();
     }
 }
