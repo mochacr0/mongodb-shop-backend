@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.model;
 
+import com.example.springbootmongodb.common.HasAddress;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -14,7 +15,7 @@ import static com.example.springbootmongodb.model.ModelConstants.USER_ADDRESS_CO
 @Setter
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class UserAddressEntity extends AbstractEntity {
+public class UserAddressEntity extends AbstractEntity implements HasAddress {
     @Field(targetType = FieldType.OBJECT_ID)
     private String userId;
     private String name;
@@ -24,7 +25,7 @@ public class UserAddressEntity extends AbstractEntity {
     private String ward;
     private String hamlet;
     private String street;
-    private String address;
+    private String addressDetails;
 
     @Override
     public String toString() {
@@ -48,7 +49,7 @@ public class UserAddressEntity extends AbstractEntity {
         builder.append(", street=");
         builder.append(this.getStreet());
         builder.append(", address=");
-        builder.append(this.getAddress());
+        builder.append(this.getAddressDetails());
         builder.append("]");
         return builder.toString();
     }

@@ -30,6 +30,11 @@ public class OrderEntity extends AbstractEntity {
     private List<OrderStatus> statusHistory = new ArrayList<>();
     private LocalDateTime expiredAt;
     private String note;
-    private Shipment shipment;
+    @DocumentReference
+    private ShipmentEntity shipment;
     private LocalDateTime completedAt;
+    @DocumentReference(lazy = true)
+    private OrderReturnEntity orderReturn;
+    @DocumentReference(lazy = true)
+    private OrderReturnEntity orderRefund;
 }

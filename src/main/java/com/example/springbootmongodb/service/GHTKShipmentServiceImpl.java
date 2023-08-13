@@ -1,9 +1,12 @@
 package com.example.springbootmongodb.service;
 
+import com.example.springbootmongodb.common.AbstractItem;
+import com.example.springbootmongodb.common.HasAddress;
 import com.example.springbootmongodb.common.data.ShopAddress;
 import com.example.springbootmongodb.common.data.UserAddress;
 import com.example.springbootmongodb.common.data.mapper.ShopAddressMapper;
 import com.example.springbootmongodb.common.data.payment.ShipmentStatus;
+import com.example.springbootmongodb.common.data.shipment.ShipmentAddress;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.common.data.shipment.ShipmentState;
 import com.example.springbootmongodb.common.data.shipment.ghtk.*;
@@ -13,15 +16,17 @@ import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.OrderEntity;
-import com.example.springbootmongodb.model.Shipment;
+import com.example.springbootmongodb.model.ShipmentEntity;
 import com.example.springbootmongodb.model.ShopAddressEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
+import com.example.springbootmongodb.repository.ShipmentRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -40,14 +45,20 @@ import static com.example.springbootmongodb.common.data.shipment.ghtk.GHTKEndpoi
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class GHTKShipmentServiceImpl extends AbstractService implements ShipmentService {
+public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> implements ShipmentService {
     private final HttpClient httpClient;
     private final GHTKCredentials ghtkCredentials;
     private final ObjectMapper objectMapper;
     private final ShopAddressService shopAddressService;
     private final UserAddressService userAddressService;
     private final ShopAddressMapper shopAddressMapper;
-    private final String TOKEN_HEADER_NAME = "Token";
+    private final ShipmentRepository shipmentRepository;
+    private static final String TOKEN_HEADER_NAME = "Token";
+
+    @Override
+    public MongoRepository<ShipmentEntity, String> getRepository() {
+        return shipmentRepository;
+    }
 
     @Override
     public GHTKLv4AddressesResponse getLv4Addresses(String address, String province, String district, String wardStreet) {
@@ -82,18 +93,6 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
         }
         return response;
     }
-
-//    private void validateGetLv4Addresses(String province, String district, String wardStreet) {
-//        if (StringUtils.isEmpty(province)) {
-//            throw new InvalidDataException("Province is required");
-//        }
-//        if (StringUtils.isEmpty(district)) {
-//            throw new InvalidDataException("District is required");
-//        }
-//        if (StringUtils.isEmpty(wardStreet)) {
-//            throw new InvalidDataException("Ward street is required");
-//        }
-//    }
 
     @Override
     public GHTKCalculateFeeResponse calculateDeliveryFee(String userAddressId, double weight, int quantity) {
@@ -148,10 +147,21 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
     }
 
     @Override
-    public Shipment place(OrderEntity order, ShipmentRequest request) {
+    public ShipmentEntity findById(String shipmentId) {
+        log.info("Performing ShipmentService findById");
+        if (StringUtils.isNotEmpty(shipmentId)) {
+            throw new InvalidDataException("Shipment Id should be specified");
+        }
+        return shipmentRepository.findById(shipmentId).orElseThrow(() -> new ItemNotFoundException(String.format("Shipment with id [%s] is not found", shipmentId)));
+    }
+
+    @Override
+    public ShipmentEntity place(ShipmentEntity shipment, String orderId, int subTotal, List<? extends AbstractItem> items, ShipmentRequest request) {
         log.info("Performing ShipmentService placeOrder");
-        //TODO: build GHTK place shipment order request body;
-        String requestBody = buildCreateShipmentRequestBody(order, request);
+        if (shipment == null) {
+            throw new UnprocessableContentException("Shipment has not been initiated");
+        }
+        String requestBody = buildCreateShipmentRequestBody(shipment, orderId, subTotal, items, request);
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(GHTKEndpoints.GHTK_CREATE_SHIPMENT_ROUTE))
@@ -181,26 +191,28 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
                 default -> throw new InternalErrorException(shipmentResponse.getMessage());
             }
         }
-        Shipment orderShipment = order.getShipment();
         GHTKOrderResponse orderResponse = shipmentResponse.getOrder();
-        orderShipment.setId(orderResponse.getLabel());
-        orderShipment.setDeliveryFee(orderResponse.getFee());
-        orderShipment.setEstimatedPickTime(orderResponse.getEstimatedPickTime());
-        orderShipment.setEstimatedDeliverTime(orderResponse.getEstimatedDeliverTime());
-        orderShipment.setEstimatedPickTime(orderResponse.getEstimatedPickTime());
-        orderShipment.setInsuranceFee(orderResponse.getInsuranceFee());
+        shipment.setId(orderResponse.getLabel());
+        shipment.setDeliveryFee(orderResponse.getFee());
+        shipment.setEstimatedPickTime(orderResponse.getEstimatedPickTime());
+        shipment.setEstimatedDeliverTime(orderResponse.getEstimatedDeliverTime());
+        shipment.setEstimatedPickTime(orderResponse.getEstimatedPickTime());
+        shipment.setInsuranceFee(orderResponse.getInsuranceFee());
         ShipmentStatus succededShipmentStatus = ShipmentStatus
                 .builder()
                 .description("Đang chờ tiếp nhận")
                 .state(ShipmentState.parseFromInt(shipmentResponse.getOrder().getStatusId()))
                 .build();
-        orderShipment.getStatusHistory().add(succededShipmentStatus);
-        return orderShipment;
+        shipment.getStatusHistory().add(succededShipmentStatus);
+        return save(shipment);
     }
 
     @Override
-    public Shipment cancel(String orderId, Shipment shipment) {
+    public ShipmentEntity cancel(ShipmentEntity shipment) {
         log.info("Performing ShipmentService cancel");
+        if (shipment == null) {
+            throw new UnprocessableContentException("Shipment is not found");
+        }
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(String.format(GHTK_CANCEL_SHIPMENT_ROUTE_PATTERN, shipment.getId())))
@@ -236,11 +248,37 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
                 .description("Đơn vị vận chuyển đang xử lý yêu cầu hủy đơn")
                 .build();
         shipment.getStatusHistory().add(cancelShipmentStatus);
-        return shipment;
+        return save(shipment);
     }
 
-    private void processAcceptedState(GHTKUpdateStatusRequest request) {
+    @Override
+    public ShipmentEntity initiate(String orderId, HasAddress pickUpAddress, HasAddress deliverAddress) {
+        log.info("Performing ShipmentService initiate");
+        return super.insert(ShipmentEntity
+                .builder()
+                .pickUpAddress(fromHasAddressToShipmentAddress(pickUpAddress))
+                .deliverAddress(fromHasAddressToShipmentAddress(deliverAddress))
+                .build());
+    }
 
+    @Override
+    public ShipmentEntity save(ShipmentEntity shipment) {
+        log.info("Performing ShipmentService save");
+        return super.save(shipment);
+    }
+
+    private ShipmentAddress fromHasAddressToShipmentAddress(HasAddress address) {
+        return ShipmentAddress
+                .builder()
+                .name(address.getName())
+                .phoneNumber(address.getPhoneNumber())
+                .province(address.getProvince())
+                .district(address.getDistrict())
+                .ward(address.getWard())
+                .hamlet(address.getHamlet())
+                .street(address.getStreet())
+                .addressDetails(address.getAddressDetails())
+                .build();
     }
 
     private String buildCalculateFeeUri(GHTKCalculateFeeRequest request) {
@@ -266,11 +304,11 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
                 .toUriString();
     }
 
-    private String buildCreateShipmentRequestBody(OrderEntity order, ShipmentRequest request) {
+    private String buildCreateShipmentRequestBody(ShipmentEntity shipment, String orderId, int subTotal, List<? extends AbstractItem> items, ShipmentRequest request) {
         GHTKCreateShipmentRequest createShipmentRequest = GHTKCreateShipmentRequest
                 .builder()
-                .order(buildOrderShipmentRequest(order, request))
-                .products(buildProductShipmentRequest(order))
+                .order(buildOrderShipmentRequest(shipment, orderId, subTotal, request))
+                .products(buildProductShipmentRequest(items))
                 .build();
         try {
             return objectMapper.writeValueAsString(createShipmentRequest);
@@ -279,38 +317,37 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
         }
     }
 
-    private GHTKOrderRequest buildOrderShipmentRequest(OrderEntity order , ShipmentRequest request) {
+    private GHTKOrderRequest buildOrderShipmentRequest(ShipmentEntity shipment, String orderId, int subTotal , ShipmentRequest request) {
         GHTKPickOption pickOption = GHTKPickOption.parseFromString(request.getPickOption());
         GHTKWorkShiftOption pickWorkShiftOption = GHTKWorkShiftOption.parseFromString(request.getPickWorkShipOption());
         GHTKWorkShiftOption deliverWorkShiftOption = GHTKWorkShiftOption.parseFromString(request.getDeliverWorkShipOption());
-        Shipment orderShipment = order.getShipment();
-        ShopAddress shopAddress = orderShipment.getShopAddress();
-        UserAddress userAddress = orderShipment.getUserAddress();
+        ShipmentAddress pickUpAddress = shipment.getPickUpAddress();
+        ShipmentAddress deliverAddress = shipment.getDeliverAddress();
         GHTKOrderRequest orderRequest = GHTKOrderRequest
                 .builder()
-                .orderId(order.getId())
+                .orderId(orderId)
                 .pickOption(pickOption.getValue())
                 .pickName("Shop")
-                .pickMoney((int)order.getSubTotal())
-                .pickAddress(shopAddress.getAddress())
-                .pickProvince(shopAddress.getProvince())
-                .pickDistrict(shopAddress.getDistrict())
-                .pickWard(shopAddress.getWard())
-                .pickStreet(shopAddress.getStreet())
-                .pickPhoneNumber(shopAddress.getPhoneNumber())
+                .pickMoney(subTotal)
+                .pickAddress(pickUpAddress.getAddressDetails())
+                .pickProvince(pickUpAddress.getProvince())
+                .pickDistrict(pickUpAddress.getDistrict())
+                .pickWard(pickUpAddress.getWard())
+                .pickStreet(pickUpAddress.getStreet())
+                .pickPhoneNumber(pickUpAddress.getPhoneNumber())
                 .note(request.getNote())
-                .name(userAddress.getName())
-                .address(userAddress.getAddress())
-                .province(userAddress.getProvince())
-                .district(userAddress.getDistrict())
-                .ward(userAddress.getWard())
-                .street(userAddress.getStreet())
-                .hamlet(StringUtils.isNotEmpty(userAddress.getHamlet()) ? userAddress.getHamlet() : "Khác")
-                .phoneNumber(userAddress.getPhoneNumber())
+                .name(deliverAddress.getName())
+                .address(deliverAddress.getAddressDetails())
+                .province(deliverAddress.getProvince())
+                .district(deliverAddress.getDistrict())
+                .ward(deliverAddress.getWard())
+                .street(deliverAddress.getStreet())
+                .hamlet(StringUtils.isNotEmpty(deliverAddress.getHamlet()) ? deliverAddress.getHamlet() : "Khác")
+                .phoneNumber(deliverAddress.getPhoneNumber())
                 .note(request.getNote())
                 .email("")
                 .isFreeShip(BooleanUtils.toInteger(request.isFreeShip()))
-                .value((int)order.getSubTotal())
+                .value(subTotal)
                 .pickWorkShift(pickWorkShiftOption.getCode())
                 .deliverWorkShift(deliverWorkShiftOption.getCode())
                 .transport(GHTKTransportMethod.ROAD.getValue())
@@ -323,7 +360,7 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
                 throw new UnprocessableContentException(exception.getMessage());
             }
             if (returnAddress != null) {
-                orderRequest.setReturnAddress(returnAddress.getAddress());
+                orderRequest.setReturnAddress(returnAddress.getAddressDetails());
                 orderRequest.setReturnName("Shop");
                 orderRequest.setReturnEmail("");
                 orderRequest.setReturnProvince(returnAddress.getProvince());
@@ -336,13 +373,12 @@ public class GHTKShipmentServiceImpl extends AbstractService implements Shipment
         return orderRequest;
     }
 
-    private List<GHTKProductRequest> buildProductShipmentRequest(OrderEntity order) {
-        return order.getOrderItems().stream().map(item -> GHTKProductRequest
+    private List<GHTKProductRequest> buildProductShipmentRequest(List<? extends AbstractItem> items) {
+        return items.stream().map(item -> GHTKProductRequest
                 .builder()
                 .name(item.getProductName())
                 .weight(item.getWeight())
                 .quantity(item.getQuantity())
                 .build()).toList();
     }
-
 }
