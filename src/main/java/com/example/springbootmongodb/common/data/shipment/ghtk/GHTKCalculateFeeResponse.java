@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.common.data.shipment.ghtk;
 
 import com.example.springbootmongodb.common.data.ShopAddress;
+import com.example.springbootmongodb.common.data.shipment.ShipmentAddress;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,4 +15,6 @@ public class GHTKCalculateFeeResponse extends GHTKAbstractResponse {
     private GHTKFeeResponse fee;
     @Schema(description = "Địa chỉ của shop được dùng để tính phí")
     private ShopAddress shopAddress;
+    private ShipmentAddress shopAddress2;
+    private ShipmentAddress userAddress;
 }

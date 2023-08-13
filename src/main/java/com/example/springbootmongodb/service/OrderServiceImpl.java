@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.*;
-import com.example.springbootmongodb.common.data.mapper.ProductItemMapper;
 import com.example.springbootmongodb.common.data.mapper.ShopAddressMapper;
 import com.example.springbootmongodb.common.data.mapper.UserAddressMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
@@ -35,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static com.example.springbootmongodb.config.OrderPolicies.*;
 
@@ -54,7 +52,6 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     private final ShipmentService shipmentService;
     private final CartService cartService;
     private final ThreadPoolTaskExecutor taskExecutor;
-    private final ProductItemMapper productItemMapper;
 
     @Override
     public MongoRepository<OrderEntity, String> getRepository() {
@@ -96,9 +93,9 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
-        if (!existingUserAddress.equals(request.getUserAddress())) {
-            throw new InvalidDataException("Your delivery address has been updated. Please verify your new address before proceeding with your order.");
-        }
+//        if (!existingUserAddress.equals(request.getUserAddress())) {
+//            throw new InvalidDataException("Your delivery address has been updated. Please verify your new address before proceeding with your order.");
+//        }
 
         //validate items
         if (CollectionUtils.isEmpty(request.getOrderItems())) {
@@ -107,33 +104,6 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         long subTotal = 0;
         List<String> productItemIds = new ArrayList<>();
         List<OrderItem> orderItems = processOrderItemRequests(request.getOrderItems());
-//        List<OrderItem> orderItems = new ArrayList<>();
-//        for (OrderItemRequest itemRequest : request.getOrderItems()) {
-//            if (itemRequest.getQuantity() <= 0) {
-//                throw new InvalidDataException("Order item quantity should be positive");
-//            }
-//            ProductItemEntity productItem;
-//            try {
-//                productItem = productItemService.findById(itemRequest.getProductItemId());
-//            } catch (ItemNotFoundException exception) {
-//                throw new UnprocessableContentException(exception.getMessage());
-//            }
-//            if (productItem.getQuantity() < itemRequest.getQuantity()) {
-//                throw new InvalidDataException(String.format("Product item with id [%s] is out of stock", productItem.getId()));
-//            }
-//            productItemIds.add(itemRequest.getProductItemId());
-//            OrderItem orderItem = OrderItem
-//                    .builder()
-//                    .productItemId(productItem.getId())
-//                    .productName(productItem.getProduct().getName())
-//                    .price(productItem.getPrice())
-//                    .weight(productItem.getWeight())
-//                    .variationDescription(productItem.getVariationDescription())
-//                    .quantity(itemRequest.getQuantity())
-//                    .build();
-//            orderItems.add(orderItem);
-//            subTotal += orderItem.getQuantity() * orderItem.getPrice();
-//        }
         for (OrderItem orderItem : orderItems) {
             productItemIds.add(orderItem.getProductItemId());
             subTotal += orderItem.getQuantity() * orderItem.getPrice();
@@ -157,15 +127,11 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             iniStatus.setState(OrderState.WAITING_TO_ACCEPT);
             expiredAt = now.plusDays(MAX_DAYS_WAITING_TO_PREPARING);
         }
-        Shipment shipment = Shipment
-                .builder()
-                .userAddress(existingUserAddress)
-                .shopAddress(existingShopAddress)
-                .build();
+        ShipmentEntity initiatedShipment = shipmentService.initiate(order.getId(), existingShopAddress, existingUserAddress);
         order.setStatusHistory(Collections.singletonList(iniStatus));
         order.setPayment(payment);
         order.setExpiredAt(expiredAt);
-        order.setShipment(shipment);
+        order.setShipment(initiatedShipment);
         order = super.insert(order);
         cartService.bulkRemoveItems(productItemIds);
         return order;
@@ -245,7 +211,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
 
     private OrderEntity processAdminCancelRequest(OrderEntity order) {
         OrderState currentOrderState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
-        Shipment orderShipment = order.getShipment();
+        ShipmentEntity orderShipment = order.getShipment();
         ShipmentState currentShipmentState = orderShipment.getStatusHistory().get(orderShipment.getStatusHistory().size() - 1).getState();
         switch (currentOrderState) {
             case UNPAID -> {}
@@ -257,15 +223,15 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 //cancel shipment
                 //FAILED_TO_PICK is already one of the ending states of shipment so don't need to cancel
                 if (currentShipmentState != ShipmentState.FAILED_TO_PICKUP) {
-                    Shipment canceledShipment = shipmentService.cancel(order.getId(), order.getShipment());
+                    ShipmentEntity canceledShipment = shipmentService.cancel(orderShipment);
                     order.setShipment(canceledShipment);
                 }
             }
             case IN_CANCEL -> {
                 refundInCancel(order);
                 //case IN_CANCEL and shipment order has been placed
-                if (StringUtils.isNotEmpty(order.getShipment().getId())) {
-                    Shipment canceledShipment = shipmentService.cancel(order.getId(), order.getShipment());
+                if (StringUtils.isNotEmpty(orderShipment.getId())) {
+                    ShipmentEntity canceledShipment = shipmentService.cancel(orderShipment);
                     order.setShipment(canceledShipment);
                 }
             }
@@ -338,7 +304,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         log.info("Performing OrderService placeShipmentOrder");
         OrderEntity order = findById(id);
         validateOrderState(order, OrderState.PREPARING);
-        Shipment placedShipment = shipmentService.place(order, shipmentRequest);
+        ShipmentEntity placedShipment = shipmentService.place(order.getShipment(), order.getId(), (int)order.getSubTotal(), order.getOrderItems(), shipmentRequest);
         order.setShipment(placedShipment);
         OrderStatus readyToShipStatus = OrderStatus
                 .builder()
@@ -368,7 +334,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             throw new UnprocessableContentException(exception.getMessage());
         }
         validateUnexpectedOrderStates(order, OrderState.WAITING_TO_ACCEPT, OrderState.PREPARING, OrderState.CANCELED, OrderState.COMPLETED);
-        Shipment orderShipment = order.getShipment();
+        ShipmentEntity orderShipment = order.getShipment();
         ShipmentState updateState = ShipmentState.parseFromInt(request.getStatusId());
         ShipmentStatus updatedStatus = ShipmentStatus
                 .builder()
@@ -462,8 +428,9 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
 
 
     private List<OrderItem> processOrderItemRequests(List<OrderItemRequest> orderItemRequests) {
-        List<CompletableFuture<OrderItem>> processFutures = orderItemRequests.stream().map(orderItemRequest -> {
-            return CompletableFuture.supplyAsync(() -> {
+        List<CompletableFuture<OrderItem>> processFutures = new ArrayList<>();
+        for (OrderItemRequest orderItemRequest : orderItemRequests) {
+            CompletableFuture<OrderItem> completableFuture = CompletableFuture.supplyAsync(() -> {
                 if (orderItemRequest.getQuantity() <= 0) {
                     throw new InvalidDataException("Order item quantity should be positive");
                 }
@@ -489,7 +456,8 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .quantity(orderItemRequest.getQuantity())
                         .build();
             }, taskExecutor);
-        }).collect(Collectors.toList());
+            processFutures.add(completableFuture);
+        }
         CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(processFutures.toArray(new CompletableFuture[processFutures.size()]));
         combinedFuture.join();
         return processFutures.stream().map(CompletableFuture::join).toList();

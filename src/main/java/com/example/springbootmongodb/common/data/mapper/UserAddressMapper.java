@@ -30,7 +30,7 @@ public class UserAddressMapper {
                 .ward(userAddress.getWard())
                 .hamlet(StringUtils.isEmpty(userAddress.getHamlet()) ? "Khác" : userAddress.getHamlet())
                 .street(userAddress.getStreet())
-                .address(userAddress.getAddress())
+                .addressDetails(userAddress.getAddressDetails())
                 .build();
     }
 
@@ -45,7 +45,7 @@ public class UserAddressMapper {
                 .hamlet(entity.getHamlet())
                 .ward(entity.getWard())
                 .street(entity.getStreet())
-                .address(entity.getAddress())
+                .addressDetails(entity.getAddressDetails())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -74,6 +74,6 @@ public class UserAddressMapper {
         entity.setWard(address.getWard());
         entity.setHamlet(address.getHamlet());
         entity.setStreet(address.getStreet());
-        entity.setAddress(address.getAddress());
+        entity.setAddressDetails(address.getAddressDetails());
     }
 }

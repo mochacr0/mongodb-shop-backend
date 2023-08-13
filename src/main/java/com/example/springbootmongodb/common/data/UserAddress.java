@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.common.data;
 
+import com.example.springbootmongodb.common.HasAddress;
 import com.example.springbootmongodb.common.validator.Required;
 import com.example.springbootmongodb.model.ToEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
@@ -15,7 +16,7 @@ import java.util.Objects;
 @Getter
 @Setter
 @SuperBuilder
-public class UserAddress extends AbstractData implements ToEntity<UserAddressEntity> {
+public class UserAddress extends AbstractData implements ToEntity<UserAddressEntity>, HasAddress {
     @Schema(description = "User Id", example = "647d222a59a4582894a95c10")
     private String userId;
     @Required(fieldName = "Receiver name")
@@ -38,7 +39,7 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
     private String street;
     @Required(fieldName = "Detail address")
     @Schema(description = "Địa chỉ chi tiết", example = "Số 1")
-    private String address;
+    private String addressDetails;
     @Schema(description = "Thôn/ấp/xóm/tổ", example = "Tổ 1")
     private String hamlet;
     private boolean isDefault;
@@ -71,7 +72,7 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
         builder.append(", street=");
         builder.append(this.getStreet());
         builder.append(", address=");
-        builder.append(this.getAddress());
+        builder.append(this.getAddressDetails());
         builder.append(", isDefault=");
         builder.append(this.isDefault());
         builder.append("]");
@@ -105,11 +106,11 @@ public class UserAddress extends AbstractData implements ToEntity<UserAddressEnt
                 && Objects.equals(getHamlet(), that.getHamlet())
                 && Objects.equals(getWard(), that.getWard())
                 && Objects.equals(getStreet(), that.getStreet())
-                && Objects.equals(getAddress(), that.getAddress());
+                && Objects.equals(getAddressDetails(), that.getAddressDetails());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getUserId(), getName(), getPhoneNumber(), getProvince(), getDistrict(), getWard(), getHamlet(), getStreet(), getAddress(), isDefault());
+        return Objects.hash(getId(), getUserId(), getName(), getPhoneNumber(), getProvince(), getDistrict(), getWard(), getHamlet(), getStreet(), getAddressDetails(), isDefault());
     }
 }

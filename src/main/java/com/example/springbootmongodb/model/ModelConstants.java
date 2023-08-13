@@ -78,4 +78,14 @@ public class ModelConstants {
      * Shop address constants
      */
     public static final String SHOP_ADDRESS_COLLECTION_NAME = "shopAddresses";
+
+    /**
+     * Return constants
+     */
+    public static final String ORDER_RETURN_COLLECTION_NAME = "returns";
+
+    /**
+     * Shipment constants
+     */
+    public static final String SHIPMENT_COLLECTION_NAME = "shipments";
 }

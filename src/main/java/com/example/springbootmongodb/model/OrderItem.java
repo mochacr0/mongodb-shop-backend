@@ -1,18 +1,19 @@
 package com.example.springbootmongodb.model;
 
-import lombok.*;
+import com.example.springbootmongodb.common.AbstractItem;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@Builder
-public class OrderItem {
-    private String productItemId;
-    private String productName;
-    private String imageUrl;
-    private double weight;
-    private String variationDescription;
-    private int quantity;
-    private long price;
+@SuperBuilder
+public class OrderItem extends AbstractItem {
+    @JsonProperty(value = "isRefundRequested")
+    private boolean isRefundRequested;
 }
