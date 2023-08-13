@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.common.data;
 
+import com.example.springbootmongodb.common.data.shipment.Shipment;
 import com.example.springbootmongodb.model.OrderItem;
 import com.example.springbootmongodb.model.OrderStatus;
 import com.example.springbootmongodb.model.Payment;
@@ -28,6 +29,6 @@ public class Order extends AbstractData {
     private List<OrderStatus> statusHistory = new ArrayList<>();
     private LocalDateTime expiredAt;
     private String note;
-    private ShipmentEntity shipment;
+    private Shipment shipment;
     private LocalDateTime completedAt;
 }

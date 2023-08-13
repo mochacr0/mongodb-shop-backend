@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OrderMapper {
     private final UserMapper userMapper;
-    private final UserAddressMapper addressMapper;
+    private final ShipmentMapper shipmentMapper;
+
     public Order fromEntity(OrderEntity entity) {
         return Order
                 .builder()
@@ -20,7 +21,7 @@ public class OrderMapper {
                 .payment(entity.getPayment())
                 .orderItems(entity.getOrderItems())
                 .statusHistory(entity.getStatusHistory())
-                .shipment(entity.getShipment())
+                .shipment(shipmentMapper.fromEntity(entity.getShipment()))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .expiredAt(entity.getExpiredAt())

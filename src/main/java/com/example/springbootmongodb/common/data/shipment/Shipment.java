@@ -1,25 +1,24 @@
-package com.example.springbootmongodb.model;
+package com.example.springbootmongodb.common.data.shipment;
 
+import com.example.springbootmongodb.common.data.AbstractData;
 import com.example.springbootmongodb.common.data.ShopAddress;
 import com.example.springbootmongodb.common.data.UserAddress;
 import com.example.springbootmongodb.common.data.payment.ShipmentStatus;
-import com.example.springbootmongodb.common.data.shipment.ShipmentAddress;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.springbootmongodb.model.ModelConstants.SHIPMENT_COLLECTION_NAME;
-
-@Document(SHIPMENT_COLLECTION_NAME)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @SuperBuilder
-public class ShipmentEntity extends AbstractEntity {
+public class Shipment extends AbstractData {
     private String note;
     private List<ShipmentStatus> statusHistory = new ArrayList<>();
     private String estimatedPickTime;
