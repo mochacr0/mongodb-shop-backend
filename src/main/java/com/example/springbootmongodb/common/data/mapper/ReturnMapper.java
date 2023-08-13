@@ -1,5 +1,9 @@
-package com.example.springbootmongodb.common.data;
+package com.example.springbootmongodb.common.data.mapper;
 
+import com.example.springbootmongodb.common.data.OrderReturn;
+import com.example.springbootmongodb.common.data.ReturnOffer;
+import com.example.springbootmongodb.common.data.ReturnReason;
+import com.example.springbootmongodb.common.data.ReturnRequest;
 import com.example.springbootmongodb.model.OrderReturnEntity;
 
 public class ReturnMapper {

@@ -161,6 +161,15 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
         if (shipment == null) {
             throw new UnprocessableContentException("Shipment has not been initiated");
         }
+        if (StringUtils.isNotEmpty(request.getReturnAddressId())) {
+            ShopAddressEntity returnAddress;
+            try {
+                returnAddress = shopAddressService.findById(request.getReturnAddressId());
+            } catch (ItemNotFoundException exception) {
+                throw new UnprocessableContentException(exception.getMessage());
+            }
+            shipment.setReturnAddress(fromHasAddressToShipmentAddress(returnAddress));
+        }
         String requestBody = buildCreateShipmentRequestBody(shipment, orderId, subTotal, items, request);
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
@@ -352,23 +361,16 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
                 .deliverWorkShift(deliverWorkShiftOption.getCode())
                 .transport(GHTKTransportMethod.ROAD.getValue())
                 .build();
-        if (request.getReturnAddressId() != null) {
-            ShopAddress returnAddress;
-            try {
-                returnAddress = shopAddressMapper.fromEntity(shopAddressService.findById(request.getReturnAddressId()));
-            } catch (ItemNotFoundException exception) {
-                throw new UnprocessableContentException(exception.getMessage());
-            }
-            if (returnAddress != null) {
-                orderRequest.setReturnAddress(returnAddress.getAddressDetails());
-                orderRequest.setReturnName("Shop");
-                orderRequest.setReturnEmail("");
-                orderRequest.setReturnProvince(returnAddress.getProvince());
-                orderRequest.setReturnDistrict(returnAddress.getDistrict());
-                orderRequest.setReturnWard(returnAddress.getWard());
-                orderRequest.setReturnStreet(returnAddress.getStreet());
-                orderRequest.setReturnPhoneNumber(returnAddress.getPhoneNumber());
-            }
+        ShipmentAddress returnAddress = shipment.getReturnAddress();
+        if (returnAddress != null) {
+            orderRequest.setReturnAddress(returnAddress.getAddressDetails());
+            orderRequest.setReturnName("Shop");
+            orderRequest.setReturnEmail("");
+            orderRequest.setReturnProvince(returnAddress.getProvince());
+            orderRequest.setReturnDistrict(returnAddress.getDistrict());
+            orderRequest.setReturnWard(returnAddress.getWard());
+            orderRequest.setReturnStreet(returnAddress.getStreet());
+            orderRequest.setReturnPhoneNumber(returnAddress.getPhoneNumber());
         }
         return orderRequest;
     }
