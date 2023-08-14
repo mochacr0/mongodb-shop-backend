@@ -1,10 +1,7 @@
 package com.example.springbootmongodb.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
@@ -34,10 +31,10 @@ public class OrderEntity extends AbstractEntity {
     @DocumentReference
     private ShipmentEntity shipment;
     private LocalDateTime completedAt;
-    @DocumentReference(lazy = true)
+    @DocumentReference
     @JsonBackReference
     private OrderReturnEntity orderReturn = null;
-    @DocumentReference(lazy = true)
+    @DocumentReference
     @JsonBackReference
     private OrderReturnEntity orderRefund = null;
 }

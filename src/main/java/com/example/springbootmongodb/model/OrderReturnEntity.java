@@ -31,6 +31,7 @@ public class OrderReturnEntity extends AbstractEntity {
     private ReturnOffer offer;
     @Builder.Default
     private List<ReturnItem> items = new ArrayList<>();
+    private ReturnStatus currentStatus;
     @Builder.Default
     private List<ReturnStatus> statusHistory = new ArrayList<>();
     private ShipmentEntity shipment;
