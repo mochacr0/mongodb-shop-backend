@@ -11,7 +11,6 @@ import com.example.springbootmongodb.model.OrderReturnEntity;
 import com.example.springbootmongodb.model.OrderStatus;
 import com.example.springbootmongodb.repository.ReturnRepository;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -68,6 +67,7 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
                 .createdAt(now)
                 .build();
         orderReturn.getStatusHistory().add(returnRequestedStatus);
+        orderReturn.setCurrentStatus(returnRequestedStatus);
         orderReturn = super.insert(orderReturn);
         order.setOrderReturn(orderReturn);
         OrderStatus orderReturnStatus = OrderStatus
@@ -81,12 +81,48 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
         return orderReturn;
     }
 
+    @Override
+    public void acceptExpiredReturnRequests() {
+        log.info("Performing ReturnService acceptExpiredReturnRequests");
+        returnRepository.acceptExpiredReturnRequests();
+    }
+
+    @Override
+    public OrderReturnEntity confirmProcessing(String returnId) {
+        log.info("Performing ReturnService confirmProcessing");
+        OrderReturnEntity orderReturn;
+        try {
+            orderReturn = findById(returnId);
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        validateReturnState(orderReturn, ReturnState.REQUESTED);
+        ReturnStatus returnProcessingStatus = ReturnStatus
+                .builder()
+                .state(ReturnState.PROCESSING)
+                .createdAt(LocalDateTime.now())
+                .build();
+        orderReturn.setCurrentStatus(returnProcessingStatus);
+        orderReturn.getStatusHistory().add(returnProcessingStatus);
+        orderReturn.setExpiredAt(null);
+        return save(orderReturn);
+    }
+
+    @Override
+    public OrderReturnEntity findById(String returnId) {
+        log.info("Performing ReturnService findById");
+        if (StringUtils.isEmpty(returnId)) {
+            throw new InvalidDataException("Return Id should be specified");
+        }
+        return returnRepository.findById(returnId).orElseThrow(() -> new ItemNotFoundException(String.format("Return with id [%s] is not found", returnId)));
+    }
+
     private void validateExistingReturn(OrderEntity order, ReturnOffer offer) {
-        if (offer == ReturnOffer.REFUND && StringUtils.isNotEmpty(order.getOrderRefund().getId())) {
+        if (offer == ReturnOffer.REFUND && order.getOrderRefund() != null) {
             throw new InvalidDataException("You have already requested a refund for this order");
 
         }
-        if (offer == ReturnOffer.RETURN_REFUND && StringUtils.isNotEmpty(order.getOrderReturn().getId())) {
+        if (offer == ReturnOffer.RETURN_REFUND && order.getOrderReturn() != null) {
             throw new InvalidDataException("You have already requested a return/refund for this order");
         }
     }
@@ -123,5 +159,12 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
             orderItem.setRefundRequested(true);
         }
         return returnItems;
+    }
+
+    private void validateReturnState(OrderReturnEntity orderReturn, ReturnState expectedState) {
+        ReturnState actualState = orderReturn.getCurrentStatus().getState();
+        if (actualState != expectedState) {
+            throw new InvalidDataException(String.format("Order return is %s", actualState.getMessage()));
+        }
     }
 }

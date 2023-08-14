@@ -133,4 +133,6 @@ public class ControllerConstants {
      */
     public static final String ORDER_RETURN_ROUTE = "/returns";
     public static final String ORDER_RETURN_REQUEST_RETURN_ROUTE = ORDER_RETURN_ROUTE;
+    public static final String ORDER_RETURN_GET_RETURN_BY_ID_ROUTE = ORDER_RETURN_ROUTE + "/{returnId}";
+    public static final String ORDER_RETURN_CONFIRM_RETURN_PROCESSING_ROUTE = ORDER_RETURN_GET_RETURN_BY_ID_ROUTE + "/process";
 }

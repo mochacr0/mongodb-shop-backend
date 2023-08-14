@@ -22,6 +22,7 @@ public class OrderReturn extends AbstractData {
     private String description;
     private String offer;
     private List<ReturnItem> items = new ArrayList<>();
+    private ReturnStatus currentStatus;
     private List<ReturnStatus> statusHistory = new ArrayList<>();
     private ShipmentEntity shipment;
     private LocalDateTime expiredAt;

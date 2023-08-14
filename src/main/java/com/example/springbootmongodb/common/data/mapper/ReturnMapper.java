@@ -22,6 +22,7 @@ public class ReturnMapper {
                 .description(entity.getDescription())
                 .offer(entity.getOffer().getValue())
                 .items(entity.getItems())
+                .currentStatus(entity.getCurrentStatus())
                 .statusHistory(entity.getStatusHistory())
                 .shipment(entity.getShipment())
                 .createdAt(entity.getCreatedAt())

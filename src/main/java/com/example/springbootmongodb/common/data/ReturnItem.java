@@ -4,6 +4,7 @@ import com.example.springbootmongodb.common.AbstractItem;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+@NoArgsConstructor
 @Getter
 @Setter
 @SuperBuilder

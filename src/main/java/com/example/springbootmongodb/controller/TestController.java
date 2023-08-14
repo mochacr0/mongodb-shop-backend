@@ -81,6 +81,7 @@ public class TestController {
     private final GHTKCredentials ghtkCredentials;
     private final HttpClient httpClient;
     private final OrderMapper orderMapper;
+    private final ReturnService returnService;
 
     private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
@@ -399,9 +400,14 @@ public class TestController {
     }
 
     @GetMapping("/18")
-    OrderReturnEntity testBuilder() {
+    OrderReturnEntity test18() {
         OrderReturnEntity orderReturn = OrderReturnEntity.builder().build();
         return orderReturn;
+    }
+
+    @GetMapping("/19")
+    void test19() {
+        returnService.acceptExpiredReturnRequests();
     }
 
 }
