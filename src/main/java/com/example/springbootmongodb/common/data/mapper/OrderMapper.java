@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 public class OrderMapper {
     private final UserMapper userMapper;
     private final ShipmentMapper shipmentMapper;
+    private final ReturnMapper returnMapper;
 
     public Order fromEntity(OrderEntity entity) {
         return Order
@@ -26,6 +27,8 @@ public class OrderMapper {
                 .updatedAt(entity.getUpdatedAt())
                 .expiredAt(entity.getExpiredAt())
                 .completedAt(entity.getCompletedAt())
+                .orderRefund(returnMapper.fromEntity(entity.getOrderRefund()))
+                .orderReturn(returnMapper.fromEntity(entity.getOrderReturn()))
                 .build();
     }
 }

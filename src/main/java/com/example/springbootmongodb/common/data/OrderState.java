@@ -14,7 +14,8 @@ public enum OrderState {
     TO_CONFIRM_RECEIVE("7", "waiting for user confirmation"),
     IN_CANCEL("8", "waiting to cancel"),
     CANCELED("9", "canceled"),
-    COMPLETED("10", "completed");
+    TO_RETURN("10", "in return/refund flow"),
+    COMPLETED("11", "completed");
 
     private final String code;
 

@@ -128,5 +128,9 @@ public class ControllerConstants {
     public static final String SHOP_ADDRESS_UPDATE_ADDRESS_BY_ID_ROUTE = SHOP_ADDRESS_GET_ADDRESS_BY_ID_ROUTE;
     public static final String SHOP_ADDRESS_DELETE_ADDRESS_BY_ID_ROUTE = SHOP_ADDRESS_GET_ADDRESS_BY_ID_ROUTE;
 
-
+    /**
+     * Order returns constants
+     */
+    public static final String ORDER_RETURN_ROUTE = "/returns";
+    public static final String ORDER_RETURN_REQUEST_RETURN_ROUTE = ORDER_RETURN_ROUTE;
 }

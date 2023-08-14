@@ -7,9 +7,9 @@ import lombok.Getter;
 @Getter
 public enum ReturnReason {
 
-    MISSING_ITEMS("missing items"),
-    DAMAGED_ITEMS("damaged items"),
-    WRONG_ITEMS("wrong items");
+    MISSING_ITEMS("missing"),
+    DAMAGED_ITEMS("damaged"),
+    WRONG_ITEMS("wrong");
 
     private final String value;
 
