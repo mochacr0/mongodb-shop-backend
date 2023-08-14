@@ -374,4 +374,34 @@ public class TestController {
         orderService.processShipmentStatusUpdateRequest(request);
         return orderMapper.fromEntity(orderService.confirmDelivered(order.getId()));
     }
+
+    @GetMapping("/waitConfirm/{orderId}")
+    Order waitConfirm(@PathVariable String orderId) {
+        OrderEntity order = orderService.findById(orderId);
+        GHTKUpdateStatusRequest request = GHTKUpdateStatusRequest
+                .builder()
+                .shipmentId(order.getShipment().getId())
+                .partnerId(order.getId())
+                .weight(0.2f)
+                .fee(45000)
+                .returnPartPackage(0)
+                .statusId(Integer.valueOf(ShipmentState.ACCEPTED.getCode()))
+                .build();
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.PICKING_UP.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.PICKED_UP.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.DELIVERING.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.DELIVERED.getCode()));
+        return orderMapper.fromEntity(orderService.processShipmentStatusUpdateRequest(request));
+    }
+
+    @GetMapping("/18")
+    OrderReturnEntity testBuilder() {
+        OrderReturnEntity orderReturn = OrderReturnEntity.builder().build();
+        return orderReturn;
+    }
+
 }
