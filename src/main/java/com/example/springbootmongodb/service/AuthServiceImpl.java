@@ -36,6 +36,8 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenFactory jwtTokenFactory;
 
+    public static final String CLIENT_HOST_URL = "http://localhost:3000";
+
     @Override
 //    @Transactional
     public void activateEmail(String activationToken) {
@@ -60,7 +62,7 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
     }
 
     @Override
-    public void resendActivationTokenByEmail(String email, HttpServletRequest request) {
+    public void resendActivationTokenByEmail(String email) {
         log.info("Performing service resendActivationTokenByEmail");
         if (StringUtils.isEmpty(email)) {
             throw new IncorrectParameterException("Email cannot be empty");
@@ -78,7 +80,7 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
         userCredentials.setActivationTokenExpirationMillis(System.currentTimeMillis() + securitySettings.getActivationTokenExpirationMillis());
         userService.save(user);
 //        String activationLink = String.format(this.ACTIVATION_URL_PATTERN, UrlUtils.getBaseUrl(request), activationToken);
-        String activationLink = String.format(this.ACTIVATION_URL_PATTERN, "http://localhost:3000", activationToken);
+        String activationLink = String.format(this.ACTIVATION_URL_PATTERN, CLIENT_HOST_URL, activationToken);
         mailService.sendActivationMail(email, activationLink);
     }
 
@@ -110,7 +112,7 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
     }
 
     @Override
-    public void requestPasswordResetEmail(String email, HttpServletRequest request) {
+    public void requestPasswordResetEmail(String email) {
         log.info("Performing requestPasswordResetEmail service");
         if (StringUtils.isBlank(email)) {
             throw new InvalidDataException("Email cannot be empty");
@@ -127,7 +129,8 @@ public class AuthServiceImpl extends AbstractService implements AuthService {
         userCredentials.setPasswordResetToken(passwordResetToken);
         userCredentials.setPasswordResetTokenExpirationMillis(System.currentTimeMillis() + securitySettings.getPasswordResetTokenExpirationMillis());
         userService.save(user);
-        String passwordResetLink = String.format(this.PASSWORD_RESET_PATTERN, UrlUtils.getBaseUrl(request), passwordResetToken);
+//        String passwordResetLink = String.format(this.PASSWORD_RESET_PATTERN, UrlUtils.getBaseUrl(request), passwordResetToken);
+        String passwordResetLink = String.format(this.PASSWORD_RESET_PATTERN, CLIENT_HOST_URL, passwordResetToken);
         mailService.sendPasswordResetMail(email, passwordResetLink);
     }
 
