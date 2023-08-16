@@ -6,7 +6,6 @@ import lombok.Getter;
 public enum ReturnState {
     REQUESTED("1", "requested"),
     JUDGING("2","processing"),
-    ACCEPTED("3","accepted"),
     REFUND_PROCESSING("4", "processing to transfer money"),
     USER_PREPARING("5","preparing"),
     READY_TO_SHIP("6","ready to return"),

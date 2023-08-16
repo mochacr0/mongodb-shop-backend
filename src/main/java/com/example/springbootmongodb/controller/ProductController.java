@@ -7,9 +7,11 @@ import com.example.springbootmongodb.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,7 +34,8 @@ public class ProductController {
 
     @GetMapping(value = PRODUCT_GET_PRODUCT_BY_ID_ROUTE)
     @Operation(summary = "Tìm sản phẩm theo Id")
-    Product getProductById (@PathVariable(name = "productId") String productId) {
+    Product getProductById (@Parameter(example = "64d5deb47602e726bcebc91a")
+            @PathVariable(name = "productId") String productId) {
         return mapper.fromEntity(productService.findById(productId));
     }
 

@@ -82,6 +82,7 @@ public class TestController {
     private final HttpClient httpClient;
     private final OrderMapper orderMapper;
     private final ReturnService returnService;
+    private final MailService mailService;
 
     private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
@@ -410,4 +411,13 @@ public class TestController {
         returnService.acceptExpiredReturnRequests();
     }
 
+    @GetMapping("/20")
+    void test20() {
+        mailService.sendRefundProcessingMail("nthai2001cr@gmail.com");
+    }
+
+    @GetMapping("/21")
+    void test21() {
+        mailService.sendRefundConfirmationEmail("nthai2001cr@gmail.com", 50000);
+    }
 }
