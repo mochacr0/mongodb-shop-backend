@@ -142,6 +142,7 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
         payment.setStatus(PaymentStatus.INITIATED);
         payment.setDescription(response.getMessage());
         payment.setPayUrl(response.getShortLink());
+        payment.setRefundableAmount(payment.getAmount());
         log.info("-----------PAY URL: " + payment.getPayUrl());
         return payment;
     }
@@ -193,11 +194,14 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
 
 
     @Override
-    public Payment refund(Payment payment) {
+    public Payment refund(Payment payment, long requestedAmount) {
         log.info("Performing PaymentService refund");
         //TODO: validate signature
-        validatePaymentStatus(payment.getStatus(), PaymentStatus.PAID);
+        validatePaymentStatus(payment.getStatus(), PaymentStatus.PAID, PaymentStatus.REFUNDED);
         validatePaymentMethod(payment.getMethod(), PaymentMethod.MOMO);
+        if (payment.getRefundableAmount() < requestedAmount) {
+            throw new InvalidDataException("Amount to refund is higher than transferred amount");
+        }
         String requestBody = buildRefundRequestBody(payment);
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
@@ -225,6 +229,7 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
         }
         payment.setStatus(PaymentStatus.REFUNDED);
         payment.setDescription(response.getMessage());
+        payment.setRefundableAmount(payment.getRefundableAmount() - requestedAmount);
         return payment;
     }
 

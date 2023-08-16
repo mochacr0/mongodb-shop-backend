@@ -2,13 +2,10 @@ package com.example.springbootmongodb.repository;
 
 import com.example.springbootmongodb.common.data.ReturnState;
 import com.example.springbootmongodb.common.data.ReturnStatus;
-import com.example.springbootmongodb.model.OrderEntity;
 import com.example.springbootmongodb.model.OrderReturnEntity;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.mongodb.MongoExpression;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -26,7 +23,7 @@ public class CustomReturnRepositoryImpl implements CustomReturnRepository{
         Update updateStatement = new Update();
         ReturnStatus processingStatus = ReturnStatus
                 .builder()
-                .state(ReturnState.PROCESSING)
+                .state(ReturnState.JUDGING)
                 .createdAt(LocalDateTime.now())
                 .build();
         updateStatement.push("statusHistory", processingStatus);
@@ -35,5 +32,15 @@ public class CustomReturnRepositoryImpl implements CustomReturnRepository{
         BulkOperations acceptReturnRequestsOperation = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, OrderReturnEntity.class);
         acceptReturnRequestsOperation.updateMulti(queryStatement, updateStatement);
         acceptReturnRequestsOperation.execute();
+    }
+
+    @Override
+    public void confirmExpiredReturnsProcessing() {
+
+    }
+
+    @Override
+    public void completeRefundedReturns() {
+
     }
 }

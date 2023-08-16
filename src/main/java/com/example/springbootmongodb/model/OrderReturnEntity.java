@@ -29,6 +29,7 @@ public class OrderReturnEntity extends AbstractEntity {
     private ReturnReason reason;
     private String description;
     private ReturnOffer offer;
+    private long refundAmount;
     @Builder.Default
     private List<ReturnItem> items = new ArrayList<>();
     private ReturnStatus currentStatus;

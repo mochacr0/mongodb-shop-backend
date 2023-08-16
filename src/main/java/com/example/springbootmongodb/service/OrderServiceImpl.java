@@ -113,12 +113,14 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .user(user)
 //                .userAddress(existingUserAddress)
                 .subTotal(subTotal)
+                .deliveryFee(request.getDeliveryFee())
+                .total(subTotal + request.getDeliveryFee())
                 .orderItems(orderItems)
                 .build();
         LocalDateTime expiredAt = null;
         LocalDateTime now = LocalDateTime.now();
         OrderStatus iniStatus = OrderStatus.builder().createdAt(now).build();
-        Payment payment = paymentService.create(request.getPaymentMethod(), subTotal);
+        Payment payment = paymentService.create(request.getPaymentMethod(), order.getTotal());
         if (payment.getMethod() == PaymentMethod.MOMO) {
             iniStatus.setState(OrderState.UNPAID);
             expiredAt = now.plusMinutes(MAX_MINUTES_WAITING_TO_INITIATE_PAYMENT);
@@ -127,12 +129,13 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             iniStatus.setState(OrderState.WAITING_TO_ACCEPT);
             expiredAt = now.plusDays(MAX_DAYS_WAITING_TO_PREPARING);
         }
-        ShipmentEntity initiatedShipment = shipmentService.initiate(order.getId(), existingShopAddress, existingUserAddress);
         order.setStatusHistory(Collections.singletonList(iniStatus));
         order.setPayment(payment);
         order.setExpiredAt(expiredAt);
-        order.setShipment(initiatedShipment);
         order = super.insert(order);
+        ShipmentEntity initiatedShipment = shipmentService.initiate(order.getId(), existingShopAddress, existingUserAddress);
+        order.setShipment(initiatedShipment);
+        order = save(order);
         cartService.bulkRemoveItems(productItemIds);
         return order;
     }
@@ -189,7 +192,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 orderRepository.rollbackOrderItemQuantities(order.getOrderItems());
                 order.getStatusHistory().add(canceledStatus);
                 if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
-                    Payment refundedPayment = paymentService.refund(order.getPayment());
+                    Payment refundedPayment = paymentService.refund(order.getPayment(), order.getPayment().getAmount());
                     order.setPayment(refundedPayment);
                 }
                 order.setExpiredAt(null);
@@ -255,7 +258,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
 
     private void refundInCancel(OrderEntity order) {
         if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
-            Payment refundedPayment = paymentService.refund(order.getPayment());
+            Payment refundedPayment = paymentService.refund(order.getPayment(), order.getPayment().getAmount());
             order.setPayment(refundedPayment);
             order.setExpiredAt(null);
         }
@@ -408,7 +411,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
 
     @Override
     public OrderEntity confirmDelivered(String id) {
-        log.info("Performing UserService confirm");
+        log.info("Performing OrderService confirm");
         OrderEntity order;
         try {
             order = findById(id);
@@ -423,6 +426,25 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(completedStatus);
+        return save(order);
+    }
+
+    @Override
+    public OrderEntity refundInReturn(String id, long requestedAmount) {
+        log.info("Performing OrderService confirm");
+        OrderEntity order;
+        try {
+            order = findById(id);
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        validateOrderState(order, OrderState.TO_RETURN);
+        Payment orderPayment = order.getPayment();
+        if (orderPayment.getRefundableAmount() < requestedAmount) {
+            throw new InvalidDataException("Amount to refund is higher than transferred amount");
+        }
+        Payment refundedPayment = paymentService.refund(order.getPayment(), requestedAmount);
+        order.setPayment(refundedPayment);
         return save(order);
     }
 
