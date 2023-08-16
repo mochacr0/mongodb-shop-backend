@@ -32,7 +32,8 @@ public class ProductController {
 
     @GetMapping(value = PRODUCT_GET_PRODUCT_BY_ID_ROUTE)
     @Operation(summary = "Tìm sản phẩm theo Id")
-    Product getProductById (@PathVariable(name = "productId") String productId) {
+    Product getProductById (@Parameter(example = "64d5deb47602e726bcebc91a")
+            @PathVariable(name = "productId") String productId) {
         return mapper.fromEntity(productService.findById(productId));
     }
 
