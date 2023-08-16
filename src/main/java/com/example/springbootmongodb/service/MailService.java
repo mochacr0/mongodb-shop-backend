@@ -6,4 +6,6 @@ public interface MailService {
     public void sendMailAsync(String mailFrom, String mailTo, String subject, String message);
     public void sendActivationMail(String mailTo, String activateLink);
     public void sendPasswordResetMail(String mailTo, String passwordResetLink);
+    public void sendRefundProcessingMail(String mailTo);
+    public void sendRefundConfirmationEmail(String mailTo, long refundedAmount);
 }

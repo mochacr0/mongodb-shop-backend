@@ -6,6 +6,7 @@ import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKPickOption;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKWorkShiftOption;
+import com.example.springbootmongodb.config.ReturnPolicies;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
@@ -18,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.regions.servicemetadata.EmailServiceMetadata;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -33,6 +35,7 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
     private final ReturnMapper returnMapper;
     private final OrderService orderService;
     private final ShipmentService shipmentService;
+    private final MailService mailService;
 
     @Override
     public MongoRepository<OrderReturnEntity, String> getRepository() {
@@ -145,9 +148,10 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
                         .state(ReturnState.REFUND_PROCESSING)
                         .createdAt(now).build();
                 orderReturn.getStatusHistory().add(refundProcessingStatus);
+                orderReturn.setExpiredAt(now.plusDays(MAX_DAYS_TRANSFERRING_MONEY));
                 orderReturn = save(orderReturn);
                 //TODO: send notify email
-
+                mailService.sendRefundProcessingMail(orderReturn.getOrder().getUser().getEmail());
                 return orderReturn;
             }
 
@@ -163,7 +167,7 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
                 orderReturn.setExpiredAt(now.plusDays(MAX_DAYS_WAITING_FOR_USER_CONFIRMATION));
                 orderReturn = save(orderReturn);
                 //TODO: send notification email
-
+                mailService.sendRefundConfirmationEmail(orderReturn.getOrder().getUser().getEmail(), orderReturn.getRefundAmount());
                 return orderReturn;
             }
         }
