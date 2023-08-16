@@ -3,7 +3,7 @@ package com.example.springbootmongodb.controller;
 import com.example.springbootmongodb.common.data.OrderReturn;
 import com.example.springbootmongodb.common.data.ReturnRequest;
 import com.example.springbootmongodb.common.data.mapper.ReturnMapper;
-import com.example.springbootmongodb.common.validator.Required;
+import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.service.ReturnService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +35,19 @@ public class ReturnController {
     @PostMapping(value = ORDER_RETURN_CONFIRM_RETURN_PROCESSING_ROUTE)
     @Operation(summary = "Xác nhận đơn trả hàng/hoàn tiền đang được xử lý")
     OrderReturn confirmProcessing(@PathVariable String returnId) {
-        return returnMapper.fromEntity(returnService.confirmProcessing(returnId));
+        return returnMapper.fromEntity(returnService.confirmJudging(returnId));
+    }
+
+    @PostMapping(value = ORDER_RETURN_ACCEPT_RETURN_REQUEST_ROUTE)
+    @Operation(summary = "Chủ shop chấp nhận đơn trả hàng/hoàn tiền")
+    OrderReturn accept(@PathVariable String returnId) {
+        return returnMapper.fromEntity(returnService.accept(returnId));
+    }
+
+    @PostMapping(value = ORDER_RETURN_PLACE_SHIPMENT_ORDER_ROUTE)
+    @Operation(summary = "User đặt đơn vận chuyển")
+    OrderReturn placeShipmentOrder(@PathVariable String returnId,
+                                   @RequestBody ShipmentRequest shipmentRequest) {
+        return returnMapper.fromEntity(returnService.placeShipmentOrder(returnId, shipmentRequest));
     }
 }

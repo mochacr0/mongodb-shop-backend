@@ -25,8 +25,8 @@ public class ReturnRequest {
     @Schema(description = "Để xuất cách giải quyết (return refund, refund)", example = "return refund")
     @Required(fieldName = "Return offer")
     private String offer;
-    @Schema(description = "Số tiền hoàn trả", example = "10000")
-    @Required(fieldName = "Return offer")
-    private long refundAmount;
+//    @Schema(description = "Số tiền hoàn trả", example = "10000")
+//    @Required(fieldName = "Return offer")
+//    private long refundAmount;
     private List<ReturnItemRequest> items = new ArrayList<>();
 }

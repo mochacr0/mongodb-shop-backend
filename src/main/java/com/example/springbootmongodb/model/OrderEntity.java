@@ -23,6 +23,8 @@ public class OrderEntity extends AbstractEntity {
     private UserEntity user;
     private UserAddressEntity userAddress;
     private long subTotal;
+    private long total;
+    private long deliveryFee;
     private Payment payment;
     private List<OrderItem> orderItems = new ArrayList<>();
     private List<OrderStatus> statusHistory = new ArrayList<>();

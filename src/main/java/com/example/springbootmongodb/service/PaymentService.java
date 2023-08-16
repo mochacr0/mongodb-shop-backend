@@ -12,6 +12,6 @@ public interface PaymentService {
     Payment create(String paymentMethod, long amount);
     Payment initiatePayment(OrderEntity order, Payment payment, HttpServletRequest httpServletRequest);
     void processIpnRequest(MomoIpnCallbackResponse request, HttpServletRequest httpServletRequest);
-    Payment refund(Payment payment);
+    Payment refund(Payment payment, long requestedAmount);
     Payment queryPaymentStatus(String orderId, Payment payment);
 }

@@ -19,4 +19,5 @@ public class OrderRequest {
     private String note;
     private ShopAddress shopAddress;
     private UserAddress userAddress;
+    private long deliveryFee;
 }

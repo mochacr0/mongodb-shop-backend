@@ -68,11 +68,10 @@ public abstract class AbstractService {
         }
     }
 
-    protected void validatePaymentStatus(PaymentStatus actualStatus, PaymentStatus expectedStatus) {
-        if (actualStatus != expectedStatus) {
-            throw new InvalidDataException(String.format("Payment is %s. It must be %s to perform this action",
-                    actualStatus.name().toLowerCase(),
-                    expectedStatus.name().toLowerCase()));
+    protected void validatePaymentStatus(PaymentStatus actualStatus, PaymentStatus... expectedStatuses) {
+        if (Arrays.stream(expectedStatuses).noneMatch(expectedState -> expectedState == actualStatus)) {
+            throw new InvalidDataException(String.format("Payment is %s",
+                    actualStatus.name().toLowerCase()));
         }
     }
 }

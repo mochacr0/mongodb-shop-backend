@@ -4,7 +4,6 @@ import com.example.springbootmongodb.common.data.shipment.Shipment;
 import com.example.springbootmongodb.model.OrderItem;
 import com.example.springbootmongodb.model.OrderStatus;
 import com.example.springbootmongodb.model.Payment;
-import com.example.springbootmongodb.model.ShipmentEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,7 +22,8 @@ import java.util.List;
 public class Order extends AbstractData {
     private User user;
     private long subTotal;
-    private long totalAmount;
+    private long deliveryFee;
+    private long total;
     private Payment payment;
     private List<OrderItem> orderItems = new ArrayList<>();
     private List<OrderStatus> statusHistory = new ArrayList<>();
