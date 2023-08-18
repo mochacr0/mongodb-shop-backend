@@ -6,6 +6,7 @@ import com.example.springbootmongodb.common.data.mapper.UserAddressMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.PaymentStatus;
 import com.example.springbootmongodb.common.data.payment.ShipmentStatus;
+import com.example.springbootmongodb.common.data.shipment.OrderType;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.common.data.shipment.ShipmentState;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKPickOption;
@@ -133,7 +134,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         order.setPayment(payment);
         order.setExpiredAt(expiredAt);
         order = super.insert(order);
-        ShipmentEntity initiatedShipment = shipmentService.initiate(order.getId(), existingShopAddress, existingUserAddress);
+        ShipmentEntity initiatedShipment = shipmentService.initiate(order.getId(), existingShopAddress, existingUserAddress, OrderType.ORDER);
         order.setShipment(initiatedShipment);
         order = save(order);
         cartService.bulkRemoveItems(productItemIds);
@@ -307,7 +308,15 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         log.info("Performing OrderService placeShipmentOrder");
         OrderEntity order = findById(id);
         validateOrderState(order, OrderState.PREPARING);
-        ShipmentEntity placedShipment = shipmentService.place(order.getShipment(), order.getId(), (int)order.getSubTotal(), order.getOrderItems(), shipmentRequest);
+        int subTotal = (int)order.getSubTotal();
+        int cod = subTotal;
+        boolean isFreeShip = false;
+        PaymentMethod paymentMethod = order.getPayment().getMethod();
+        if (paymentMethod == PaymentMethod.MOMO) {
+            cod = 0;
+            isFreeShip = true;
+        }
+        ShipmentEntity placedShipment = shipmentService.place(order.getShipment(), order.getId(), subTotal, cod, isFreeShip, order.getOrderItems(), shipmentRequest);
         order.setShipment(placedShipment);
         OrderStatus readyToShipStatus = OrderStatus
                 .builder()

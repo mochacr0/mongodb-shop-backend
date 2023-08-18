@@ -1,9 +1,8 @@
 package com.example.springbootmongodb.model;
 
-import com.example.springbootmongodb.common.data.ShopAddress;
-import com.example.springbootmongodb.common.data.UserAddress;
 import com.example.springbootmongodb.common.data.payment.ShipmentStatus;
 import com.example.springbootmongodb.common.data.shipment.ShipmentAddress;
+import com.example.springbootmongodb.common.data.shipment.OrderType;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -29,4 +28,5 @@ public class ShipmentEntity extends AbstractEntity {
     private ShipmentAddress pickUpAddress;
     private ShipmentAddress deliverAddress;
     private ShipmentAddress returnAddress;
+    private OrderType orderType;
 }

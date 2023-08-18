@@ -32,11 +32,11 @@ public class ReturnController {
         return returnMapper.fromEntity(returnService.findById(returnId));
     }
 
-    @PostMapping(value = ORDER_RETURN_CONFIRM_RETURN_PROCESSING_ROUTE)
-    @Operation(summary = "Xác nhận đơn trả hàng/hoàn tiền đang được xử lý")
-    OrderReturn confirmProcessing(@PathVariable String returnId) {
-        return returnMapper.fromEntity(returnService.confirmJudging(returnId));
-    }
+//    @PostMapping(value = ORDER_RETURN_CONFIRM_RETURN_PROCESSING_ROUTE)
+//    @Operation(summary = "Xác nhận đơn trả hàng/hoàn tiền đang được xử lý")
+//    OrderReturn confirmProcessing(@PathVariable String returnId) {
+//        return returnMapper.fromEntity(returnService.confirmJudging(returnId));
+//    }
 
     @PostMapping(value = ORDER_RETURN_ACCEPT_RETURN_REQUEST_ROUTE)
     @Operation(summary = "Chủ shop chấp nhận đơn trả hàng/hoàn tiền")

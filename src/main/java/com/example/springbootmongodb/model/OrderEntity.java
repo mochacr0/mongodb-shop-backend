@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.model;
 
+import com.example.springbootmongodb.common.data.Packable;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -18,7 +19,7 @@ import static com.example.springbootmongodb.model.ModelConstants.ORDER_COLLECTIO
 @Getter
 @Setter
 @SuperBuilder
-public class OrderEntity extends AbstractEntity {
+public class OrderEntity extends AbstractEntity implements Packable {
     @DocumentReference
     private UserEntity user;
     private UserAddressEntity userAddress;

@@ -25,6 +25,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
+import javax.naming.ServiceUnavailableException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -52,6 +53,7 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
     private OrderService orderService;
     public static final String UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE = "Payment method is not supported";
     private static final String DEFAULT_EXTRA_DATA = "Thanh toán qua ví Momo";
+    public static final String UNAVAILABLE_SERVICE_ERROR_MESSAGE = "No server is available to handle this request";
 
     @Override
     public Payment create(String paymentMethod, long amount) {
@@ -67,47 +69,6 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
                 .status(PaymentStatus.NEW)
                 .build();
     }
-
-//    @Override
-//    public Payment initiatePayment(String orderId, Payment payment, HttpServletRequest httpServletRequest) {
-//        validatePaymentStatus(payment.getStatus(), PaymentStatus.NEW);
-//        validatePaymentMethod(payment.getMethod(), PaymentMethod.MOMO);
-//        String requestId = UUID.randomUUID().toString();
-//        String requestBody = buildCaptureWalletRequestBody(orderId, payment, requestId, httpServletRequest);
-//        HttpRequest initiateRequest = HttpRequest
-//                .newBuilder()
-//                .uri(URI.create(MomoEndpoints.MOMO_CAPTURE_WALLET_ROUTE))
-//                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-//                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-//                .build();
-//        HttpResponse<String> httpResponse;
-//        try {
-//            httpResponse = httpClient.send(initiateRequest, HttpResponse.BodyHandlers.ofString());
-//        } catch (IOException | InterruptedException exception) {
-//            throw new InternalErrorException(exception.getMessage());
-//        }
-//        if (httpResponse.statusCode() >= 500) {
-//            throw new InternalErrorException(httpResponse.body());
-//        }
-//        MomoCaptureWalletResponse response;
-//        try {
-//            response = objectMapper.readValue(httpResponse.body(), MomoCaptureWalletResponse.class);
-//        } catch (JsonProcessingException exception) {
-//            throw new InternalErrorException(exception.getMessage());
-//        }
-//        if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
-//            throw new UnprocessableContentException(response.getMessage());
-//        }
-//        payment.setStatus(PaymentStatus.INITIATED);
-//        payment.setDescription(response.getMessage());
-//        payment.setPayUrl(response.getPayUrl());
-//        log.info("----------PAY URL: " + response.getPayUrl());
-//        log.info("----------SEND REQUEST ID: " + requestId);
-//        log.info("----------ORDER ID: " + orderId);
-//        log.info("----------AMOUNT: " + payment.getAmount());
-//        log.info("----------RECEIVE REQUEST ID: " + response.getRequestId());
-//        return payment;
-//    }
 
     @Override
     public Payment initiatePayment(OrderEntity order, Payment payment, HttpServletRequest httpServletRequest) {
@@ -126,6 +87,9 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
             httpResponse = httpClient.send(initiateRequest, HttpResponse.BodyHandlers.ofString());
         } catch (IOException | InterruptedException exception) {
             throw new InternalErrorException(exception.getMessage());
+        }
+        if (httpResponse.statusCode() == 503) {
+            throw new UnavailableServiceException(UNAVAILABLE_SERVICE_ERROR_MESSAGE);
         }
         if (httpResponse.statusCode() >= 500) {
             throw new InternalErrorException(httpResponse.body());
@@ -215,6 +179,9 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
         } catch (IOException | InterruptedException exception) {
             throw new InternalErrorException(exception.getMessage());
         }
+        if (httpResponse.statusCode() == 503) {
+            throw new UnavailableServiceException(UNAVAILABLE_SERVICE_ERROR_MESSAGE);
+        }
         if (httpResponse.statusCode() >= 500) {
             throw new InternalErrorException(httpResponse.body());
         }
@@ -224,7 +191,10 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
         } catch (JsonProcessingException exception) {
             throw new InternalErrorException(exception.getMessage());
         }
-        if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
+        if (response.getResultCode() == 1001) {
+            throw new InsufficientBalanceException("Insufficient balance in the shop owner's account to process the refund");
+        }
+        else if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
             throw new UnprocessableContentException(response.getMessage());
         }
         payment.setStatus(PaymentStatus.REFUNDED);
@@ -249,6 +219,9 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
         } catch (IOException | InterruptedException exception) {
             throw new InternalErrorException(exception.getMessage());
         }
+        if (httpResponse.statusCode() == 503) {
+            throw new UnavailableServiceException(UNAVAILABLE_SERVICE_ERROR_MESSAGE);
+        }
         if (httpResponse.statusCode() >= 500) {
             throw new InternalErrorException(httpResponse.body());
         }
@@ -266,6 +239,7 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
         payment.setDescription(response.getMessage());
         return payment;
     }
+
 
     private String buildCaptureWalletRequestBody(String orderId, Payment payment, String requestId, HttpServletRequest httpRequest) {
         String baseUrl = UrlUtils.getBaseUrl(httpRequest);

@@ -2,20 +2,18 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.AbstractItem;
 import com.example.springbootmongodb.common.HasAddress;
-import com.example.springbootmongodb.common.data.ShopAddress;
-import com.example.springbootmongodb.common.data.UserAddress;
+import com.example.springbootmongodb.common.data.Packable;
 import com.example.springbootmongodb.common.data.mapper.ShopAddressMapper;
+import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.ShipmentStatus;
+import com.example.springbootmongodb.common.data.shipment.OrderType;
 import com.example.springbootmongodb.common.data.shipment.ShipmentAddress;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.common.data.shipment.ShipmentState;
 import com.example.springbootmongodb.common.data.shipment.ghtk.*;
+import com.example.springbootmongodb.common.validator.Length;
 import com.example.springbootmongodb.config.GHTKCredentials;
-import com.example.springbootmongodb.exception.InternalErrorException;
-import com.example.springbootmongodb.exception.InvalidDataException;
-import com.example.springbootmongodb.exception.ItemNotFoundException;
-import com.example.springbootmongodb.exception.UnprocessableContentException;
-import com.example.springbootmongodb.model.OrderEntity;
+import com.example.springbootmongodb.exception.*;
 import com.example.springbootmongodb.model.ShipmentEntity;
 import com.example.springbootmongodb.model.ShopAddressEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
@@ -23,9 +21,12 @@ import com.example.springbootmongodb.repository.ShipmentRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -53,6 +54,15 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
     private final UserAddressService userAddressService;
     private final ShopAddressMapper shopAddressMapper;
     private final ShipmentRepository shipmentRepository;
+
+    @Autowired
+    @Lazy
+    private OrderService orderService;
+
+    @Autowired
+    @Lazy
+    private ReturnService returnService;
+
     private static final String TOKEN_HEADER_NAME = "Token";
 
     @Override
@@ -156,7 +166,7 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
     }
 
     @Override
-    public ShipmentEntity place(ShipmentEntity shipment, String orderId, int subTotal, List<? extends AbstractItem> items, ShipmentRequest request) {
+    public ShipmentEntity place(ShipmentEntity shipment, String orderId, int subTotal, int cod, boolean isFreeShip, List<? extends AbstractItem> items, ShipmentRequest request) {
         log.info("Performing ShipmentService placeOrder");
         if (shipment == null) {
             throw new UnprocessableContentException("Shipment has not been initiated");
@@ -170,7 +180,7 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
             }
             shipment.setReturnAddress(fromHasAddressToShipmentAddress(returnAddress));
         }
-        String requestBody = buildCreateShipmentRequestBody(shipment, orderId, subTotal, items, request);
+        String requestBody = buildCreateShipmentRequestBody(shipment, orderId, subTotal, cod, isFreeShip, items, request);
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()
                 .uri(URI.create(GHTKEndpoints.GHTK_CREATE_SHIPMENT_ROUTE))
@@ -261,12 +271,13 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
     }
 
     @Override
-    public ShipmentEntity initiate(String orderId, HasAddress pickUpAddress, HasAddress deliverAddress) {
+    public ShipmentEntity initiate(String orderId, HasAddress pickUpAddress, HasAddress deliverAddress, OrderType orderType) {
         log.info("Performing ShipmentService initiate");
         return super.insert(ShipmentEntity
                 .builder()
                 .pickUpAddress(fromHasAddressToShipmentAddress(pickUpAddress))
                 .deliverAddress(fromHasAddressToShipmentAddress(deliverAddress))
+                .orderType(orderType)
                 .build());
     }
 
@@ -274,6 +285,25 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
     public ShipmentEntity save(ShipmentEntity shipment) {
         log.info("Performing ShipmentService save");
         return super.save(shipment);
+    }
+
+    @Override
+    public Packable processShipmentStatusUpdateRequest(GHTKUpdateStatusRequest request) {
+        log.info("Performing ShipmentService processShipmentStatusUpdateRequest");
+        ShipmentEntity shipment;
+        try {
+            shipment = findById(request.getShipmentId());
+        } catch (ItemNotFoundException exception) {
+            throw new UnavailableServiceException(exception.getMessage());
+        }
+        Packable packable = null;
+        if (shipment.getOrderType() == OrderType.ORDER) {
+            packable = orderService.processShipmentStatusUpdateRequest(request);
+        }
+        else if(shipment.getOrderType() == OrderType.RETURN ){
+            packable = returnService.processShipmentStatusUpdateRequest(request);
+        }
+        return packable;
     }
 
     private ShipmentAddress fromHasAddressToShipmentAddress(HasAddress address) {
@@ -313,10 +343,10 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
                 .toUriString();
     }
 
-    private String buildCreateShipmentRequestBody(ShipmentEntity shipment, String orderId, int subTotal, List<? extends AbstractItem> items, ShipmentRequest request) {
+    private String buildCreateShipmentRequestBody(ShipmentEntity shipment, String orderId, int subTotal, int cod, boolean isFreeShip, List<? extends AbstractItem> items, ShipmentRequest request) {
         GHTKCreateShipmentRequest createShipmentRequest = GHTKCreateShipmentRequest
                 .builder()
-                .order(buildOrderShipmentRequest(shipment, orderId, subTotal, request))
+                .order(buildOrderShipmentRequest(shipment, orderId, subTotal, cod, isFreeShip, request))
                 .products(buildProductShipmentRequest(items))
                 .build();
         try {
@@ -326,7 +356,7 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
         }
     }
 
-    private GHTKOrderRequest buildOrderShipmentRequest(ShipmentEntity shipment, String orderId, int subTotal , ShipmentRequest request) {
+    private GHTKOrderRequest buildOrderShipmentRequest(ShipmentEntity shipment, String orderId, int subTotal, int cod, boolean isFreeShip, ShipmentRequest request) {
         GHTKPickOption pickOption = GHTKPickOption.parseFromString(request.getPickOption());
         GHTKWorkShiftOption pickWorkShiftOption = GHTKWorkShiftOption.parseFromString(request.getPickWorkShipOption());
         GHTKWorkShiftOption deliverWorkShiftOption = GHTKWorkShiftOption.parseFromString(request.getDeliverWorkShipOption());
@@ -337,7 +367,7 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
                 .orderId(orderId)
                 .pickOption(pickOption.getValue())
                 .pickName("Shop")
-                .pickMoney(subTotal)
+                .pickMoney(cod)
                 .pickAddress(pickUpAddress.getAddressDetails())
                 .pickProvince(pickUpAddress.getProvince())
                 .pickDistrict(pickUpAddress.getDistrict())
@@ -355,7 +385,7 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
                 .phoneNumber(deliverAddress.getPhoneNumber())
                 .note(request.getNote())
                 .email("")
-                .isFreeShip(BooleanUtils.toInteger(request.isFreeShip()))
+                .isFreeShip(BooleanUtils.toInteger(isFreeShip))
                 .value(subTotal)
                 .pickWorkShift(pickWorkShiftOption.getCode())
                 .deliverWorkShift(deliverWorkShiftOption.getCode())

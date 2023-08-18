@@ -15,6 +15,4 @@ public class GHTKCalculateFeeResponse extends GHTKAbstractResponse {
     private GHTKFeeResponse fee;
     @Schema(description = "Địa chỉ của shop được dùng để tính phí")
     private ShopAddress shopAddress;
-    private ShipmentAddress shopAddress2;
-    private ShipmentAddress userAddress;
 }

@@ -8,4 +8,5 @@ public interface MailService {
     public void sendPasswordResetMail(String mailTo, String passwordResetLink);
     public void sendRefundProcessingMail(String mailTo);
     public void sendRefundConfirmationEmail(String mailTo, long refundedAmount);
+    public void sendAcceptedReturnEmail(String mailTo);
 }
