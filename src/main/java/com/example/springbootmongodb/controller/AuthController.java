@@ -40,7 +40,7 @@ public class AuthController {
     @PostMapping(value = AUTH_RESEND_ACTIVATION_TOKEN_ROUTE)
     void resendActivationToken(@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                                @RequestBody ResendActivationEmailRequest resendRequest, HttpServletRequest request) {
-        authService.resendActivationTokenByEmail(resendRequest.getEmail(), request);
+        authService.resendActivationTokenByEmail(resendRequest.getEmail());
     }
 
     @Operation(summary = "Truy xuất yêu cầu đối với mật khẩu (Số lượng ký tự thường, ký tự viết hoa,...)")
@@ -62,7 +62,7 @@ public class AuthController {
     void requestPasswordResetEmail (@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
                                     @RequestBody PasswordResetEmailRequest passwordResetEmailRequest,
                                     HttpServletRequest request) {
-        authService.requestPasswordResetEmail(passwordResetEmailRequest.getEmail(), request);
+        authService.requestPasswordResetEmail(passwordResetEmailRequest.getEmail());
     }
 
     @Operation(summary = "Reset mật khẩu bằng token reset đã gửi đến email")
