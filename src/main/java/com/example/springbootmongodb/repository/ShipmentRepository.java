@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.repository;
 
+import com.example.springbootmongodb.common.data.Packable;
 import com.example.springbootmongodb.model.ShipmentEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 

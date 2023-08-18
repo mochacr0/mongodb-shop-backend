@@ -1,9 +1,6 @@
 package com.example.springbootmongodb.model;
 
-import com.example.springbootmongodb.common.data.ReturnItem;
-import com.example.springbootmongodb.common.data.ReturnOffer;
-import com.example.springbootmongodb.common.data.ReturnReason;
-import com.example.springbootmongodb.common.data.ReturnStatus;
+import com.example.springbootmongodb.common.data.*;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -22,7 +19,7 @@ import static com.example.springbootmongodb.model.ModelConstants.ORDER_RETURN_CO
 @Getter
 @Setter
 @SuperBuilder
-public class OrderReturnEntity extends AbstractEntity {
+public class OrderReturnEntity extends AbstractEntity implements Packable {
     @DocumentReference
     @JsonManagedReference
     private OrderEntity order;

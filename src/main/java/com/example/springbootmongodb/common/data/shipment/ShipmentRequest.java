@@ -22,11 +22,12 @@ public class ShipmentRequest {
     private String deliverWorkShipOption;
     @Schema(description = "Ghi chú cho đơn vị vận chuyển", example = "Hàng dễ vỡ, nhẹ tay")
     private String note;
-    private boolean isFreeShip;
-
-    @Schema(name = "isFeeShip", description = "Có miễn phí giao hàng cho người mua không", example = "false")
-    @JsonProperty
-    public boolean isFreeShip() {
-        return isFreeShip;
-    }
+//    @Builder.Default
+//    private boolean isFreeShip = false;
+//
+//    @Schema(name = "isFeeShip", description = "Có miễn phí giao hàng cho người mua không", example = "false")
+//    @JsonProperty
+//    public boolean isFreeShip() {
+//        return isFreeShip;
+//    }
 }

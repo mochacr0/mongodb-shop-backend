@@ -80,6 +80,18 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
+    public void sendAcceptedReturnEmail(String mailTo) {
+        String subject = "Xác nhận yêu cầu đổi hàng/hoàn tiền LVTN Shop";
+        String templateLocation = "return.user.preparation.ftl";
+        Map<String, Object> model = new HashMap<>();
+        model.put("targetEmail", mailTo);
+        model.put("placeReturnShipmentOrderLink", "http://localhost:5000");
+        model.put("maxDaysForUserPreparation", ReturnPolicies.MAX_DAYS_USER_PREPARING);
+        String message = convertTemplateIntoString(templateLocation, model);
+        sendMailAsync(mailSender.getUsername(), mailTo, subject, message);
+    }
+
+    @Override
     public void sendTemplateMail() {
         String mailFrom = "mochacr0@gmail.com";
         String mailTo = "nthai2001cr@gmail.com";

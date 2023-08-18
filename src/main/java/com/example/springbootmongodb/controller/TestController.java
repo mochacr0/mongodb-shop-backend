@@ -420,4 +420,9 @@ public class TestController {
     void test21() {
         mailService.sendRefundConfirmationEmail("nthai2001cr@gmail.com", 50000);
     }
+
+    @GetMapping("/22")
+    void test22() {
+        mailService.sendAcceptedReturnEmail("nthai2001cr@gmail.com");
+    }
 }

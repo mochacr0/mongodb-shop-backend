@@ -181,6 +181,14 @@ public abstract class AbstractControllerTest {
         }
     }
 
+    public void userLogin() throws Exception {
+        login("user00", "String");
+    }
+
+    public void adminLogin() throws Exception {
+        login("admin", "String");
+    }
+
     public ResultActions performLogin(String username, String password) throws Exception {
         return performPost("/auth/login", new LoginRequest(username, password));
     }

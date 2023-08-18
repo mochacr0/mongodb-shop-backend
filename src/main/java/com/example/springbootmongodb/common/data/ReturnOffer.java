@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 public enum ReturnOffer {
-    RETURN_REFUND("return refund"),
+    RETURN_REFUND("return-refund"),
     REFUND("refund");
 
     private final String value;

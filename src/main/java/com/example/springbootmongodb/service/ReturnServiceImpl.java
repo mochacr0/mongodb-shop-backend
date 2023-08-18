@@ -3,10 +3,11 @@ package com.example.springbootmongodb.service;
 import com.example.springbootmongodb.common.data.*;
 import com.example.springbootmongodb.common.data.mapper.ReturnMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
+import com.example.springbootmongodb.common.data.shipment.OrderType;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKPickOption;
+import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKUpdateStatusRequest;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKWorkShiftOption;
-import com.example.springbootmongodb.config.ReturnPolicies;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
@@ -19,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import software.amazon.awssdk.regions.servicemetadata.EmailServiceMetadata;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -56,10 +56,7 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
-        validateOrderState(order, OrderState.TO_CONFIRM_RECEIVE);
-        if (order.getPayment().getMethod() == PaymentMethod.CASH) {
-                throw new InvalidDataException("Refund/return requests are currently supported only for orders paid online");
-        }
+        validateOrderState(order, OrderState.TO_CONFIRM_RECEIVE, OrderState.TO_RETURN);
         OrderReturnEntity orderReturn = returnMapper.toEntity(request);
         validateExistingReturn(order, orderReturn.getOffer());
         orderReturn.setOrder(order);
@@ -76,10 +73,17 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
         orderReturn.getStatusHistory().add(returnRequestedStatus);
         orderReturn.setCurrentStatus(returnRequestedStatus);
         orderReturn = super.insert(orderReturn);
-        ShipmentEntity returnShipment = shipmentService.initiate(orderReturn.getId(), order.getShipment().getDeliverAddress(), order.getShipment().getPickUpAddress());
-        orderReturn.setShipment(returnShipment);
+        if (orderReturn.getOffer() == ReturnOffer.RETURN_REFUND) {
+            ShipmentEntity returnShipment = shipmentService.initiate(orderReturn.getId(), order.getShipment().getDeliverAddress(), order.getShipment().getPickUpAddress(), OrderType.RETURN);
+            orderReturn.setShipment(returnShipment);
+        }
         orderReturn = save(orderReturn);
-        order.setOrderReturn(orderReturn);
+        if (orderReturn.getOffer() == ReturnOffer.RETURN_REFUND) {
+            order.setOrderReturn(orderReturn);
+        }
+        else if (orderReturn.getOffer() == ReturnOffer.REFUND) {
+            order.setOrderRefund(orderReturn);
+        }
         OrderStatus orderReturnStatus = OrderStatus
                 .builder()
                 .state(OrderState.TO_RETURN)
@@ -94,29 +98,29 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
     @Override
     public void acceptExpiredReturnRequests() {
         log.info("Performing ReturnService acceptExpiredReturnRequests");
-        returnRepository.acceptExpiredReturnRequests();
+//        returnRepository.acceptExpiredReturnRequests();
     }
 
-    @Override
-    public OrderReturnEntity confirmJudging(String returnId) {
-        log.info("Performing ReturnService confirmProcessing");
-        OrderReturnEntity orderReturn;
-        try {
-            orderReturn = findById(returnId);
-        } catch (ItemNotFoundException exception) {
-            throw new UnprocessableContentException(exception.getMessage());
-        }
-        validateReturnState(orderReturn, ReturnState.REQUESTED);
-        ReturnStatus returnProcessingStatus = ReturnStatus
-                .builder()
-                .state(ReturnState.JUDGING)
-                .createdAt(LocalDateTime.now())
-                .build();
-        orderReturn.setCurrentStatus(returnProcessingStatus);
-        orderReturn.getStatusHistory().add(returnProcessingStatus);
-        orderReturn.setExpiredAt(null);
-        return save(orderReturn);
-    }
+//    @Override
+//    public OrderReturnEntity confirmJudging(String returnId) {
+//        log.info("Performing ReturnService confirmProcessing");
+//        OrderReturnEntity orderReturn;
+//        try {
+//            orderReturn = findById(returnId);
+//        } catch (ItemNotFoundException exception) {
+//            throw new UnprocessableContentException(exception.getMessage());
+//        }
+//        validateReturnState(orderReturn, ReturnState.REQUESTED);
+//        ReturnStatus returnProcessingStatus = ReturnStatus
+//                .builder()
+//                .state(ReturnState.JUDGING)
+//                .createdAt(LocalDateTime.now())
+//                .build();
+//        orderReturn.setCurrentStatus(returnProcessingStatus);
+//        orderReturn.getStatusHistory().add(returnProcessingStatus);
+//        orderReturn.setExpiredAt(null);
+//        return save(orderReturn);
+//    }
 
     @Override
     public OrderReturnEntity findById(String returnId) {
@@ -136,12 +140,14 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
         } catch(ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
-        validateReturnState(orderReturn, ReturnState.JUDGING);
+        validateReturnState(orderReturn, ReturnState.REQUESTED);
         LocalDateTime now = LocalDateTime.now();
+
+        //REFUND ONLY
         if (orderReturn.getOffer() == ReturnOffer.REFUND) {
             PaymentMethod paymentMethod = orderReturn.getOrder().getPayment().getMethod();
+
             //case payment in cash
-            //TODO: handle in-cash payment refund
             if (paymentMethod == PaymentMethod.CASH) {
                 ReturnStatus refundProcessingStatus = ReturnStatus
                         .builder()
@@ -150,29 +156,18 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
                 orderReturn.getStatusHistory().add(refundProcessingStatus);
                 orderReturn.setExpiredAt(now.plusDays(MAX_DAYS_TRANSFERRING_MONEY));
                 orderReturn = save(orderReturn);
-                //TODO: send notify email
                 mailService.sendRefundProcessingMail(orderReturn.getOrder().getUser().getEmail());
-                return orderReturn;
             }
 
             //case payment with momo
             else if (paymentMethod == PaymentMethod.MOMO) {
                 orderService.refundInReturn(orderReturn.getOrder().getId(), orderReturn.getRefundAmount());
-                ReturnStatus returnRefundedStatus = ReturnStatus
-                        .builder()
-                        .state(ReturnState.AWAITING_USER_CONFIRMATION)
-                        .createdAt(now)
-                        .build();
-                orderReturn.getStatusHistory().add(returnRefundedStatus);
-                orderReturn.setExpiredAt(now.plusDays(MAX_DAYS_WAITING_FOR_USER_CONFIRMATION));
-                orderReturn = save(orderReturn);
-                //TODO: send notification email
-                mailService.sendRefundConfirmationEmail(orderReturn.getOrder().getUser().getEmail(), orderReturn.getRefundAmount());
-                return orderReturn;
+                orderReturn = confirmTransferred(returnId, orderReturn);
             }
         }
+
+        //RETURN AND REFUND
         else if (orderReturn.getOffer() == ReturnOffer.RETURN_REFUND) {
-            //TODO: handle retunrn and refund
             ReturnStatus returnUserPreparingStatus = ReturnStatus
                     .builder()
                     .state(ReturnState.USER_PREPARING)
@@ -181,10 +176,9 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
             orderReturn.getStatusHistory().add(returnUserPreparingStatus);
             orderReturn.setExpiredAt(now.plusDays(MAX_DAYS_USER_PREPARING));
             orderReturn = save(orderReturn);
-            //TODO: send notification email
-
+            mailService.sendAcceptedReturnEmail(orderReturn.getOrder().getUser().getEmail());
         }
-        return save(orderReturn);
+        return orderReturn;
     }
 
     @Override
@@ -192,7 +186,8 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
         log.info("Performing ReturnService placeShipmentOrder");
         OrderReturnEntity orderReturn = findById(returnId);
         validateReturnState(orderReturn, ReturnState.USER_PREPARING);
-        ShipmentEntity placedShipment = shipmentService.place(orderReturn.getShipment(), orderReturn.getId(), (int)orderReturn.getRefundAmount(), orderReturn.getItems(), shipmentRequest);
+        //pass isFreeShip as false to avoid error in ShipmentService
+        ShipmentEntity placedShipment = shipmentService.place(orderReturn.getShipment(), orderReturn.getId(), (int)orderReturn.getRefundAmount(), (int)orderReturn.getRefundAmount(),false, orderReturn.getItems(), shipmentRequest);
         orderReturn.setShipment(placedShipment);
         ReturnStatus readyToShipStatus = ReturnStatus
                 .builder()
@@ -209,6 +204,47 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
             orderReturn.setExpiredAt(expiredAt);
         }
         return save(orderReturn);
+    }
+
+    @Override
+    public OrderReturnEntity confirmTransferred(String returnId, OrderReturnEntity orderReturn) {
+        log.info("Performing ReturnService placeShipmentOrder");
+        if (orderReturn == null) {
+            orderReturn = findById(returnId);
+            validateReturnState(orderReturn, ReturnState.REFUND_PROCESSING);
+        }
+        LocalDateTime now = LocalDateTime.now();
+        ReturnStatus returnRefundedStatus = ReturnStatus
+                .builder()
+                .state(ReturnState.AWAITING_USER_CONFIRMATION)
+                .createdAt(now)
+                .build();
+        orderReturn.getStatusHistory().add(returnRefundedStatus);
+        orderReturn.setExpiredAt(now.plusDays(MAX_DAYS_WAITING_FOR_USER_CONFIRMATION));
+        orderReturn = save(orderReturn);
+        mailService.sendRefundConfirmationEmail(orderReturn.getOrder().getUser().getEmail(), orderReturn.getRefundAmount());
+        return orderReturn;
+    }
+
+    @Override
+    public OrderReturnEntity cancel(String returnId) {
+        log.info("Performing ReturnService cancel");
+        OrderReturnEntity orderReturn = findById(returnId);
+//        validateReturnState(orderReturn, ReturnState.JUDGING, );
+        return null;
+    }
+
+    @Override
+    public OrderReturnEntity processShipmentStatusUpdateRequest(GHTKUpdateStatusRequest request) {
+        log.info("Performing ReturnService processShipmentStatusUpdateRequest");
+        OrderReturnEntity orderReturn;
+        try {
+            orderReturn = findById(request.getPartnerId());
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        validateUnexpectedReturnStates(orderReturn, ReturnState.REQUESTED, ReturnState.REFUND_PROCESSING, ReturnState.USER_PREPARING, ReturnState.CANCELLED, ReturnState.AWAITING_USER_CONFIRMATION, ReturnState.COMPLETED);
+        return null;
     }
 
     private void validateExistingReturn(OrderEntity order, ReturnOffer offer) {
@@ -267,6 +303,14 @@ public class ReturnServiceImpl extends DataBaseService<OrderReturnEntity> implem
         ReturnState actualState = orderReturn.getCurrentStatus().getState();
         if (Arrays.stream(expectedStates).noneMatch(expectedState -> expectedState == actualState)) {
             throw new InvalidDataException(String.format("Order is %s",
+                    actualState.getMessage().toLowerCase()));
+        }
+    }
+
+    protected void validateUnexpectedReturnStates(OrderReturnEntity orderReturn, ReturnState... unexpectedStates) {
+        ReturnState actualState = orderReturn.getStatusHistory().get(orderReturn.getStatusHistory().size() - 1).getState();
+        if (Arrays.stream(unexpectedStates).anyMatch(unexpectedState -> unexpectedState == actualState)) {
+            throw new InvalidDataException(String.format("Order return is %s",
                     actualState.getMessage().toLowerCase()));
         }
     }

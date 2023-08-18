@@ -11,7 +11,7 @@ public class ShipmentMapper {
                 .builder()
                 .id(entity.getId())
                 .note(entity.getNote())
-                .estimatedDeliverTime(entity.getEstimatedDeliverTime())
+                .estimatedPickTime(entity.getEstimatedPickTime())
                 .estimatedDeliverTime(entity.getEstimatedDeliverTime())
                 .deliveryFee(entity.getDeliveryFee())
                 .insuranceFee(entity.getInsuranceFee())
