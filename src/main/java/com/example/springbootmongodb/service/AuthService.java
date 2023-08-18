@@ -7,8 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
     public void activateEmail(String activationToken);
-    public void resendActivationTokenByEmail(String email, HttpServletRequest request);
+    public void resendActivationTokenByEmail(String email);
     public JwtToken changePassword(ChangePasswordRequest request);
-    public void requestPasswordResetEmail(String email, HttpServletRequest request);
+    public void requestPasswordResetEmail(String email);
     public void resetPassword(PasswordResetRequest request);
 }
