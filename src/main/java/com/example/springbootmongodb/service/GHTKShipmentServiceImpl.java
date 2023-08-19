@@ -2,6 +2,8 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.AbstractItem;
 import com.example.springbootmongodb.common.HasAddress;
+import com.example.springbootmongodb.common.data.CalculateDeliveryFeeItem;
+import com.example.springbootmongodb.common.data.CalculateDeliveryFeeRequest;
 import com.example.springbootmongodb.common.data.Packable;
 import com.example.springbootmongodb.common.data.mapper.ShopAddressMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
@@ -14,6 +16,7 @@ import com.example.springbootmongodb.common.data.shipment.ghtk.*;
 import com.example.springbootmongodb.common.validator.Length;
 import com.example.springbootmongodb.config.GHTKCredentials;
 import com.example.springbootmongodb.exception.*;
+import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ShipmentEntity;
 import com.example.springbootmongodb.model.ShopAddressEntity;
 import com.example.springbootmongodb.model.UserAddressEntity;
@@ -54,6 +57,7 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
     private final UserAddressService userAddressService;
     private final ShopAddressMapper shopAddressMapper;
     private final ShipmentRepository shipmentRepository;
+    private final ProductService productService;
 
     @Autowired
     @Lazy
@@ -105,11 +109,11 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
     }
 
     @Override
-    public GHTKCalculateFeeResponse calculateDeliveryFee(String userAddressId, double weight, int quantity) {
+    public GHTKCalculateFeeResponse calculateDeliveryFee(CalculateDeliveryFeeRequest request) {
         log.info("Performing ShipmentService calculateFee");
         UserAddressEntity userAddress;
         try {
-            userAddress = userAddressService.findById(userAddressId);
+            userAddress = userAddressService.findById(request.getUserAddressId());
         } catch(ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
@@ -118,6 +122,16 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
             shopAddress = shopAddressService.findDefaultAddress();
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
+        }
+        int totalWeight = 0;
+        for (CalculateDeliveryFeeItem item : request.getItems()) {
+            ProductEntity product;
+            try {
+                product = productService.findById(item.getProductId());
+            } catch(ItemNotFoundException exception) {
+                throw new UnprocessableContentException(exception.getMessage());
+            }
+            totalWeight += (int) (product.getWeight() * item.getQuantity() * 1000); //kilogram -> gram
         }
         GHTKCalculateFeeRequest calculateFeeRequest = GHTKCalculateFeeRequest
                 .builder()
@@ -129,7 +143,7 @@ public class GHTKShipmentServiceImpl extends DataBaseService<ShipmentEntity> imp
                 .district(userAddress.getDistrict())
                 .ward(userAddress.getWard())
                 .address(userAddress.getStreet())
-                .weight((int)weight * 1000 * quantity)
+                .weight(totalWeight)
                 .build();
         HttpRequest httpRequest = HttpRequest
                 .newBuilder()

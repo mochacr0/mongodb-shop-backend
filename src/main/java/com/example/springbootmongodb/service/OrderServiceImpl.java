@@ -53,6 +53,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     private final ShipmentService shipmentService;
     private final CartService cartService;
     private final ThreadPoolTaskExecutor taskExecutor;
+    private final ProductService productService;
 
     @Override
     public MongoRepository<OrderEntity, String> getRepository() {
@@ -435,7 +436,9 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(completedStatus);
-        return save(order);
+        order = save(order);
+        productService.updateTotalSales(order.getOrderItems());
+        return order;
     }
 
     @Override
@@ -479,6 +482,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 return OrderItem
                         .builder()
                         .productItemId(productItem.getId())
+                        .productId(productItem.getProduct().getId())
                         .productName(String.format("%s %s", productItem.getProduct().getName(), productItem.getVariationDescription()))
                         .imageUrl(productItem.getImageUrl())
                         .price(productItem.getPrice())
