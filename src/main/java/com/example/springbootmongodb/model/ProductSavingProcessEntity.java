@@ -1,9 +1,6 @@
 package com.example.springbootmongodb.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -29,5 +26,6 @@ public class ProductSavingProcessEntity {
     @Indexed(name = CREATED_AT_FIELD, expireAfterSeconds = 86100)
     @CreatedDate
     private LocalDateTime createdAt;
+    @Builder.Default
     private Set<String> imageKeys = new HashSet<>();
 }
