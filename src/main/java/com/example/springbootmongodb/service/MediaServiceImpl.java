@@ -3,6 +3,7 @@ package com.example.springbootmongodb.service;
 import com.example.springbootmongodb.common.data.*;
 import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
+import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductSavingProcessEntity;
 import com.example.springbootmongodb.model.ProductVariationEntity;
@@ -55,21 +56,14 @@ public class MediaServiceImpl implements MediaService {
     public static final String UNSUPPORTED_IMAGE_TYPE_ERROR_MESSAGE = "Unsupported image types";
     public static final String FAILED_TO_UPLOAD_IMAGE_ERROR_MESSAGE = "Encountered error during uploading image, please try again";
     public static final String IMAGE_MAXIMUM_LENGTH_EXCEEDED_ERROR_MESSAGE = "The provided image size has exceeded the maximum allowed size of " + MAX_IMAGE_SIZE_KB;
+    public static final int MAXIMUM_REVIEW_IMAGES = 3;
+    public static final String MAXIMUM_REVIEW_IMAGES_EXCEEDED_ERROR_MESSAGE = "Only " + MAXIMUM_REVIEW_IMAGES + " images are allowed";
 
     @Override
     @Transactional
     public TemporaryImage uploadImage(String processId, MultipartFile image) {
         log.info("Performing MediaService uploadImage");
-        if (StringUtils.isEmpty(image.getContentType())) {
-            throw new InvalidDataException(INVALID_IMAGE_TYPE_ERROR_MESSAGE);
-        }
-        if (!supportedImageTypes.containsKey(image.getContentType())) {
-            throw new InvalidDataException(UNSUPPORTED_IMAGE_TYPE_ERROR_MESSAGE);
-        }
-        long imageKbSize = image.getSize()/1024;
-        if (imageKbSize > MAX_IMAGE_SIZE_KB) {
-            throw new InvalidDataException(IMAGE_MAXIMUM_LENGTH_EXCEEDED_ERROR_MESSAGE + " : " + image.getSize());
-        }
+        validateImage(image);
         String imageKey = UUID.randomUUID() + "." + image.getContentType().substring(6);
         PutObjectRequest request = PutObjectRequest
                 .builder()
@@ -99,6 +93,68 @@ public class MediaServiceImpl implements MediaService {
         }
         String imageUrl = s3Client.utilities().getUrl(GetUrlRequest.builder().bucket(DEFAULT_BUCKET).key(imageKey).build()).toString();
         return TemporaryImage.builder().url(imageUrl).processId(process.getId()).build();
+    }
+
+    private void validateImage(MultipartFile image) {
+        if (StringUtils.isEmpty(image.getContentType())) {
+            throw new InvalidDataException(INVALID_IMAGE_TYPE_ERROR_MESSAGE);
+        }
+        if (!supportedImageTypes.containsKey(image.getContentType())) {
+            throw new InvalidDataException(UNSUPPORTED_IMAGE_TYPE_ERROR_MESSAGE);
+        }
+        long imageKbSize = image.getSize()/1024;
+        if (imageKbSize > MAX_IMAGE_SIZE_KB) {
+            throw new InvalidDataException(IMAGE_MAXIMUM_LENGTH_EXCEEDED_ERROR_MESSAGE + " : " + image.getSize());
+        }
+    }
+
+    private void validateImages(List<MultipartFile> images) {
+        for (MultipartFile image : images) {
+            validateImage(image);
+        }
+    }
+
+    @Override
+    public TemporaryImages uploadImages(String processId, List<MultipartFile> images) {
+        log.info("Performing MediaService uploadImages");
+        validateImages(images);
+        Set<String> imageKeys = new HashSet<>();
+        List<String> imageUrls = new ArrayList<>();
+        ProductSavingProcessEntity process = ProductSavingProcessEntity.builder().build();
+        if (StringUtils.isNotEmpty(processId)) {
+            process = processRepository.findById(processId)
+                    .orElseThrow(() -> new ItemNotFoundException(String.format("Process with id [%s] is not found", processId)));
+        }
+        if (process.getImageKeys().size() + images.size()> MAXIMUM_REVIEW_IMAGES) {
+            throw new InvalidDataException(MAXIMUM_REVIEW_IMAGES_EXCEEDED_ERROR_MESSAGE);
+        }
+        for (MultipartFile image : images) {
+            String imageKey = UUID.randomUUID() + "." + image.getContentType().substring(6);
+            imageKeys.add(imageKey);
+            PutObjectRequest request = PutObjectRequest
+                    .builder()
+                    .bucket(DEFAULT_BUCKET)
+                    .key(imageKey)
+                    .tagging(TEMPORARY_TAG)
+                    .contentType(image.getContentType())
+                    .build();
+            try {
+                s3Client.putObject(request, software.amazon.awssdk.core.sync.RequestBody.fromInputStream(image.getInputStream(), image.getInputStream().available()));
+            } catch (IOException e) {
+                throw new InternalErrorException(FAILED_TO_UPLOAD_IMAGE_ERROR_MESSAGE);
+            }
+            String imageUrl = s3Client.utilities().getUrl(GetUrlRequest.builder().bucket(DEFAULT_BUCKET).key(imageKey).build()).toString();
+            imageUrls.add(imageUrl);
+        }
+        if (StringUtils.isNotEmpty(process.getId())) {
+            process.getImageKeys().addAll(imageKeys);
+            process = saveProcess(process);
+        }
+        else {
+            process.setImageKeys(imageKeys);
+            process = insertProcess(process);
+        }
+        return TemporaryImages.builder().processId(process.getId()).urls(imageUrls).build();
     }
 
     @Override

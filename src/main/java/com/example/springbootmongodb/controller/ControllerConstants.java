@@ -94,6 +94,7 @@ public class ControllerConstants {
      */
     public static final String MEDIA_ROUTE = "/media";
     public static final String MEDIA_UPLOAD_IMAGE_ROUTE = MEDIA_ROUTE + "/image";
+    public static final String MEDIA_UPLOAD_MULTIPLE_IMAGES_ROUTE = MEDIA_ROUTE + "/multiImages";
 
     /**
      * Order constants
