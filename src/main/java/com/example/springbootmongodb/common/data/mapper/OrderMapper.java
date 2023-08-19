@@ -28,8 +28,8 @@ public class OrderMapper {
                 .updatedAt(entity.getUpdatedAt())
                 .expiredAt(entity.getExpiredAt())
                 .completedAt(entity.getCompletedAt())
-                .orderRefund(returnMapper.fromEntity(entity.getOrderRefund()))
-                .orderReturn(returnMapper.fromEntity(entity.getOrderReturn()))
+//                .orderRefund(returnMapper.fromEntity(entity.getOrderRefund()))
+//                .orderReturn(returnMapper.fromEntity(entity.getOrderReturn()))
                 .build();
     }
 }

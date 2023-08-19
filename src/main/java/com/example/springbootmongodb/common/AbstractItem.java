@@ -13,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class AbstractItem {
     private String productItemId;
+    private String productId;
     private String productName;
     private String imageUrl;
     private double weight;

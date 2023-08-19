@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.*;
+import com.example.springbootmongodb.model.OrderItem;
 import com.example.springbootmongodb.model.ProductEntity;
 
 import java.util.List;
@@ -16,4 +17,6 @@ public interface ProductService {
     PageData<ProductPaginationResult> findProducts(ProductPageParameter pageParameter);
     List<ProductEntity> searchProducts(String textSearch, Integer limit);
     void deleteById(String id);
+    void updateTotalSales(List<OrderItem> orderItems);
+
 }

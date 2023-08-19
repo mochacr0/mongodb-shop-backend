@@ -7,10 +7,7 @@ import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
-import com.example.springbootmongodb.model.CategoryEntity;
-import com.example.springbootmongodb.model.ProductEntity;
-import com.example.springbootmongodb.model.ProductItemEntity;
-import com.example.springbootmongodb.model.ProductVariationEntity;
+import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,9 +20,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -217,6 +212,23 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
         combinedFuture.join();
         itemService.deleteByProductId(product.getId());
         productRepository.deleteById(product.getId());
+    }
+
+    @Override
+    public void updateTotalSales(List<OrderItem> orderItems) {
+        log.info("Performing ProductService updateTotalSales");
+        Map<String, Integer> updateMap = new HashMap<>();
+        for (OrderItem orderItem : orderItems) {
+            String productId = orderItem.getProductId();
+            if (!updateMap.containsKey(productId)) {
+                updateMap.put(productId, orderItem.getQuantity());
+            }
+            else {
+                updateMap.put(productId, updateMap.get(productId) + orderItem.getQuantity());
+            }
+        }
+        productRepository.updateTotalSales(updateMap);
+
     }
 
     private void disabledOldVariations(List<ProductVariationEntity> oldVariations, List<ProductVariationEntity> updatedVariations) {

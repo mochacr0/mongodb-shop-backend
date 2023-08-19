@@ -31,6 +31,6 @@ public class Order extends AbstractData {
     private String note;
     private Shipment shipment;
     private LocalDateTime completedAt;
-    private OrderReturn orderReturn;
-    private OrderReturn orderRefund;
+//    private OrderReturn orderReturn;
+//    private OrderReturn orderRefund;
 }
