@@ -138,4 +138,11 @@ public class ControllerConstants {
     public static final String ORDER_RETURN_CONFIRM_RETURN_PROCESSING_ROUTE = ORDER_RETURN_GET_RETURN_BY_ID_ROUTE + "/judge";
     public static final String ORDER_RETURN_ACCEPT_RETURN_REQUEST_ROUTE = ORDER_RETURN_GET_RETURN_BY_ID_ROUTE + "/accept";
     public static final String ORDER_RETURN_PLACE_SHIPMENT_ORDER_ROUTE = ORDER_RETURN_GET_RETURN_BY_ID_ROUTE + "/shipment";
+
+    /**
+     * Review constants
+     */
+    public static final String REVIEW_ROUTE = "/reviews";
+    public static final String REVIEW_POST_REVIEW_ROUTE = REVIEW_ROUTE;
+    public static final String REVIEW_GET_REVIEW_BY_ID_ROUTE = REVIEW_ROUTE + "/{reviewId}";
 }

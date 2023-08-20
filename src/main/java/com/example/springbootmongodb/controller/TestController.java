@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.Order;
-import com.example.springbootmongodb.common.data.OrderState;
 import com.example.springbootmongodb.common.data.TemporaryImage;
 import com.example.springbootmongodb.common.data.VariationOption;
 import com.example.springbootmongodb.common.data.mapper.OrderMapper;
@@ -29,11 +28,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,7 +45,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -83,6 +78,7 @@ public class TestController {
     private final OrderMapper orderMapper;
     private final ReturnService returnService;
     private final MailService mailService;
+    private final ReviewService reviewService;
 
     private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
@@ -424,5 +420,15 @@ public class TestController {
     @GetMapping("/22")
     void test22() {
         mailService.sendAcceptedReturnEmail("nthai2001cr@gmail.com");
+    }
+
+    @GetMapping("/23")
+    int test23(@RequestParam String productId) {
+        return reviewService.countProductReviews(productId);
+    }
+
+    @GetMapping("/24")
+    double test24(@RequestParam String productId) {
+        return reviewService.calculateProductRatings(productId);
     }
 }

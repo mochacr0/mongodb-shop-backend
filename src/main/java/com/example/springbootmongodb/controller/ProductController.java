@@ -7,11 +7,9 @@ import com.example.springbootmongodb.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +27,7 @@ public class ProductController {
     @Operation(summary = "Tạo sản phẩm mới",
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     Product createAsync(@RequestBody ProductRequest request) {
-        return mapper.fromEntity(productService.createAsync(request));
+        return mapper.fromEntity(productService.create(request));
     }
 
     @GetMapping(value = PRODUCT_GET_PRODUCT_BY_ID_ROUTE)
@@ -44,7 +42,7 @@ public class ProductController {
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     Product update (@PathVariable(name = "productId") String productId,
                     @RequestBody ProductRequest request) {
-        return mapper.fromEntity(productService.updateAsync(productId, request));
+        return mapper.fromEntity(productService.update(productId, request));
     }
 
     @GetMapping(value = PRODUCT_GET_PRODUCTS_ROUTE)
