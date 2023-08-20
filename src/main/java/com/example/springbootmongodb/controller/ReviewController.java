@@ -9,8 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import static com.example.springbootmongodb.controller.ControllerConstants.REVIEW_GET_REVIEW_BY_ID_ROUTE;
-import static com.example.springbootmongodb.controller.ControllerConstants.REVIEW_POST_REVIEW_ROUTE;
+import static com.example.springbootmongodb.controller.ControllerConstants.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,5 +28,12 @@ public class ReviewController {
     @Operation(summary = "Đánh giá sản phẩm")
     Review post(@RequestBody ReviewRequest request) {
         return reviewMapper.fromEntity(reviewService.create(request));
+    }
+
+    @PutMapping(value = REVIEW_UPDATE_REVIEW_ROUTE)
+    @Operation(summary = "Chỉnh sửa đánh giá")
+    Review edit(@PathVariable String reviewId,
+            @RequestBody ReviewRequest request) {
+        return reviewMapper.fromEntity(reviewService.edit(reviewId, request));
     }
 }

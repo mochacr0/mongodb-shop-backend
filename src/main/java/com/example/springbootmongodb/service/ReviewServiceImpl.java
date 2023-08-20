@@ -2,6 +2,7 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.ReviewRequest;
 import com.example.springbootmongodb.common.data.mapper.ReviewMapper;
+import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
@@ -9,12 +10,16 @@ import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductSavingProcessEntity;
 import com.example.springbootmongodb.model.ReviewEntity;
 import com.example.springbootmongodb.repository.ReviewRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +32,7 @@ public class ReviewServiceImpl extends DataBaseService<ReviewEntity> implements 
     private final ReviewRepository reviewRepository;
     private final MediaService mediaService;
     private final ReviewMapper reviewMapper;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     @Lazy
@@ -87,19 +93,34 @@ public class ReviewServiceImpl extends DataBaseService<ReviewEntity> implements 
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
-        if (review.isEdited()) {
-            throw new InvalidDataException(UNEDITABLE_AFTER_FIRST_EDIT_ERROR_MESSAGE);
-        }
+//        if (review.isEdited()) {
+//            throw new InvalidDataException(UNEDITABLE_AFTER_FIRST_EDIT_ERROR_MESSAGE);
+//        }
         if (LocalDateTime.now().isAfter(review.getCreatedAt().plusDays(REVIEW_EDIT_WINDOW))) {
             throw new InvalidDataException(EXPIRED_EDIT_WINDOW_ERROR_MESSAGE);
         }
+        if (request.getRating() != review.getRating()) {
+            productService.updateRatings(review.getProduct().getId(), request.getRating());
+        }
+
+        //review's images have not changed
         if (StringUtils.isEmpty(request.getProcessId())) {
             reviewMapper.updateFields(review, request);
-            review = save(review);
+            review.setEdited(true);
+            return save(review);
         }
-        //TODO: re-calculate product ratings
 
-
+        //review's images have changed
+        ReviewEntity odlReview;
+        try {
+            odlReview = objectMapper.readValue(objectMapper.writeValueAsString(review), ReviewEntity.class);
+        } catch (JsonProcessingException e) {
+            throw new InternalErrorException("Encountered errors while copying object");
+        }
+        reviewMapper.updateFields(review, request);
+        review.setEdited(true);
+        save(review);
+        mediaService.persistUpdatingReviewImages(request, odlReview);
         return review;
     }
 

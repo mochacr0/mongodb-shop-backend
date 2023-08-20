@@ -47,5 +47,6 @@ public class ReviewMapper {
     public void updateFields(ReviewEntity entity, ReviewRequest request) {
         entity.setRating(request.getRating());
         entity.setComment(request.getComment());
+        entity.setImageUrls(request.getImageUrls());
     }
 }
