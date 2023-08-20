@@ -88,4 +88,9 @@ public class ModelConstants {
      * Shipment constants
      */
     public static final String SHIPMENT_COLLECTION_NAME = "shipments";
+
+    /**
+     * Review constants
+     */
+    public static final String REVIEW_COLLECTION_NAME = "reviews";
 }

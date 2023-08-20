@@ -39,6 +39,8 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
     private final MediaService mediaService;
     private final ObjectMapper objectMapper;
     private final CategoryService categoryService;
+    private final ReviewService reviewService;
+
     public static final String DUPLICATED_PRODUCT_NAME_ERROR_MESSAGE = "There is already a product with that name";
     public static final String MINIMUM_WEIGHT_VIOLATION_ERROR_MESSAGE = "Product weight must be greater than 0";
     public static final String REQUIRED_PRODUCT_NAME_ERROR_MESSAGE = "Product name should be specified";
@@ -51,7 +53,7 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
 
     @Override
     @Transactional
-    public ProductEntity createAsync(ProductRequest request) {
+    public ProductEntity create(ProductRequest request) {
         log.info("Performing ProductService create");
         validateRequest(request);
         if (existsByName(request.getName())) {
@@ -78,7 +80,7 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
         createdProduct.setItems(createdItems);
         updatePriceRange(createdProduct);
         super.save(createdProduct);
-        mediaService.persistCreatingProductImagesAsync(request);
+        mediaService.persistCreatingProductImages(request);
         return createdProduct;
     }
 
@@ -92,7 +94,7 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
 
     @Override
     @Transactional
-    public ProductEntity updateAsync(String id, ProductRequest request) {
+    public ProductEntity update(String id, ProductRequest request) {
         log.info("Performing ProductService updateAsync");
         validateRequest(request);
         ProductEntity existingProduct = findById(id);
@@ -140,7 +142,7 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
         existingProduct.setVariations(updatedVariations);
         existingProduct.setItems(savedItems);
         updatePriceRange(existingProduct);
-        mediaService.persistUpdatingProductImagesAsync(request, oldProduct);
+        mediaService.persistUpdatingProductImages(request, oldProduct);
         super.save(existingProduct);
         return existingProduct;
     }
@@ -229,6 +231,19 @@ import static com.example.springbootmongodb.common.validator.ConstraintValidator
         }
         productRepository.updateTotalSales(updateMap);
 
+    }
+
+    @Override
+    public void updateRatings(String productId, double rating) {
+        log.info("Performing ProductService updateRating");
+        ProductEntity product;
+        try {
+            product = findById(productId);
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        product.setRating(reviewService.calculateProductRatings(product.getId()));
+        save(product);
     }
 
     private void disabledOldVariations(List<ProductVariationEntity> oldVariations, List<ProductVariationEntity> updatedVariations) {

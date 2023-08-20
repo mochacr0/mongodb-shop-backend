@@ -1,7 +1,6 @@
 package com.example.springbootmongodb.common.data;
 
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,13 +9,12 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
-@SuperBuilder
-public class Review extends AbstractData {
+@Builder
+public class ReviewRequest {
+    private String productId;
     private double rating;
     private String comment;
+    private String processId;
     @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
-    private Review shopResponse;
-    @Builder.Default
-    private boolean isEdited = false;
 }
