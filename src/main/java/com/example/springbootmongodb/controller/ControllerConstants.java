@@ -145,4 +145,5 @@ public class ControllerConstants {
     public static final String REVIEW_ROUTE = "/reviews";
     public static final String REVIEW_POST_REVIEW_ROUTE = REVIEW_ROUTE;
     public static final String REVIEW_GET_REVIEW_BY_ID_ROUTE = REVIEW_ROUTE + "/{reviewId}";
+    public static final String REVIEW_UPDATE_REVIEW_ROUTE = REVIEW_GET_REVIEW_BY_ID_ROUTE;
 }

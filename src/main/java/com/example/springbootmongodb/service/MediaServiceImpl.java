@@ -245,7 +245,7 @@ public class MediaServiceImpl implements MediaService {
         Set<String> existingImageUrls = primaryVariation.getOptions().stream().map(VariationOptionEntity::getImageUrl).collect(Collectors.toSet());
         existingImageUrls.add(oldProduct.getImageUrl());
 
-        //new images that's not existing in current product
+        //new images that is not existing in current product
         imageUrlRequests.removeAll(existingImageUrls);
         if (CollectionUtils.isNotEmpty(imageUrlRequests)) {
 
@@ -323,7 +323,51 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     public void persistUpdatingReviewImages(ReviewRequest request, ReviewEntity oldReview) {
+        log.info("Performing MediaService persistUpdatingReviewImages");
+        List<CompletableFuture<Void>> updateImageFutures = new ArrayList<>();
+        List<String> existingImageUrls = new ArrayList<>(oldReview.getImageUrls());
+        List<String> requestImageUrls = new ArrayList<>(request.getImageUrls());
 
+        //persist new images
+        if (StringUtils.isNotEmpty(request.getProcessId())) {
+            ProductSavingProcessEntity process;
+            try {
+                process = findProcessById(request.getProcessId());
+            } catch (ItemNotFoundException exception) {
+                throw new UnprocessableContentException("There is no current process for this product");
+            }
+
+            List<String> processImageKeys = new ArrayList<>(process.getImageKeys());
+            processImageKeys.retainAll(requestImageUrls.stream().map(this::parseImageKeyFromUrl).toList());
+
+            //remove temporary tag
+            for (String imageKey : process.getImageKeys()) {
+                DeleteObjectTaggingRequest deleteObjectTaggingRequest = DeleteObjectTaggingRequest.builder().bucket(DEFAULT_BUCKET).key(imageKey).build();
+                updateImageFutures.add(CompletableFuture.supplyAsync(() -> {
+                    s3Client.deleteObjectTagging(deleteObjectTaggingRequest);
+                    return null;
+                }, taskExecutor));
+            }
+
+            processRepository.deleteById(process.getId());
+        }
+
+        //retrieve non-existent images
+        existingImageUrls.removeAll(requestImageUrls);
+
+        //delete images
+        for (String imageUrl : existingImageUrls) {
+            if (StringUtils.isNotEmpty(imageUrl)) {
+                DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder().bucket(DEFAULT_BUCKET).key(parseImageKeyFromUrl(imageUrl)).build();
+                updateImageFutures.add(CompletableFuture.supplyAsync(() -> {
+                    s3Client.deleteObject(deleteObjectRequest);
+                    return null;
+                }, taskExecutor));
+            }
+        }
+
+        CompletableFuture<Void> combinedFutures = CompletableFuture.allOf(updateImageFutures.toArray(new CompletableFuture[updateImageFutures.size()]));
+        combinedFutures.join();
     }
 
     @Override
