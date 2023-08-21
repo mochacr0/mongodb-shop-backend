@@ -2,6 +2,7 @@ package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.ReviewRequest;
 import com.example.springbootmongodb.common.data.mapper.ReviewMapper;
+import com.example.springbootmongodb.common.security.SecurityUser;
 import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
@@ -9,6 +10,7 @@ import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.ProductEntity;
 import com.example.springbootmongodb.model.ProductSavingProcessEntity;
 import com.example.springbootmongodb.model.ReviewEntity;
+import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.repository.ReviewRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -33,6 +35,7 @@ public class ReviewServiceImpl extends DataBaseService<ReviewEntity> implements 
     private final MediaService mediaService;
     private final ReviewMapper reviewMapper;
     private final ObjectMapper objectMapper;
+    private final UserService userService;
 
     @Autowired
     @Lazy
@@ -41,7 +44,6 @@ public class ReviewServiceImpl extends DataBaseService<ReviewEntity> implements 
     public static final String RATING_VIOLATION_ERROR_MESSAGE = "Product rating must be between 1 and 5";
     public static final String UNEDITABLE_AFTER_FIRST_EDIT_ERROR_MESSAGE = "You can only edit your review once";
     public static final String EXPIRED_EDIT_WINDOW_ERROR_MESSAGE = "Edit window ended after 7 days from posting";
-    public static final int REVIEW_POST_WINDOW = 7;
     public static final int REVIEW_EDIT_WINDOW = 7;
 
     @Override
@@ -69,11 +71,12 @@ public class ReviewServiceImpl extends DataBaseService<ReviewEntity> implements 
             throw new UnprocessableContentException(exception.getMessage());
         }
 
-        //TODO: validate whether user has purchased this product or not
-
-        //TODO: Validate whether the timeframe for posting a review has passed or not
-
+        UserEntity user = userService.findCurrentUser();
+        if (!reviewRepository.isUserAllowedToPost(user.getId(), product.getId())) {
+            throw new InvalidDataException("You need to buy this product first");
+        }
         ReviewEntity review = reviewMapper.toEntity(request);
+        review.setUser(user);
         review.setProduct(product);
         review = super.insert(review);
         productService.updateRatings(review.getProduct().getId(), request.getRating());
@@ -82,6 +85,7 @@ public class ReviewServiceImpl extends DataBaseService<ReviewEntity> implements 
     }
 
     @Override
+    @Transactional
     public ReviewEntity edit(String reviewId, ReviewRequest request) {
         log.info("Performing ReviewService edit");
         if (request.getRating() < 1 || request.getRating() > 5) {
@@ -93,9 +97,9 @@ public class ReviewServiceImpl extends DataBaseService<ReviewEntity> implements 
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
-//        if (review.isEdited()) {
-//            throw new InvalidDataException(UNEDITABLE_AFTER_FIRST_EDIT_ERROR_MESSAGE);
-//        }
+        if (review.isEdited()) {
+            throw new InvalidDataException(UNEDITABLE_AFTER_FIRST_EDIT_ERROR_MESSAGE);
+        }
         if (LocalDateTime.now().isAfter(review.getCreatedAt().plusDays(REVIEW_EDIT_WINDOW))) {
             throw new InvalidDataException(EXPIRED_EDIT_WINDOW_ERROR_MESSAGE);
         }

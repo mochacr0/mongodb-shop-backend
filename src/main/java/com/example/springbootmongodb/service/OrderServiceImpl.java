@@ -132,6 +132,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             expiredAt = now.plusDays(MAX_DAYS_WAITING_TO_PREPARING);
         }
         order.setStatusHistory(Collections.singletonList(iniStatus));
+        order.setCurrentStatus(iniStatus);
         order.setPayment(payment);
         order.setExpiredAt(expiredAt);
         order = super.insert(order);
@@ -188,11 +189,13 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             case UNPAID -> {
                 orderRepository.rollbackOrderItemQuantities(order.getOrderItems());
                 order.getStatusHistory().add(canceledStatus);
+                order.setCurrentStatus(canceledStatus);
                 order.setExpiredAt(null);
             }
             case WAITING_TO_ACCEPT -> {
                 orderRepository.rollbackOrderItemQuantities(order.getOrderItems());
                 order.getStatusHistory().add(canceledStatus);
+                order.setCurrentStatus(canceledStatus);
                 if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
                     Payment refundedPayment = paymentService.refund(order.getPayment(), order.getPayment().getAmount());
                     order.setPayment(refundedPayment);
@@ -206,6 +209,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .createdAt(LocalDateTime.now())
                         .build();
                 order.getStatusHistory().add(inCancelStatus);
+                order.setCurrentStatus(inCancelStatus);
                 LocalDateTime expiredAt = LocalDateTime.now().plusDays(MAX_DAYS_IN_CANCEL_TO_CANCELED);
                 order.setExpiredAt(expiredAt);
             }
@@ -254,6 +258,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(canceledStatus);
+        order.setCurrentStatus(canceledStatus);
         order.setExpiredAt(null);
         return save(order);
     }
@@ -300,6 +305,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(now)
                 .build();
         order.getStatusHistory().add(preparingStatus);
+        order.setCurrentStatus(preparingStatus);
         order.setExpiredAt(now.plusDays(MAX_DAYS_PREPARING_TO_READY));
         return save(order);
     }
@@ -325,6 +331,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(readyToShipStatus);
+        order.setCurrentStatus(readyToShipStatus);
         if (shipmentRequest.getPickOption().equals(GHTKPickOption.POST.getValue())) {
             String[] splitTime = placedShipment.getEstimatedPickTime().split(" ");
             String dayPart = splitTime[0];
@@ -376,6 +383,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .description("Order has been handed over to the shipping carrier")
                         .build();
                 order.getStatusHistory().add(orderPickedUpStatus);
+                order.setCurrentStatus(orderPickedUpStatus);
                 order.setExpiredAt(null);
             }
             case DELIVERING -> {
@@ -386,6 +394,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .description("Delivering")
                         .build();
                 order.getStatusHistory().add(orderDeliveringStatus);
+                order.setCurrentStatus(orderDeliveringStatus);
             }
             case DELIVERY_DELAYED -> {}
             case FAILED_TO_DELIVER -> {
@@ -396,6 +405,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .description("Failed to deliver")
                         .build();
                 order.getStatusHistory().add(orderFailedToDeliverStatus);
+                order.setCurrentStatus(orderFailedToDeliverStatus);
             }
             case DELIVERED -> {
                 OrderStatus orderWaitingToConfirmState = OrderStatus
@@ -405,6 +415,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .description("Waiting for user confirmation")
                         .build();
                 order.getStatusHistory().add(orderWaitingToConfirmState);
+                order.setCurrentStatus(orderWaitingToConfirmState);
                 order.setCompletedAt(now.plusDays(MAX_DAYS_FOR_RETURN_REFUND));
             }
             case RETURNING -> {}
@@ -436,6 +447,8 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(completedStatus);
+        order.setCurrentStatus(completedStatus);
+//        order.setCompletedAt(LocalDateTime.now());
         order = save(order);
         productService.updateTotalSales(order.getOrderItems());
         return order;

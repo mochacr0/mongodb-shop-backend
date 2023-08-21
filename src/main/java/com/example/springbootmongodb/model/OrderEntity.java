@@ -6,6 +6,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import static com.example.springbootmongodb.model.ModelConstants.ORDER_COLLECTIO
 @SuperBuilder
 public class OrderEntity extends AbstractEntity implements Packable {
     @DocumentReference
+    @Field("userId")
     private UserEntity user;
     private UserAddressEntity userAddress;
     private long subTotal;
@@ -28,6 +30,7 @@ public class OrderEntity extends AbstractEntity implements Packable {
     private long deliveryFee;
     private Payment payment;
     private List<OrderItem> orderItems = new ArrayList<>();
+    private OrderStatus currentStatus;
     private List<OrderStatus> statusHistory = new ArrayList<>();
     private LocalDateTime expiredAt;
     private String note;

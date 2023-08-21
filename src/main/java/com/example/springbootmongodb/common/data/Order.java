@@ -26,6 +26,7 @@ public class Order extends AbstractData {
     private long total;
     private Payment payment;
     private List<OrderItem> orderItems = new ArrayList<>();
+    private OrderStatus currentStatus;
     private List<OrderStatus> statusHistory = new ArrayList<>();
     private LocalDateTime expiredAt;
     private String note;
