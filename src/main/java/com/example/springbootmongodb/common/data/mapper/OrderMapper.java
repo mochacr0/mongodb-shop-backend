@@ -22,6 +22,7 @@ public class OrderMapper {
                 .total(entity.getTotal())
                 .payment(entity.getPayment())
                 .orderItems(entity.getOrderItems())
+                .currentStatus(entity.getCurrentStatus())
                 .statusHistory(entity.getStatusHistory())
                 .shipment(shipmentMapper.fromEntity(entity.getShipment()))
                 .createdAt(entity.getCreatedAt())

@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.Order;
+import com.example.springbootmongodb.common.data.OrderRequest;
 import com.example.springbootmongodb.common.data.TemporaryImage;
 import com.example.springbootmongodb.common.data.VariationOption;
 import com.example.springbootmongodb.common.data.mapper.OrderMapper;
@@ -19,6 +20,7 @@ import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import com.example.springbootmongodb.repository.ProductRepository;
+import com.example.springbootmongodb.repository.ReviewRepository;
 import com.example.springbootmongodb.repository.VariationOptionRepository;
 import com.example.springbootmongodb.service.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -79,6 +81,8 @@ public class TestController {
     private final ReturnService returnService;
     private final MailService mailService;
     private final ReviewService reviewService;
+    private final ReviewRepository reviewRepository;
+    private final UserAddressService userAddressService;
 
     private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
@@ -430,5 +434,10 @@ public class TestController {
     @GetMapping("/24")
     double test24(@RequestParam String productId) {
         return reviewService.calculateProductRatings(productId);
+    }
+
+    @GetMapping("/25")
+    void test25() {
+        mongoTemplate.find(Query.query(where("userId")), ReviewEntity.class);
     }
 }

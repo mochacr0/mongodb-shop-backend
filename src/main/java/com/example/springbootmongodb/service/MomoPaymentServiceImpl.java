@@ -140,6 +140,7 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
                 .createdAt(now)
                 .build();
         order.getStatusHistory().add(newOrderStatus);
+        order.setCurrentStatus(newOrderStatus);
         order.setExpiredAt(now.plusDays(MAX_DAYS_WAITING_TO_PREPARING));
     }
 
@@ -153,6 +154,7 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(newOrderStatus);
+        order.setCurrentStatus(newOrderStatus);
         order.setExpiredAt(null);
     }
 

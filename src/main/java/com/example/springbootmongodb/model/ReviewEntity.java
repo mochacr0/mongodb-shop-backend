@@ -2,6 +2,7 @@ package com.example.springbootmongodb.model;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -19,6 +20,9 @@ import static com.example.springbootmongodb.model.ModelConstants.REVIEW_COLLECTI
 @Setter
 @SuperBuilder
 public class ReviewEntity extends AbstractEntity {
+    @DocumentReference
+    @Field("userId")
+    private UserEntity user;
     @DocumentReference(lazy = true)
     @Field(name = "productId")
     private ProductEntity product;
