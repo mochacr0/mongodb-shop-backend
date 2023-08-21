@@ -43,8 +43,6 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
         List<ProductEntity> data = mongoTemplate.find(paginationQuery, ProductEntity.class);
         boolean hasNext = documentsToSkip + data.size() < totalDocuments;
         long totalPages = (long)Math.ceil((double) totalDocuments / pageParameter.getPageSize());
-
-
         return new PageData<>(hasNext, totalDocuments, totalPages, data.stream().map(mapper::fromEntityToPaginationResult).toList());
     }
 

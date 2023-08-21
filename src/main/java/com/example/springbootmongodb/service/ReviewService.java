@@ -1,6 +1,6 @@
 package com.example.springbootmongodb.service;
 
-import com.example.springbootmongodb.common.data.ReviewRequest;
+import com.example.springbootmongodb.common.data.*;
 import com.example.springbootmongodb.model.ReviewEntity;
 
 public interface ReviewService {
@@ -10,4 +10,5 @@ public interface ReviewService {
     ReviewEntity findById(String reviewId);
     int countProductReviews(String productId);
     double calculateProductRatings(String productId);
+    PageData<Review> findReviews(ReviewPageParameter pageParameter);
 }

@@ -1,19 +1,17 @@
 package com.example.springbootmongodb.service;
 
-import com.example.springbootmongodb.common.data.ReviewRequest;
+import com.example.springbootmongodb.common.data.*;
 import com.example.springbootmongodb.common.data.mapper.ReviewMapper;
-import com.example.springbootmongodb.common.security.SecurityUser;
+import com.example.springbootmongodb.common.validator.CommonValidator;
 import com.example.springbootmongodb.exception.InternalErrorException;
 import com.example.springbootmongodb.exception.InvalidDataException;
 import com.example.springbootmongodb.exception.ItemNotFoundException;
 import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.ProductEntity;
-import com.example.springbootmongodb.model.ProductSavingProcessEntity;
 import com.example.springbootmongodb.model.ReviewEntity;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.repository.ReviewRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +33,7 @@ public class ReviewServiceImpl extends DataBaseService<ReviewEntity> implements 
     private final ReviewMapper reviewMapper;
     private final ObjectMapper objectMapper;
     private final UserService userService;
+    private final CommonValidator commonValidator;
 
     @Autowired
     @Lazy
@@ -150,4 +148,12 @@ public class ReviewServiceImpl extends DataBaseService<ReviewEntity> implements 
         log.info("Performing ReviewService calculateProductRatings");
         return reviewRepository.calculateProductRatings(productId);
     }
+
+    @Override
+    public PageData<Review> findReviews(ReviewPageParameter pageParameter) {
+        log.info("Performing ReviewService findReviews");
+        commonValidator.validatePageParameter(pageParameter);
+        return reviewRepository.findReviews(pageParameter);
+    }
+
 }

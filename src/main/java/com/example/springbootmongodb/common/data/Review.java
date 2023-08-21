@@ -19,4 +19,5 @@ public class Review extends AbstractData {
     private Review shopResponse;
     @Builder.Default
     private boolean isEdited = false;
+    private UserSimplification user;
 }

@@ -57,9 +57,9 @@ public class ProductController {
                                                   @RequestParam(required = false) String sortDirection,
                                                   @Parameter(description = SORT_PROPERTY_DESCRIPTION)
                                                   @RequestParam(required = false) String sortProperty,
-////                                                  @Parameter(description = MIN_PRICE_FILTER_DESCRIPTION)
+//                                                  @Parameter(description = MIN_PRICE_FILTER_DESCRIPTION)
                                                   @RequestParam(required = false) Float minPrice,
-////                                                  @Parameter(description = MAX_PRICE_FILTER_DESCRIPTION)
+//                                                  @Parameter(description = MAX_PRICE_FILTER_DESCRIPTION)
                                                   @RequestParam(required = false) Float maxPrice,
 //                                                  @Parameter(description = RATING_FILTER_DESCRIPTION)
                                                   @RequestParam(required = false) Float rating,

@@ -3,10 +3,13 @@ package com.example.springbootmongodb.common.data.mapper;
 import com.example.springbootmongodb.common.data.Review;
 import com.example.springbootmongodb.common.data.ReviewRequest;
 import com.example.springbootmongodb.model.ReviewEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class ReviewMapper {
+    private final UserMapper userMapper;
 
     public ReviewEntity toEntity(ReviewRequest request) {
         return ReviewEntity
@@ -28,6 +31,7 @@ public class ReviewMapper {
                .shopResponse(fromEntityToShopResponse(entity.getShopResponse()))
                .createdAt(entity.getCreatedAt())
                .updatedAt(entity.getUpdatedAt())
+               .user(userMapper.fromEntityToUserSimplification(entity.getUser()))
                .build();
     }
 
