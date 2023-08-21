@@ -16,7 +16,10 @@ import com.example.springbootmongodb.model.OrderStatus;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.service.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,6 +61,32 @@ public class ReviewController {
     Review edit(@PathVariable String reviewId,
             @RequestBody ReviewRequest request) {
         return reviewMapper.fromEntity(reviewService.edit(reviewId, request));
+    }
+
+    @GetMapping(value = REVIEW_GET_REVIEWS_ROUTE)
+    @Operation(summary = "Phân trang đánh giá sản phẩm")
+    PageData<Review> getReviews(@Parameter(description = PAGE_NUMBER_DESCRIPTION)
+                                @RequestParam(defaultValue = PAGE_NUMBER_DEFAULT_STRING_VALUE) int page,
+                                @Parameter(description = PAGE_SIZE_DESCRIPTION)
+                                @RequestParam(defaultValue = PAGE_SIZE_DEFAULT_STRING_VALUE) int pageSize,
+                                @Parameter(description = SORT_ORDER_DESCRIPTION,
+                                        examples = {@ExampleObject(name = "asc (Ascending)", value = "asc"),
+                                                @ExampleObject(name = "desc (Descending)", value = "desc")})
+                                @RequestParam(required = false) String sortDirection,
+                                @Parameter(description = SORT_PROPERTY_DESCRIPTION)
+                                @RequestParam(required = false) String sortProperty,
+                                @Parameter(description = "Id của sản phẩm")
+                                @RequestParam(required = false) String productId) {
+        return reviewService.findReviews(ReviewPageParameter
+                .builder()
+                .page(page)
+                .pageSize(pageSize)
+                .sortDirection(sortDirection)
+                .sortProperty(sortProperty)
+                .productId(productId)
+                .build()
+        );
+
     }
 
     @PostMapping("/iniData")
