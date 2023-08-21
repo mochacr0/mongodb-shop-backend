@@ -1,12 +1,12 @@
 package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.common.data.*;
-import com.example.springbootmongodb.common.data.mapper.ProductItemMapper;
 import com.example.springbootmongodb.common.data.mapper.ShopAddressMapper;
 import com.example.springbootmongodb.common.data.mapper.UserAddressMapper;
 import com.example.springbootmongodb.common.data.payment.PaymentMethod;
 import com.example.springbootmongodb.common.data.payment.PaymentStatus;
 import com.example.springbootmongodb.common.data.payment.ShipmentStatus;
+import com.example.springbootmongodb.common.data.shipment.OrderType;
 import com.example.springbootmongodb.common.data.shipment.ShipmentRequest;
 import com.example.springbootmongodb.common.data.shipment.ShipmentState;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKPickOption;
@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static com.example.springbootmongodb.config.OrderPolicies.*;
 
@@ -54,7 +53,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
     private final ShipmentService shipmentService;
     private final CartService cartService;
     private final ThreadPoolTaskExecutor taskExecutor;
-    private final ProductItemMapper productItemMapper;
+    private final ProductService productService;
 
     @Override
     public MongoRepository<OrderEntity, String> getRepository() {
@@ -96,9 +95,9 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
-        if (!existingUserAddress.equals(request.getUserAddress())) {
-            throw new InvalidDataException("Your delivery address has been updated. Please verify your new address before proceeding with your order.");
-        }
+//        if (!existingUserAddress.equals(request.getUserAddress())) {
+//            throw new InvalidDataException("Your delivery address has been updated. Please verify your new address before proceeding with your order.");
+//        }
 
         //validate items
         if (CollectionUtils.isEmpty(request.getOrderItems())) {
@@ -107,33 +106,6 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         long subTotal = 0;
         List<String> productItemIds = new ArrayList<>();
         List<OrderItem> orderItems = processOrderItemRequests(request.getOrderItems());
-//        List<OrderItem> orderItems = new ArrayList<>();
-//        for (OrderItemRequest itemRequest : request.getOrderItems()) {
-//            if (itemRequest.getQuantity() <= 0) {
-//                throw new InvalidDataException("Order item quantity should be positive");
-//            }
-//            ProductItemEntity productItem;
-//            try {
-//                productItem = productItemService.findById(itemRequest.getProductItemId());
-//            } catch (ItemNotFoundException exception) {
-//                throw new UnprocessableContentException(exception.getMessage());
-//            }
-//            if (productItem.getQuantity() < itemRequest.getQuantity()) {
-//                throw new InvalidDataException(String.format("Product item with id [%s] is out of stock", productItem.getId()));
-//            }
-//            productItemIds.add(itemRequest.getProductItemId());
-//            OrderItem orderItem = OrderItem
-//                    .builder()
-//                    .productItemId(productItem.getId())
-//                    .productName(productItem.getProduct().getName())
-//                    .price(productItem.getPrice())
-//                    .weight(productItem.getWeight())
-//                    .variationDescription(productItem.getVariationDescription())
-//                    .quantity(itemRequest.getQuantity())
-//                    .build();
-//            orderItems.add(orderItem);
-//            subTotal += orderItem.getQuantity() * orderItem.getPrice();
-//        }
         for (OrderItem orderItem : orderItems) {
             productItemIds.add(orderItem.getProductItemId());
             subTotal += orderItem.getQuantity() * orderItem.getPrice();
@@ -143,12 +115,14 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .user(user)
 //                .userAddress(existingUserAddress)
                 .subTotal(subTotal)
+                .deliveryFee(request.getDeliveryFee())
+                .total(subTotal + request.getDeliveryFee())
                 .orderItems(orderItems)
                 .build();
         LocalDateTime expiredAt = null;
         LocalDateTime now = LocalDateTime.now();
         OrderStatus iniStatus = OrderStatus.builder().createdAt(now).build();
-        Payment payment = paymentService.create(request.getPaymentMethod(), subTotal);
+        Payment payment = paymentService.create(request.getPaymentMethod(), order.getTotal());
         if (payment.getMethod() == PaymentMethod.MOMO) {
             iniStatus.setState(OrderState.UNPAID);
             expiredAt = now.plusMinutes(MAX_MINUTES_WAITING_TO_INITIATE_PAYMENT);
@@ -157,16 +131,14 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             iniStatus.setState(OrderState.WAITING_TO_ACCEPT);
             expiredAt = now.plusDays(MAX_DAYS_WAITING_TO_PREPARING);
         }
-        Shipment shipment = Shipment
-                .builder()
-                .userAddress(existingUserAddress)
-                .shopAddress(existingShopAddress)
-                .build();
         order.setStatusHistory(Collections.singletonList(iniStatus));
+        order.setCurrentStatus(iniStatus);
         order.setPayment(payment);
         order.setExpiredAt(expiredAt);
-        order.setShipment(shipment);
         order = super.insert(order);
+        ShipmentEntity initiatedShipment = shipmentService.initiate(order.getId(), existingShopAddress, existingUserAddress, OrderType.ORDER);
+        order.setShipment(initiatedShipment);
+        order = save(order);
         cartService.bulkRemoveItems(productItemIds);
         return order;
     }
@@ -217,13 +189,15 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             case UNPAID -> {
                 orderRepository.rollbackOrderItemQuantities(order.getOrderItems());
                 order.getStatusHistory().add(canceledStatus);
+                order.setCurrentStatus(canceledStatus);
                 order.setExpiredAt(null);
             }
             case WAITING_TO_ACCEPT -> {
                 orderRepository.rollbackOrderItemQuantities(order.getOrderItems());
                 order.getStatusHistory().add(canceledStatus);
+                order.setCurrentStatus(canceledStatus);
                 if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
-                    Payment refundedPayment = paymentService.refund(order.getPayment());
+                    Payment refundedPayment = paymentService.refund(order.getPayment(), order.getPayment().getAmount());
                     order.setPayment(refundedPayment);
                 }
                 order.setExpiredAt(null);
@@ -235,6 +209,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .createdAt(LocalDateTime.now())
                         .build();
                 order.getStatusHistory().add(inCancelStatus);
+                order.setCurrentStatus(inCancelStatus);
                 LocalDateTime expiredAt = LocalDateTime.now().plusDays(MAX_DAYS_IN_CANCEL_TO_CANCELED);
                 order.setExpiredAt(expiredAt);
             }
@@ -245,7 +220,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
 
     private OrderEntity processAdminCancelRequest(OrderEntity order) {
         OrderState currentOrderState = order.getStatusHistory().get(order.getStatusHistory().size() - 1).getState();
-        Shipment orderShipment = order.getShipment();
+        ShipmentEntity orderShipment = order.getShipment();
         ShipmentState currentShipmentState = orderShipment.getStatusHistory().get(orderShipment.getStatusHistory().size() - 1).getState();
         switch (currentOrderState) {
             case UNPAID -> {}
@@ -257,15 +232,15 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 //cancel shipment
                 //FAILED_TO_PICK is already one of the ending states of shipment so don't need to cancel
                 if (currentShipmentState != ShipmentState.FAILED_TO_PICKUP) {
-                    Shipment canceledShipment = shipmentService.cancel(order.getId(), order.getShipment());
+                    ShipmentEntity canceledShipment = shipmentService.cancel(orderShipment);
                     order.setShipment(canceledShipment);
                 }
             }
             case IN_CANCEL -> {
                 refundInCancel(order);
                 //case IN_CANCEL and shipment order has been placed
-                if (StringUtils.isNotEmpty(order.getShipment().getId())) {
-                    Shipment canceledShipment = shipmentService.cancel(order.getId(), order.getShipment());
+                if (StringUtils.isNotEmpty(orderShipment.getId())) {
+                    ShipmentEntity canceledShipment = shipmentService.cancel(orderShipment);
                     order.setShipment(canceledShipment);
                 }
             }
@@ -283,13 +258,14 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(canceledStatus);
+        order.setCurrentStatus(canceledStatus);
         order.setExpiredAt(null);
         return save(order);
     }
 
     private void refundInCancel(OrderEntity order) {
         if (order.getPayment().getMethod() == PaymentMethod.MOMO) {
-            Payment refundedPayment = paymentService.refund(order.getPayment());
+            Payment refundedPayment = paymentService.refund(order.getPayment(), order.getPayment().getAmount());
             order.setPayment(refundedPayment);
             order.setExpiredAt(null);
         }
@@ -329,6 +305,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(now)
                 .build();
         order.getStatusHistory().add(preparingStatus);
+        order.setCurrentStatus(preparingStatus);
         order.setExpiredAt(now.plusDays(MAX_DAYS_PREPARING_TO_READY));
         return save(order);
     }
@@ -338,7 +315,15 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
         log.info("Performing OrderService placeShipmentOrder");
         OrderEntity order = findById(id);
         validateOrderState(order, OrderState.PREPARING);
-        Shipment placedShipment = shipmentService.place(order, shipmentRequest);
+        int subTotal = (int)order.getSubTotal();
+        int cod = subTotal;
+        boolean isFreeShip = false;
+        PaymentMethod paymentMethod = order.getPayment().getMethod();
+        if (paymentMethod == PaymentMethod.MOMO) {
+            cod = 0;
+            isFreeShip = true;
+        }
+        ShipmentEntity placedShipment = shipmentService.place(order.getShipment(), order.getId(), subTotal, cod, isFreeShip, order.getOrderItems(), shipmentRequest);
         order.setShipment(placedShipment);
         OrderStatus readyToShipStatus = OrderStatus
                 .builder()
@@ -346,6 +331,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(readyToShipStatus);
+        order.setCurrentStatus(readyToShipStatus);
         if (shipmentRequest.getPickOption().equals(GHTKPickOption.POST.getValue())) {
             String[] splitTime = placedShipment.getEstimatedPickTime().split(" ");
             String dayPart = splitTime[0];
@@ -368,7 +354,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
             throw new UnprocessableContentException(exception.getMessage());
         }
         validateUnexpectedOrderStates(order, OrderState.WAITING_TO_ACCEPT, OrderState.PREPARING, OrderState.CANCELED, OrderState.COMPLETED);
-        Shipment orderShipment = order.getShipment();
+        ShipmentEntity orderShipment = order.getShipment();
         ShipmentState updateState = ShipmentState.parseFromInt(request.getStatusId());
         ShipmentStatus updatedStatus = ShipmentStatus
                 .builder()
@@ -397,6 +383,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .description("Order has been handed over to the shipping carrier")
                         .build();
                 order.getStatusHistory().add(orderPickedUpStatus);
+                order.setCurrentStatus(orderPickedUpStatus);
                 order.setExpiredAt(null);
             }
             case DELIVERING -> {
@@ -407,6 +394,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .description("Delivering")
                         .build();
                 order.getStatusHistory().add(orderDeliveringStatus);
+                order.setCurrentStatus(orderDeliveringStatus);
             }
             case DELIVERY_DELAYED -> {}
             case FAILED_TO_DELIVER -> {
@@ -417,6 +405,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .description("Failed to deliver")
                         .build();
                 order.getStatusHistory().add(orderFailedToDeliverStatus);
+                order.setCurrentStatus(orderFailedToDeliverStatus);
             }
             case DELIVERED -> {
                 OrderStatus orderWaitingToConfirmState = OrderStatus
@@ -426,6 +415,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .description("Waiting for user confirmation")
                         .build();
                 order.getStatusHistory().add(orderWaitingToConfirmState);
+                order.setCurrentStatus(orderWaitingToConfirmState);
                 order.setCompletedAt(now.plusDays(MAX_DAYS_FOR_RETURN_REFUND));
             }
             case RETURNING -> {}
@@ -442,7 +432,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
 
     @Override
     public OrderEntity confirmDelivered(String id) {
-        log.info("Performing UserService confirm");
+        log.info("Performing OrderService confirm");
         OrderEntity order;
         try {
             order = findById(id);
@@ -457,13 +447,37 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 .createdAt(LocalDateTime.now())
                 .build();
         order.getStatusHistory().add(completedStatus);
+        order.setCurrentStatus(completedStatus);
+//        order.setCompletedAt(LocalDateTime.now());
+        order = save(order);
+        productService.updateTotalSales(order.getOrderItems());
+        return order;
+    }
+
+    @Override
+    public OrderEntity refundInReturn(String id, long requestedAmount) {
+        log.info("Performing OrderService confirm");
+        OrderEntity order;
+        try {
+            order = findById(id);
+        } catch (ItemNotFoundException exception) {
+            throw new UnprocessableContentException(exception.getMessage());
+        }
+        validateOrderState(order, OrderState.TO_RETURN);
+        Payment orderPayment = order.getPayment();
+        if (orderPayment.getRefundableAmount() < requestedAmount) {
+            throw new InvalidDataException("Amount to refund is higher than transferred amount");
+        }
+        Payment refundedPayment = paymentService.refund(order.getPayment(), requestedAmount);
+        order.setPayment(refundedPayment);
         return save(order);
     }
 
 
     private List<OrderItem> processOrderItemRequests(List<OrderItemRequest> orderItemRequests) {
-        List<CompletableFuture<OrderItem>> processFutures = orderItemRequests.stream().map(orderItemRequest -> {
-            return CompletableFuture.supplyAsync(() -> {
+        List<CompletableFuture<OrderItem>> processFutures = new ArrayList<>();
+        for (OrderItemRequest orderItemRequest : orderItemRequests) {
+            CompletableFuture<OrderItem> completableFuture = CompletableFuture.supplyAsync(() -> {
                 if (orderItemRequest.getQuantity() <= 0) {
                     throw new InvalidDataException("Order item quantity should be positive");
                 }
@@ -481,6 +495,7 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                 return OrderItem
                         .builder()
                         .productItemId(productItem.getId())
+                        .productId(productItem.getProduct().getId())
                         .productName(String.format("%s %s", productItem.getProduct().getName(), productItem.getVariationDescription()))
                         .imageUrl(productItem.getImageUrl())
                         .price(productItem.getPrice())
@@ -489,7 +504,8 @@ public class OrderServiceImpl extends DataBaseService<OrderEntity> implements Or
                         .quantity(orderItemRequest.getQuantity())
                         .build();
             }, taskExecutor);
-        }).collect(Collectors.toList());
+            processFutures.add(completableFuture);
+        }
         CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(processFutures.toArray(new CompletableFuture[processFutures.size()]));
         combinedFuture.join();
         return processFutures.stream().map(CompletableFuture::join).toList();

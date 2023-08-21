@@ -27,7 +27,7 @@ public class ProductController {
     @Operation(summary = "Tạo sản phẩm mới",
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     Product createAsync(@RequestBody ProductRequest request) {
-        return mapper.fromEntity(productService.createAsync(request));
+        return mapper.fromEntity(productService.create(request));
     }
 
     @GetMapping(value = PRODUCT_GET_PRODUCT_BY_ID_ROUTE)
@@ -42,7 +42,7 @@ public class ProductController {
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
     Product update (@PathVariable(name = "productId") String productId,
                     @RequestBody ProductRequest request) {
-        return mapper.fromEntity(productService.updateAsync(productId, request));
+        return mapper.fromEntity(productService.update(productId, request));
     }
 
     @GetMapping(value = PRODUCT_GET_PRODUCTS_ROUTE)
@@ -57,9 +57,9 @@ public class ProductController {
                                                   @RequestParam(required = false) String sortDirection,
                                                   @Parameter(description = SORT_PROPERTY_DESCRIPTION)
                                                   @RequestParam(required = false) String sortProperty,
-////                                                  @Parameter(description = MIN_PRICE_FILTER_DESCRIPTION)
+//                                                  @Parameter(description = MIN_PRICE_FILTER_DESCRIPTION)
                                                   @RequestParam(required = false) Float minPrice,
-////                                                  @Parameter(description = MAX_PRICE_FILTER_DESCRIPTION)
+//                                                  @Parameter(description = MAX_PRICE_FILTER_DESCRIPTION)
                                                   @RequestParam(required = false) Float maxPrice,
 //                                                  @Parameter(description = RATING_FILTER_DESCRIPTION)
                                                   @RequestParam(required = false) Float rating,

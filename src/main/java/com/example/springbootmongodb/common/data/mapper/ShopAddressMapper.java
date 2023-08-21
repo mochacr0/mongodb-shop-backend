@@ -16,7 +16,7 @@ public class ShopAddressMapper {
                 .ward(request.getWard())
                 .hamlet(request.getHamlet())
                 .street(request.getStreet())
-                .address(request.getAddress())
+                .addressDetails(request.getAddress())
                 .isDefault(request.isDefault())
                 .build();
     }
@@ -31,7 +31,7 @@ public class ShopAddressMapper {
                 .ward(entity.getWard())
                 .hamlet(entity.getHamlet())
                 .street(entity.getStreet())
-                .address(entity.getAddress())
+                .addressDetails(entity.getAddressDetails())
                 .isDefault(entity.isDefault())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
@@ -45,7 +45,8 @@ public class ShopAddressMapper {
         entity.setWard(request.getWard());
         entity.setHamlet(request.getHamlet());
         entity.setStreet(request.getStreet());
-        entity.setAddress(request.getAddress());
+        entity.setAddressDetails(request.getAddress());
         entity.setDefault(request.isDefault());
     }
+
 }

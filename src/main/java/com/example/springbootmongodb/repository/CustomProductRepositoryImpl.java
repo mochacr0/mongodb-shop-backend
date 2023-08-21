@@ -1,19 +1,23 @@
 package com.example.springbootmongodb.repository;
 
+import com.example.springbootmongodb.common.AbstractItem;
 import com.example.springbootmongodb.common.data.PageData;
 import com.example.springbootmongodb.common.data.ProductPageParameter;
 import com.example.springbootmongodb.common.data.ProductPaginationResult;
 import com.example.springbootmongodb.common.data.mapper.ProductMapper;
+import com.example.springbootmongodb.model.OrderItem;
 import com.example.springbootmongodb.model.ProductEntity;
+import com.example.springbootmongodb.model.ProductItemEntity;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.TextCriteria;
-import org.springframework.data.mongodb.core.query.TextQuery;
+import org.springframework.data.mongodb.core.query.*;
 
 import java.util.List;
+import java.util.Map;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @RequiredArgsConstructor
 public class CustomProductRepositoryImpl implements CustomProductRepository {
@@ -39,8 +43,6 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
         List<ProductEntity> data = mongoTemplate.find(paginationQuery, ProductEntity.class);
         boolean hasNext = documentsToSkip + data.size() < totalDocuments;
         long totalPages = (long)Math.ceil((double) totalDocuments / pageParameter.getPageSize());
-
-
         return new PageData<>(hasNext, totalDocuments, totalPages, data.stream().map(mapper::fromEntityToPaginationResult).toList());
     }
 
@@ -93,5 +95,18 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
             return new Criteria();
         }
         return new Criteria("categoryId").is(categoryId);
+    }
+
+    @Override
+    public void updateTotalSales(Map<String, Integer> updateMap) {
+        BulkOperations bulkUpdateOperation = mongoTemplate.bulkOps(BulkOperations.BulkMode.ORDERED, ProductItemEntity.class);
+        for (Map.Entry<String, Integer> entry : updateMap.entrySet()) {
+            bulkUpdateOperation.updateOne(Query
+                    .query(where("_id")
+                            .is(entry.getKey())),
+                    new Update()
+                            .inc("totalSales", entry.getValue()));
+        }
+        bulkUpdateOperation.execute();
     }
 }

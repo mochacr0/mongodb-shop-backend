@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.controller;
 
+import com.example.springbootmongodb.common.data.CalculateDeliveryFeeRequest;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKCalculateFeeResponse;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKLv4AddressesResponse;
 import com.example.springbootmongodb.service.ShipmentService;
@@ -8,9 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
 
@@ -29,16 +28,11 @@ public class ShipmentController {
         return shipmentService.getLv4Addresses(address, province, district, wardStreet);
     }
 
-    @GetMapping(value = SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE)
+    @PostMapping(value = SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE)
     @Operation(summary = "Tính phí vận chuyển",
             security = {@SecurityRequirement(name = SWAGGER_SECURITY_SCHEME_BEARER_AUTH)})
-    GHTKCalculateFeeResponse calculateDeliveryFee(@Parameter(description = "Id địa chỉ của người dùng cần tính phí", required = true)
-                                                  @RequestParam String userAddressId,
-                                                  @Parameter(description = "Khối lượng của sản phẩm", required = true)
-                                                  @RequestParam Double weight,
-                                                  @Parameter(description = "Số lượng cần đặt hàng", required = true)
-                                                  @RequestParam Integer quantity) {
-        return shipmentService.calculateDeliveryFee(userAddressId, weight, quantity);
+    GHTKCalculateFeeResponse calculateDeliveryFee(@RequestBody CalculateDeliveryFeeRequest request) {
+        return shipmentService.calculateDeliveryFee(request);
     }
 
 //    @GetMapping(value = SHIPMENT_CALCULATE_DELIVERY_FEE_ROUTE)

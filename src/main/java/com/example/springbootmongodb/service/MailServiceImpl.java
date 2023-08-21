@@ -1,6 +1,7 @@
 package com.example.springbootmongodb.service;
 
 import com.example.springbootmongodb.config.MailConfiguration;
+import com.example.springbootmongodb.config.ReturnPolicies;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -50,6 +51,42 @@ public class MailServiceImpl implements MailService {
         Map<String, Object> model = new HashMap<>();
         model.put("passwordResetLink", passwordResetLink);
         model.put("targetEmail", mailTo);
+        String message = convertTemplateIntoString(templateLocation, model);
+        sendMailAsync(mailSender.getUsername(), mailTo, subject, message);
+    }
+
+    @Override
+    public void sendRefundProcessingMail(String mailTo) {
+        String subject = "Thông báo đổi trả hàng LVTN Shop";
+        String templateLocation = "return.processing.ftl";
+        Map<String, Object> model = new HashMap<>();
+        model.put("maxDaysForRefundTransferring", ReturnPolicies.MAX_DAYS_TRANSFERRING_MONEY);
+        model.put("targetEmail", mailTo);
+        String message = convertTemplateIntoString(templateLocation, model);
+        sendMailAsync(mailSender.getUsername(), mailTo, subject, message);
+    }
+
+    @Override
+    public void sendRefundConfirmationEmail(String mailTo, long refundedAmount) {
+        String subject = "Xác nhận hoàn tiền LVTN Shop";
+        String templateLocation = "return.refunded.ftl";
+        Map<String, Object> model = new HashMap<>();
+        model.put("targetEmail", mailTo);
+        model.put("refundedAmount", refundedAmount);
+        model.put("confirmationLink", "http://localhost:5000");
+        model.put("maxDaysWaitingForConfirmation", ReturnPolicies.MAX_DAYS_WAITING_FOR_USER_CONFIRMATION);
+        String message = convertTemplateIntoString(templateLocation, model);
+        sendMailAsync(mailSender.getUsername(), mailTo, subject, message);
+    }
+
+    @Override
+    public void sendAcceptedReturnEmail(String mailTo) {
+        String subject = "Xác nhận yêu cầu đổi hàng/hoàn tiền LVTN Shop";
+        String templateLocation = "return.user.preparation.ftl";
+        Map<String, Object> model = new HashMap<>();
+        model.put("targetEmail", mailTo);
+        model.put("placeReturnShipmentOrderLink", "http://localhost:5000");
+        model.put("maxDaysForUserPreparation", ReturnPolicies.MAX_DAYS_USER_PREPARING);
         String message = convertTemplateIntoString(templateLocation, model);
         sendMailAsync(mailSender.getUsername(), mailTo, subject, message);
     }

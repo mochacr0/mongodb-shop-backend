@@ -2,14 +2,17 @@ package com.example.springbootmongodb.common.data.mapper;
 
 import com.example.springbootmongodb.common.data.RegisterUserRequest;
 import com.example.springbootmongodb.common.data.User;
+import com.example.springbootmongodb.common.data.UserSimplification;
 import com.example.springbootmongodb.common.data.payment.momo.MomoUserInfo;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.security.Authority;
 import com.example.springbootmongodb.security.oauth2.OAuth2UserInfo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserMapper {
+
     public UserEntity toEntity(User user) {
         return UserEntity.builder()
                 .id(user.getId())
@@ -48,6 +51,7 @@ public class UserMapper {
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .userCredentials(entity.getUserCredentials())
+
                 .build();
     }
 
@@ -55,6 +59,14 @@ public class UserMapper {
         return MomoUserInfo
                 .builder()
                 .email(entity.getEmail())
+                .name(entity.getName())
+                .build();
+    }
+
+    public UserSimplification fromEntityToUserSimplification(UserEntity entity) {
+        return UserSimplification
+                .builder()
+                .id(entity.getEmail())
                 .name(entity.getName())
                 .build();
     }

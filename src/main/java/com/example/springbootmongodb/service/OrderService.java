@@ -18,4 +18,5 @@ public interface OrderService {
     OrderEntity processShipmentStatusUpdateRequest(GHTKUpdateStatusRequest request);
     void markCompletedOrders();
     OrderEntity confirmDelivered(String id);
+    OrderEntity refundInReturn(String id, long requestedAmount);
 }

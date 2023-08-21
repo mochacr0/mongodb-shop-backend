@@ -1,6 +1,6 @@
 <#--
 
-    Copyright © 2016-2023 The Thingsboard Authors
+    Copyright © 2016-2023 LVTN Shop Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@
                     <td class="content-block" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0px; padding: 0px 32px; height: 59px;" valign="top">Please contact your system administrator to resolve the issue.</td>
                 </tr>
                 <tr style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
-                    <td class="content-block" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0px; padding: 0px 32px; height: 40px;" valign="top">&mdash; The ThingsBoard</td>
+                    <td class="content-block" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0px; padding: 0px 32px; height: 40px;" valign="top">&mdash; LVTN Shop</td>
                 </tr>
                 </tbody>
             </table>

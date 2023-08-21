@@ -103,6 +103,7 @@ public class ApplicationSecurityConfiguration {
             "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
             //TEST
 //            USERS_DELETE_USER_BY_ID_ROUTE,
+            REVIEW_GET_REVIEWS_ROUTE,
             USERS_ACTIVATE_USER_CREDENTIALS_ROUTE,
             SHIPMENT_GET_LV4_ADDRESSES_ROUTE));
 

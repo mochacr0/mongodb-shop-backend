@@ -1,7 +1,7 @@
 package com.example.springbootmongodb.controller;
 
 import com.example.springbootmongodb.common.data.Order;
-import com.example.springbootmongodb.common.data.OrderState;
+import com.example.springbootmongodb.common.data.OrderRequest;
 import com.example.springbootmongodb.common.data.TemporaryImage;
 import com.example.springbootmongodb.common.data.VariationOption;
 import com.example.springbootmongodb.common.data.mapper.OrderMapper;
@@ -20,6 +20,7 @@ import com.example.springbootmongodb.exception.UnprocessableContentException;
 import com.example.springbootmongodb.model.*;
 import com.example.springbootmongodb.repository.ProductItemRepository;
 import com.example.springbootmongodb.repository.ProductRepository;
+import com.example.springbootmongodb.repository.ReviewRepository;
 import com.example.springbootmongodb.repository.VariationOptionRepository;
 import com.example.springbootmongodb.service.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,11 +30,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,7 +47,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -81,6 +78,11 @@ public class TestController {
     private final GHTKCredentials ghtkCredentials;
     private final HttpClient httpClient;
     private final OrderMapper orderMapper;
+    private final ReturnService returnService;
+    private final MailService mailService;
+    private final ReviewService reviewService;
+    private final ReviewRepository reviewRepository;
+    private final UserAddressService userAddressService;
 
     private final String GHTK_API_TOKEN_KEY = "641cd4f20fecc058dc822b5163ceb3abb797431f";
 //    @GetMapping(value = "/test")
@@ -373,5 +375,69 @@ public class TestController {
         request.setStatusId(Integer.valueOf(ShipmentState.DELIVERED.getCode()));
         orderService.processShipmentStatusUpdateRequest(request);
         return orderMapper.fromEntity(orderService.confirmDelivered(order.getId()));
+    }
+
+    @GetMapping("/waitConfirm/{orderId}")
+    Order waitConfirm(@PathVariable String orderId) {
+        OrderEntity order = orderService.findById(orderId);
+        GHTKUpdateStatusRequest request = GHTKUpdateStatusRequest
+                .builder()
+                .shipmentId(order.getShipment().getId())
+                .partnerId(order.getId())
+                .weight(0.2f)
+                .fee(45000)
+                .returnPartPackage(0)
+                .statusId(Integer.valueOf(ShipmentState.ACCEPTED.getCode()))
+                .build();
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.PICKING_UP.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.PICKED_UP.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.DELIVERING.getCode()));
+        orderService.processShipmentStatusUpdateRequest(request);
+        request.setStatusId(Integer.valueOf(ShipmentState.DELIVERED.getCode()));
+        return orderMapper.fromEntity(orderService.processShipmentStatusUpdateRequest(request));
+    }
+
+    @GetMapping("/18")
+    OrderReturnEntity test18() {
+        OrderReturnEntity orderReturn = OrderReturnEntity.builder().build();
+        return orderReturn;
+    }
+
+    @GetMapping("/19")
+    void test19() {
+        returnService.acceptExpiredReturnRequests();
+    }
+
+    @GetMapping("/20")
+    void test20() {
+        mailService.sendRefundProcessingMail("nthai2001cr@gmail.com");
+    }
+
+    @GetMapping("/21")
+    void test21() {
+        mailService.sendRefundConfirmationEmail("nthai2001cr@gmail.com", 50000);
+    }
+
+    @GetMapping("/22")
+    void test22() {
+        mailService.sendAcceptedReturnEmail("nthai2001cr@gmail.com");
+    }
+
+    @GetMapping("/23")
+    int test23(@RequestParam String productId) {
+        return reviewService.countProductReviews(productId);
+    }
+
+    @GetMapping("/24")
+    double test24(@RequestParam String productId) {
+        return reviewService.calculateProductRatings(productId);
+    }
+
+    @GetMapping("/25")
+    void test25() {
+        mongoTemplate.find(Query.query(where("userId")), ReviewEntity.class);
     }
 }

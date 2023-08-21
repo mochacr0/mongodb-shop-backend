@@ -1,6 +1,5 @@
 package com.example.springbootmongodb.common.data;
 
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -20,4 +19,5 @@ public class OrderRequest {
     private String note;
     private ShopAddress shopAddress;
     private UserAddress userAddress;
+    private long deliveryFee;
 }
