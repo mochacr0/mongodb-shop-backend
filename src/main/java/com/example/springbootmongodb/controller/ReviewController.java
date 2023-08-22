@@ -12,19 +12,15 @@ import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKPickOption;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKUpdateStatusRequest;
 import com.example.springbootmongodb.common.data.shipment.ghtk.GHTKWorkShiftOption;
 import com.example.springbootmongodb.model.OrderEntity;
-import com.example.springbootmongodb.model.OrderStatus;
 import com.example.springbootmongodb.model.UserEntity;
 import com.example.springbootmongodb.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 
 import static com.example.springbootmongodb.controller.ControllerConstants.*;
@@ -63,6 +59,12 @@ public class ReviewController {
         return reviewMapper.fromEntity(reviewService.edit(reviewId, request));
     }
 
+    @DeleteMapping(value = REVIEW_DELETE_REVIEW_ROUTE)
+    @Operation(summary = "Ẩn đánh giá")
+    void disable(@PathVariable String reviewId) {
+        reviewService.disable(reviewId);
+    }
+
     @GetMapping(value = REVIEW_GET_REVIEWS_ROUTE)
     @Operation(summary = "Phân trang đánh giá sản phẩm")
     PageData<Review> getReviews(@Parameter(description = PAGE_NUMBER_DESCRIPTION)
@@ -86,7 +88,26 @@ public class ReviewController {
                 .productId(productId)
                 .build()
         );
+    }
 
+    @PostMapping(value = REVIEW_RESPONSE_REVIEW_ROUTE)
+    @Operation(summary = "Phản hồi đánh giá của khách hàng")
+    Review response(@PathVariable String reviewId,
+                    @RequestBody ShopResponseRequest request) {
+        return reviewMapper.fromEntity(reviewService.createResponse(reviewId, request));
+    }
+
+    @PutMapping(value = REVIEW_EDIT_RESPONSE_ROUTE)
+    @Operation(summary = "Chỉnh sửa phản hồi")
+    Review editResponse(@PathVariable String reviewId,
+                        @RequestBody ShopResponseRequest request) {
+        return reviewMapper.fromEntity(reviewService.editResponse(reviewId, request));
+    }
+
+    @DeleteMapping(value = REVIEW_DELETE_RESPONSE_ROUTE)
+    @Operation(summary = "Xóa phản hồi")
+    Review deleteResponse(@PathVariable String reviewId) {
+        return reviewMapper.fromEntity(reviewService.deleteResponse(reviewId));
     }
 
     @PostMapping("/iniData")

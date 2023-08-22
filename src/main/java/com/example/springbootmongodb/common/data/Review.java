@@ -20,4 +20,6 @@ public class Review extends AbstractData {
     @Builder.Default
     private boolean isEdited = false;
     private UserSimplification user;
+    @Builder.Default
+    private boolean isDisabled = false;
 }

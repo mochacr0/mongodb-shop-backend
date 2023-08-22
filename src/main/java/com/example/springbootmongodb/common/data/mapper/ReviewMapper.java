@@ -2,6 +2,7 @@ package com.example.springbootmongodb.common.data.mapper;
 
 import com.example.springbootmongodb.common.data.Review;
 import com.example.springbootmongodb.common.data.ReviewRequest;
+import com.example.springbootmongodb.common.data.ShopResponseRequest;
 import com.example.springbootmongodb.model.ReviewEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,8 @@ public class ReviewMapper {
                 .rating(request.getRating())
                 .comment(request.getComment())
                 .imageUrls(request.getImageUrls())
+                .isEdited(false)
+                .isDisabled(false)
                 .build();
     }
 
@@ -41,7 +44,6 @@ public class ReviewMapper {
         }
         return Review
                 .builder()
-                .id(entity.getId())
                 .comment(entity.getComment())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
@@ -52,5 +54,15 @@ public class ReviewMapper {
         entity.setRating(request.getRating());
         entity.setComment(request.getComment());
         entity.setImageUrls(request.getImageUrls());
+    }
+
+    public ReviewEntity fromRequestToShopResponse(ShopResponseRequest request) {
+        return ReviewEntity
+                .builder()
+                .comment(request.getComment())
+                .shopResponse(null)
+                .imageUrls(null)
+                .isEdited(false)
+                .build();
     }
 }
