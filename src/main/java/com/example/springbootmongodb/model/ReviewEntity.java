@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.ReadOnlyProperty;

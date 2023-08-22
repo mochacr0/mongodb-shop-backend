@@ -62,7 +62,6 @@ public class ReviewMapper {
                 .comment(request.getComment())
                 .shopResponse(null)
                 .imageUrls(null)
-                .isEdited(false)
                 .build();
     }
 }

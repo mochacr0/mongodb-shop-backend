@@ -41,7 +41,7 @@ public class ReviewController {
     private final OrderMapper orderMapper;
 
     @GetMapping(value = REVIEW_GET_REVIEW_BY_ID_ROUTE)
-    @Operation(summary = "Truy xuất review theo id")
+    @Operation(summary = "Truy xuất đánh giá theo id")
     Review findById(@PathVariable String reviewId) {
         return reviewMapper.fromEntity(reviewService.findById(reviewId));
     }
@@ -111,6 +111,7 @@ public class ReviewController {
     }
 
     @PostMapping("/iniData")
+    @Operation(summary = "Tạo data đơn hàng đã hoàn thành và chờ review (Test only)")
     Order iniData(@RequestBody List<String> productItemIds) {
         UserEntity user = userService.findByName("user00");
         UserAddress userAddress = addressMapper.fromEntity(addressService.findById(user.getDefaultAddressId()));
