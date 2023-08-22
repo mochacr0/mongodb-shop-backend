@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.common.data;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -17,7 +18,11 @@ public class Review extends AbstractData {
     @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
     private Review shopResponse;
+    @JsonProperty(value = "isEdited")
     @Builder.Default
     private boolean isEdited = false;
     private UserSimplification user;
+    @JsonProperty(value = "isDisabled")
+    @Builder.Default
+    private boolean isDisabled = false;
 }

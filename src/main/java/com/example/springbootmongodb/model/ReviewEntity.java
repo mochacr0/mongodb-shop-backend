@@ -1,5 +1,6 @@
 package com.example.springbootmongodb.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.ReadOnlyProperty;
@@ -30,7 +31,7 @@ public class ReviewEntity extends AbstractEntity {
     private String comment;
     @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
-    @DocumentReference
     private ReviewEntity shopResponse;
     private boolean isEdited;
+    private boolean isDisabled;
 }

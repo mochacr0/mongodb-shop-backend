@@ -65,12 +65,9 @@ public class CustomReviewRepositoryImpl implements CustomReviewRepository {
     @Override
     public PageData<Review> findReviews(ReviewPageParameter pageParameter) {
         long documentsToSkip = (long) (pageParameter.getPage()) * pageParameter.getPageSize();
-        Query countDocumentsQuery;
-        if (StringUtils.isEmpty(pageParameter.getProductId())) {
-            countDocumentsQuery = Query.query(new Criteria());
-        }
-        else {
-            countDocumentsQuery = new Query().addCriteria(where("productId").is(new ObjectId(pageParameter.getProductId())));
+        Query countDocumentsQuery = Query.query(where("isDisabled").is(false));
+        if (StringUtils.isNotEmpty(pageParameter.getProductId())) {
+            countDocumentsQuery = countDocumentsQuery.addCriteria(where("productId").is(new ObjectId(pageParameter.getProductId())));
         }
         long totalDocuments = mongoTemplate.count(countDocumentsQuery, ReviewEntity.class);
         Query paginationQuery = countDocumentsQuery
