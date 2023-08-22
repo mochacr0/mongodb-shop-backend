@@ -30,7 +30,7 @@ public class ReviewEntity extends AbstractEntity {
     private String comment;
     @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
-    @DocumentReference
     private ReviewEntity shopResponse;
     private boolean isEdited;
+    private boolean isDisabled;
 }
