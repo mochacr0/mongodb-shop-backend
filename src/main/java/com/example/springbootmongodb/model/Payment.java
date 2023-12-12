@@ -17,4 +17,5 @@ public class Payment {
     private PaymentMethod method;
     private PaymentStatus status;
     private String description;
+    private String currentRequestId;
 }

@@ -52,8 +52,9 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
     @Lazy
     private OrderService orderService;
     public static final String UNSUPPORTED_PAYMENT_METHOD_ERROR_MESSAGE = "Payment method is not supported";
-    private static final String DEFAULT_EXTRA_DATA = "Thanh toán qua ví Momo";
+    private static final String DEFAULT_EXTRA_DATA = "momo";
     public static final String UNAVAILABLE_SERVICE_ERROR_MESSAGE = "No server is available to handle this request";
+//    public static final String TEST_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAit2TJxH7RwK1n+UMB9MbdC9sPO8Ip9zJmnGv1LPEpqY8aYZwXSWGV9w+wcU28zmZSjEWBciqW6kddDjyBtDdPIlWLUliWTjI74ktv/hkaDENCuzUXm0TjTj1nZ9YUQdz6FGJWLJGDYWnT5KEcgCwDVqT9W9EqOPF6Qv2yf4jDppz7Ik29uY4O5pNtip9ipKRB/82x/iB0MvsPeuMBicuyDxkDxt8+aPmCKa7cW6QS+AGqpc70GPe+Ta7yqdiHBtL0hj9+3BI0X9eQFDQ3tRszeXCIT6mBhD5fyeyYx4VNKi6oCIpNb5duVT9+5Ie4mnhwJthttFG59X4qzDIAFr8wwIDAQAB";
 
     @Override
     public Payment create(String paymentMethod, long amount) {
@@ -103,6 +104,7 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
         if (response.getResultCode() != 0 && response.getResultCode() != 9000) {
             throw new UnprocessableContentException(response.getMessage());
         }
+        payment.setCurrentRequestId(requestId);
         payment.setStatus(PaymentStatus.INITIATED);
         payment.setDescription(response.getMessage());
         payment.setPayUrl(response.getShortLink());
@@ -120,13 +122,50 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
         } catch (ItemNotFoundException exception) {
             throw new UnprocessableContentException(exception.getMessage());
         }
+        log.info("IPN: " + response.toString());
         validateOrder(order, PaymentStatus.INITIATED, OrderState.UNPAID);
+        validateSignature(order, response);
         switch (response.getResultCode()) {
             case 0, 9000 -> processSuccessfulTrans(order, response);
             case 99, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1030 -> processFailedTrans(order, response);
         }
         order.getPayment().setDescription(response.getMessage());
         orderService.save(order);
+    }
+
+    private void validateSignature(OrderEntity order, MomoIpnCallbackResponse response) {
+        Payment orderPayment = order.getPayment();
+//        String valueToDigest = "accessKey=" + momoCredentials.getAccessKey() +
+//                "&amount=" + orderPayment.getAmount()+
+//                "&extraData=" + DEFAULT_EXTRA_DATA +
+//                "&message=" + response.getMessage() +
+//                "&orderId=" + order.getId() +
+//                "&orderInfo=" + DEFAULT_EXTRA_DATA +
+//                "&orderType=" + response.getOrderType() +
+//                "&partnerCode=" + momoCredentials.getPartnerCode() +
+//                "&payType=" + response.getPayType() +
+//                "&requestId=" + orderPayment.getCurrentRequestId() +
+//                "&responseTime=" + response.getResponseTime() +
+//                "&resultCode=" + response.getResultCode() +
+//                "&transId=" + response.getTransId();
+
+        String valueToDigest = "accessKey=" + momoCredentials.getAccessKey() +
+                "&amount=" + response.getAmount()+
+                "&extraData=" + response.getExtraData() +
+                "&message=" + response.getMessage() +
+                "&orderId=" + response.getOrderId() +
+                "&orderInfo=" + response.getOrderInfo() +
+                "&orderType=" + response.getOrderType() +
+                "&partnerCode=" + response.getPartnerCode() +
+                "&payType=" + response.getPayType() +
+                "&requestId=" + response.getRequestId() +
+                "&responseTime=" + response.getResponseTime() +
+                "&resultCode=" + response.getResultCode() +
+                "&transId=" + response.getTransId();
+        HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
+        String signedSignature = hmacUtils.hmacHex(valueToDigest);
+        log.info("NEW CRAFTED SIGNATURE: " + signedSignature);
+        log.info("RECEIVED SIGNATURE: " + response.getSignature());
     }
 
     private void processSuccessfulTrans(OrderEntity order, MomoIpnCallbackResponse response) {
@@ -185,6 +224,9 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
             throw new UnavailableServiceException(UNAVAILABLE_SERVICE_ERROR_MESSAGE);
         }
         if (httpResponse.statusCode() >= 500) {
+            throw new InternalErrorException(httpResponse.body());
+        }
+        if (httpResponse.statusCode() >= 400) {
             throw new InternalErrorException(httpResponse.body());
         }
         MomoRefundResponse response;
@@ -352,6 +394,7 @@ public class MomoPaymentServiceImpl extends AbstractService implements PaymentSe
         String ipnUrl = baseUrl + ORDER_IPN_REQUEST_CALLBACK_ROUTE;
         String redirectUrl = ipnUrl;
         String valueToDigest = buildPayWithMethodRawSignature(payment.getAmount(), ipnUrl, order.getId(), DEFAULT_EXTRA_DATA, DEFAULT_EXTRA_DATA, redirectUrl, requestId);
+        log.info("RAW SIGNATURE: " + valueToDigest);
         HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, momoCredentials.getSecretKey());
         String signedSignature = hmacUtils.hmacHex(valueToDigest);
         MomoPayWithMethodRequest payWithMethodRequest = MomoPayWithMethodRequest
