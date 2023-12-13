@@ -12,11 +12,11 @@ An e-commerce backend application using Spring Boot, leveraging AWS S3 for media
 - Any IDE of your choice
 - Docker
 ### Step-by-step Guide
-1. Clone the latest code
+1. Clone the latest code:
 ```bash
 git clone https://github.com/mochacr0/mongodb-shop-backend.git
 ```
-2. Open your preferred IDE and provide your own application.yml file, including application properties, secrets, and API keys.
+2. Open your preferred IDE and provide your own application.yml file, including application properties, secrets, and API keys:
 ``` yaml
 spring:
   data:
@@ -83,12 +83,19 @@ shipping:
   ghtk:
     apiToken: <YOUR GIAOHANGTIETKIEM TOKEN API>
 ```
-3. Navigate to the project's main directory and run the following command to start the container
+3. Navigate to the project's main directory and run the following command to start the container:
 ```bash
 docker compose up -d
 ```
 4. Once the container is running, access the Swagger documentation page at: http://localhost:5000/swagger-ui.html
-5. Stop and remove the container by using
+5. Use the following accounts to access authorized endpoints:
+
+    |          |   User   |   Admin  |
+    | :-------: | :------: | :------: | 
+    | Username | `user00` |  `admin` |
+    | Password | `String` | `String` |
+   
+6. Stop and remove the container by using:
 ```bash
 docker compose down
 ```
