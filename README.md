@@ -1,4 +1,4 @@
-# Shop-Backend
+# MongoDB-Shop-Backend
 An e-commerce backend application using Spring Boot, leveraging AWS S3 for media storage, Giaohangtietkiem for delivery services, and integrating Momo wallet for seamless payment processing.
 ## Technologies
 - Java 17
