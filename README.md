@@ -113,3 +113,7 @@ docker compose down
 **Response example**
 
 ![image](https://github.com/mochacr0/mongodb-shop-backend/assets/64319905/397e7412-b766-4187-94f1-7d7ffaf75743)
+
+**Database Diagram**
+
+![image](https://github.com/mochacr0/mongodb-shop-backend/assets/64319905/9d693769-4b60-456d-8bed-d6abb4daf5b9)
